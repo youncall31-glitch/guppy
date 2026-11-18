@@ -22,12 +22,12 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 #hud .bar{height:4px;border-radius:2px;background:rgba(255,255,255,.2);overflow:hidden;display:block}
 #hud .bar i{display:block;height:100%;width:0;background:#7fe0cf}
 #hud button.pill{padding:7px 10px}
-#stats{position:absolute;top:calc(52px + env(safe-area-inset-top));left:8px;right:8px;display:flex;gap:5px;flex-wrap:nowrap;overflow:hidden;white-space:nowrap;z-index:3;pointer-events:none}
+#stats{display:none;position:absolute;top:calc(52px + env(safe-area-inset-top));left:8px;right:8px;display:flex;gap:5px;flex-wrap:nowrap;overflow:hidden;white-space:nowrap;z-index:3;pointer-events:none}
 #stats span{background:rgba(6,26,38,.42);color:#dff3ef;font-size:11.5px;padding:4px 9px;border-radius:999px}
 .it.order{display:flex;gap:10px;align-items:center;padding:10px 4px;border-bottom:1px solid #e6eef0}.it.order>i{flex:none;width:76px;display:block}.it.order>i svg{width:76px;height:42px;display:block}.it.order>div{flex:1;min-width:0}.it.order small{display:block;font-size:12px;color:#5b6d74;margin-top:2px}
 #stats .ok{background:#2fa58a;color:#fff;animation:pulse 1.4s ease-in-out infinite}
 #stats .warn{background:rgba(242,163,58,.75);color:#fff}
-#bubble{position:absolute;top:calc(140px + env(safe-area-inset-top));left:10px;max-width:78%;background:#fff;font-size:13px;padding:8px 11px;border-radius:14px 14px 14px 3px;box-shadow:0 6px 18px rgba(0,0,0,.25);opacity:0;transform:translateY(-4px);transition:.3s;pointer-events:none;z-index:3}
+#bubble{position:absolute;top:calc(146px + env(safe-area-inset-top));left:10px;max-width:78%;background:#fff;font-size:13px;padding:8px 11px;border-radius:14px 14px 14px 3px;box-shadow:0 6px 18px rgba(0,0,0,.25);opacity:0;transform:translateY(-4px);transition:.3s;pointer-events:none;z-index:3}
 #bubble.show{opacity:1;transform:none}
 #float{position:absolute;right:16px;top:calc(50px + env(safe-area-inset-top));font-weight:800;font-size:18px;color:#ffe27a;text-shadow:0 1px 5px rgba(0,0,0,.6);opacity:0;pointer-events:none;z-index:4}
 #float.go{animation:up 1.4s ease-out}
@@ -38,8 +38,8 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 #rescue:not(.big) button{padding:8px 12px 10px;font-size:13px;border-radius:999px}
 #rescue:not(.big) small{display:none}
 #rescue.show{display:block;animation:bob 1.2s ease-in-out infinite}
-#goal{position:absolute;left:8px;top:calc(138px + env(safe-area-inset-top));z-index:3;max-width:calc(100% - 16px);background:rgba(255,255,255,.72);color:#24343c;font-size:12.5px;padding:7px 12px;border-radius:12px;text-align:left;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-#goal small{display:block;font-size:11px;opacity:.7}
+#goal{position:absolute;left:8px;top:calc(108px + env(safe-area-inset-top));z-index:3;max-width:calc(100% - 16px);background:rgba(255,255,255,.72);color:#24343c;font-size:12.5px;padding:7px 12px;border-radius:12px;text-align:left;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+#goal small{display:none}
 #goal.ready{background:var(--accent2);color:#fff;font-weight:800;animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{50%{transform:scale(1.05)}}
 #rescue.show:not(.big){animation:pulse 1.2s ease-in-out infinite}
@@ -157,6 +157,11 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 .shop h5,.album h5{margin:12px 2px 6px;font-size:12.5px;color:var(--muted);display:flex;justify-content:space-between}
 .album h5 b{color:var(--ink);font-size:13.5px}
 .album h5.lock{opacity:.55}
+.pill.money{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;padding:4px 12px 5px;min-width:84px}.pill.money .mv{font-weight:800;font-size:14px}.pill.money small{font-size:10.5px;opacity:.8;font-weight:600}.pill.money small.warn{color:#ffc36b}
+#ordBtn.ok{background:#2fa58a;animation:pulse 1.4s ease-in-out infinite}#ordBtn{position:relative}#ordBtn b{position:absolute;top:-4px;right:-4px;background:#ff6b5a;color:#fff;font-size:10px;border-radius:99px;padding:0 5px}
+#shelf button.on{min-width:96px}#shelf button .st{display:block;font-size:11px;opacity:.85}#shelf button .st.warn{color:#c2620a;font-weight:700}
+.btn{border-radius:12px;font-weight:700;min-height:34px}.btn.sm{min-height:28px}
+.grip{cursor:pointer;padding:6px 0;background-clip:content-box;height:5px;box-sizing:content-box}.sheet.full{max-height:94%}
 .bgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.bc{background:#fff;border-radius:16px;padding:8px;box-shadow:0 1px 3px rgba(20,58,79,.1);cursor:pointer}.bc:active{transform:scale(.98)}
 .bt{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin:0 2px 6px}.gp{font-size:11.5px;background:#fff4d6;color:#7a5a00;border-radius:99px;padding:1px 7px}
 .bs{font-size:12px;color:#4a5d64;margin:6px 2px 0}.bs.big{font-size:14px;margin:8px 2px;display:flex;justify-content:space-between;align-items:center}
@@ -218,7 +223,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
 .cust .pay{position:absolute;bottom:106px;left:50%;transform:translateX(-50%);font-weight:800;font-size:15px;color:#e0a100;text-shadow:0 1px 2px #fff;opacity:0;white-space:nowrap}
 .cust .pay.go{animation:payup 1.6s ease-out}
 @keyframes payup{0%{opacity:0;transform:translate(-50%,8px)}20%{opacity:1}100%{opacity:0;transform:translate(-50%,-34px)}}
-#shelf{position:absolute;top:calc(84px + env(safe-area-inset-top));left:8px;right:8px;display:flex;gap:6px;z-index:3}
+#shelf{position:absolute;top:calc(56px + env(safe-area-inset-top));left:8px;right:8px;display:flex;gap:6px;z-index:3}
 #shelf button{flex:none;min-width:58px;padding:6px 8px 5px;border-radius:12px;background:rgba(255,255,255,.55);color:#24343c;font-size:12px;line-height:1.25;border:2px solid transparent;box-shadow:0 2px 6px rgba(0,0,0,.08)}
 #shelf button b{display:block;font-size:13px}
 #shelf button.on{background:#fff;border-color:var(--accent)}
@@ -246,13 +251,14 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
   <section id="tankwrap">
     <svg id="tank" role="img" aria-label="전시 어항"></svg>
     <div id="hud">
-      <div class="pill money" data-tx="🪙 가진 돈">🪙 <span id="money">0</span></div>
+      <div class="pill money" data-tx="🪙 가진 돈 · 아래는 하루 손님 수입"><span class="mv">🪙 <span id="money">0</span></span><small id="inc"></small></div>
       <div class="pill day" data-tx="게임 날짜 · 막대가 차면 하루가 지나요"><span id="day">1일째</span><span class="bar"><i id="daybar"></i></span></div>
       <button class="pill" data-a="speed" id="spd" aria-label="속도" data-tx="⏱ 시간 빠르기 바꾸기">×1</button>
+      <button class="pill" id="ordBtn" data-a="orders" aria-label="주문" data-tx="📋 손님 주문" style="display:none">📋</button>
       <button class="pill" data-a="log" aria-label="기록" data-tx="📜 가게 기록">📜</button>
       <button class="pill" id="helpBtn" data-a="helpmode" aria-label="도움말">?</button>
     </div>
-    <div id="stats"></div>
+    <div id="stats" style="display:none"></div>
     <div id="shelf"></div>
     <div id="crowd"></div>
     <div id="scroll"><i></i></div>
@@ -1390,7 +1396,7 @@ function drawDeco() {
     if (DECO_MODE) hu += `<g class="slotdot" data-a="slot" data-id="${i}"><circle cx="${p.x.toFixed(1)}" cy="${(p.y - 10).toFixed(1)}" r="11" fill="${k ? '#1f9e8f' : '#fff'}" fill-opacity=".9" stroke="#1f9e8f" stroke-width="2"/><text x="${p.x.toFixed(1)}" y="${(p.y - 5.5).toFixed(1)}" text-anchor="middle" font-size="13" font-weight="700" fill="${k ? '#fff' : '#1f9e8f'}">${k ? '✎' : '+'}</text></g>`;
   });
   b.innerHTML = hb; f.innerHTML = hf; ui.innerHTML = hu;
-  const bt = $('#decoBtn'); if (bt) { bt.classList.toggle('on', DECO_MODE); bt.textContent = DECO_MODE ? '✓ 꾸미기 끝' : '🪴 꾸미기'; bt.style.display = VB.tank ? '' : 'none'; }
+  const bt = $('#decoBtn'); if (bt) { bt.classList.toggle('on', DECO_MODE); bt.textContent = DECO_MODE ? '✓ 꾸미기 끝' : `🪴 꾸미기 ${C.decoStats(curTank()).n}/${C.slotCount(curTank().size)}`; bt.style.display = VB.tank ? '' : 'none'; }
 }
 function showSlot(i) {
   const k = (curTank().deco || [])[i], p = slots()[i];
@@ -1710,18 +1716,23 @@ function renderHud() {
   $('#money').textContent = fmt(S.money); $('#day').textContent = `${S.day}일째`; $('#spd').textContent = (SPEEDS.find(x => x.v === S.speed) || SPEEDS[2]).i;
   const used = C.tankUsed(S), fryN = C.at(S, tankLoc()).filter(f => !C.isAdult(f)).length, inc = C.tankIncome(S), cap = C.tankCap(S);
   $('#stats').innerHTML = `<span class="${used > cap ? 'warn' : ''}" data-tx="🐟 이 어항의 구피 / 정원">🐟 ${used}/${cap}${fryN ? ` · 치어 ${fryN}` : ''}</span><span data-tx="🪴 꾸민 자리 / 전체 자리">🪴 ${C.decoStats(curTank()).n}/${C.slotCount(curTank().size)}</span>${(S.orders || []).length ? `<span class="tap ${S.orders.some(o => C.orderMatches(S, o).length) ? 'ok' : ''}" data-a="orders" data-tx="📋 손님 주문">📋 ${S.orders.length}</span>` : ''}<span class="tap ${C.careOf(curTank()).water < 50 ? 'warn' : ''}" data-a="care" data-tx="${curTank().show ? '🖼 전시 어항 꾸미기' : '💧 물 상태 · 누르면 물갈이·먹이'}">${curTank().show ? '🖼 꾸미기 장치' : `💧${Math.round(curTank().water)}%${curTank().full > 0 ? ' · 🍤' : ''}`}</span><span class="${inc.pays ? '' : 'warn'}" data-tx="하루 손님 수입 · 예쁜 구피·수초가 많을수록 ↑">${inc.pays ? `손님 🪙${fmt(inc.total)}/일` : '손님 없음'}</span>${S.rep >= 1 ? `<span data-tx="⭐ 기증하면 올라요 · 하루 1%씩 식어요">⭐ 평판 ${Math.round(S.rep)} · 손님 +${Math.round((C.repMult(S) - 1) * 100)}%</span>` : ''}${S.auto && S.auto.on ? '<span data-tx="🤖 자동 관리가 켜져 있어요">🤖 자동</span>' : ''}`;
-  $('#shelf').innerHTML = S.tanks.map((t, i) => `<button class="${i === S.cur ? 'on' : ''}" data-a="switch" data-id="${i}" data-tx="${t.show ? '🖼 전시 어항 · 시간이 멈춰 늙지 않아요' : '💞 교배 어항'} · 🐟 구피 / 정원"><b>${t.show ? '🖼 ' + C.THEMES[t.theme].n : (t.lock ? '❄️ ' : '') + C.SIZES[t.size].n}</b>🐟${C.tankUsed(S, i)}/${C.tankCap(S, i)}${S.fish.some(f => f.atRisk && f.loc === 'tank' + i) ? ' 🐣' : ''}</button>`).join('') + (S.tanks.length < C.TANK_MAX ? '<button class="add" data-a="shop" aria-label="어항 더 들이기">＋</button>' : '');
+  { const ie = $('#inc'); ie.textContent = inc.pays ? `+${fmt(inc.total)}/일${S.auto && S.auto.on ? ' · 🤖' : ''}` : '손님 없음'; ie.classList.toggle('warn', !inc.pays);
+    const ob = $('#ordBtn'), on = (S.orders || []).length; ob.style.display = on ? '' : 'none'; ob.classList.toggle('ok', on && S.orders.some(o => C.orderMatches(S, o).length)); ob.innerHTML = `📋${on > 1 ? `<b>${on}</b>` : ''}`; }
+  $('#shelf').innerHTML = S.tanks.map((t, i) => { const cur = i === S.cur, w = C.careOf(t).water;
+    const st = t.show ? `🐟${C.tankUsed(S, i)}/${C.tankCap(S, i)}${cur ? ' · 장치' : ''}` : `🐟${C.tankUsed(S, i)}/${C.tankCap(S, i)}${cur ? ` · 💧${Math.round(t.water)}%${t.full > 0 ? '🍤' : ''}` : ''}`;
+    return `<button class="${cur ? 'on' : ''}" data-a="${cur ? 'care' : 'switch'}" data-id="${i}" data-tx="${cur ? (t.show ? '🖼 누르면 전시 어항 장치' : '💧 누르면 물갈이·먹이') : (t.show ? '🖼 전시 어항으로 바꾸기' : '💞 교배 어항으로 바꾸기')}"><b>${t.show ? '🖼 ' + C.THEMES[t.theme].n : C.SIZES[t.size].n + (S.tanks.filter(x => !x.show).length > 1 ? ' ' + (S.tanks.slice(0, i + 1).filter(x => !x.show).length) : '')}</b><span class="st ${!t.show && cur && w < 50 ? 'warn' : ''}">${st}${S.fish.some(f => f.atRisk && f.loc === 'tank' + i) ? ' 🐣' : ''}</span></button>`; }).join('') + (S.tanks.length < C.TANK_MAX ? '<button class="add" data-a="shop" aria-label="어항 더 들이기">＋</button>' : '');
   const risk = S.fish.filter(f => f.atRisk).length;
   const big = !(S.stats.rescued > 0);   // 처음 한 번만 크게 설명하고, 그 뒤로는 작은 알약 버튼
   $('#rescue').classList.toggle('show', risk > 0); $('#rescue').classList.toggle('big', big);
   if (risk) { $('#rtxt').textContent = big ? `🐣 치어 ${risk}마리를 건져 주세요!` : `🐣 치어 ${risk} 건지기`; $('#rsub').textContent = `오늘이 지나면 어른 구피가 먹어요 · 수초에 숨을 확률 ${Math.round(C.survival(S) * 100)}%`; }
   const g = C.goalNow(S), gb = $('#goal');
-  if (gb) { gb.style.display = g && !DECO_MODE && (!TUT.on || TUT.coach || TUT.i >= TS().length - 1) ? '' : 'none'; if (g) { const ok = g.ok(S); gb.classList.toggle('ready', ok); gb.innerHTML = ok ? `🎁 ${g.t} 완료! 🪙${g.r} 받기` : `🎯 ${g.t} · 🪙${g.r}<small>${g.h}</small>`; } }
+  if (gb) { gb.style.display = g && !DECO_MODE && (!TUT.on || TUT.coach || TUT.i >= TS().length - 1) ? '' : 'none'; if (g) { const ok = g.ok(S); gb.classList.toggle('ready', ok); gb.innerHTML = ok ? `🎁 ${g.t} · 🪙${g.r} 받기` : `🎯 ${g.t} · 🪙${g.r}`; gb.dataset.tx = ok ? '' : `💡 ${g.h}`; } }
   const T = C.careOf(curTank()), fb = $('#feedBtn');
   if (fb) { fb.style.display = VB.tank && !DECO_MODE && !curTank().show ? '' : 'none'; const vb = $('#viewBtn'); if (vb) vb.style.display = VB.tank && !DECO_MODE && curTank().show ? '' : 'none'; fb.textContent = `${C.FOODS[S.feedKind || 'flake'].i} 먹이`; }
+  { const db = $('#decoBtn'); if (db && !DECO_MODE) db.textContent = `🪴 꾸미기 ${C.decoStats(curTank()).n}/${C.slotCount(curTank().size)}`; }
   murk();
   const nurAd = C.at(S, 'nursery').filter(C.isAdult).length;
-  let emptyBox = 0; for (let i = 0; i < S.boxes; i++) if (C.at(S, 'box' + i).length < 2) emptyBox++;
+  let emptyBox = 0; for (let i = 0; i < S.boxes; i++) if (C.at(S, 'box' + i).filter(f => !f.sep).length < 2) emptyBox++;
   const bd = { fishes: nurAd ? `<b class="badge">${nurAd}</b>` : '', boxes: emptyBox ? `<b class="badge soft">${emptyBox}</b>` : '', album: UI.newAlbum ? `<b class="badge">${UI.newAlbum}</b>` : '', shop: '' };
   document.querySelectorAll('#dock button').forEach(b => { const k = b.dataset.dock; b.classList.toggle('on', UI.sheet === k); b.querySelectorAll('.badge').forEach(x => x.remove()); if (bd[k]) b.insertAdjacentHTML('beforeend', bd[k]); });
 }
@@ -1731,8 +1742,8 @@ function render() { syncTank(); drawPlants(); renderHud(); refreshSheet(); if (U
 const Q = []; let modalOpen = false;
 function openSheet(html, kind, arg, tall) {
   const sh = $('#sheet'), same = UI.sheet === kind && UI.arg === arg, top = sh.scrollTop;
-  UI.sheet = kind || null; UI.arg = arg; sh.className = 'sheet' + (tall ? ' tall' : '');
-  sh.innerHTML = '<div class="grip"></div>' + html; $('#modal').classList.add('show'); modalOpen = true;
+  const wasFull = sh.classList.contains('full'); UI.sheet = kind || null; UI.arg = arg; sh.className = 'sheet' + (tall ? ' tall' : '') + (same && wasFull ? ' full' : '');
+  sh.innerHTML = '<div class="grip" data-a="grip" aria-label="창 크기"></div>' + html; $('#modal').classList.add('show'); modalOpen = true;
   sh.scrollTop = same ? top : 0; renderHud();
 }
 function closeSheet() { if (TIP_NOW.size) { S.tips = S.tips || {}; TIP_NOW.forEach(k => S.tips[k] = 1); TIP_NOW.clear(); } $('#modal').classList.remove('show'); modalOpen = false; UI.sheet = null; UI.sel = null; renderHud(); if (Q.length) setTimeout(() => { if (!modalOpen && Q.length) Q.shift()(); }, 250); }
@@ -2381,6 +2392,7 @@ function act(a, el) {
     }
     case 'put': err = C.moveTo(S, id, 'box' + el.dataset.box); if (!err) { save(); render(); return showBox(+el.dataset.box); } break;
     case 'boxopen': return showBox(id);
+    case 'grip': $('#sheet').classList.toggle('full'); return;
     case 'ptab': UI.ptab = el.dataset.v; return showPick(id, el.dataset.sex);
     case 'none': return;
     case 'boxdest': { S.boxDest = S.boxDest || {}; S.boxDest[id] = el.dataset.v; boxFry(id).forEach(x => { if (el.dataset.v !== 'ask') x.dest = el.dataset.v; }); save(); toast({ stay: '🐣 치어는 번식통에서 계속 자라요', tank: '🐣 3일쯤 자라면 어항으로 나가요', ask: '🐣 낳을 때마다 물어볼게요' }[el.dataset.v]); return showBox(id); }
@@ -2480,6 +2492,7 @@ function demo() {
   setTimeout(() => { VIEW.cx = 330; applyView(); toast('위의 어항 탭으로 폭포 ↔ 떠 있는 섬을 바꿔 보세요 · 좌우로 밀면 어항이 움직여요'); }, 400);
 }
 setTimeout(demo, 300);
+
 
 
 
