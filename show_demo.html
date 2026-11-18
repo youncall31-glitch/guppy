@@ -164,7 +164,10 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 #shelf{justify-content:center;pointer-events:none}.tsw{display:flex;align-items:center;gap:6px;pointer-events:auto}.tsw .ar{width:34px;height:34px;border-radius:50%;border:0;background:rgba(6,26,38,.4);color:#fff;font-size:14px}
 .tsw .tn{border:0;background:rgba(255,255,255,.72);border-radius:14px;padding:5px 14px;min-width:150px;text-align:center;color:#24343c;font:inherit;line-height:1.25}.tsw .tn b{display:block;font-size:14px}.tsw .tn span{font-size:11.5px;opacity:.85}.tsw .tn span.warn{color:#c2620a;font-weight:700}
 .tdots{display:flex;gap:4px;justify-content:center;margin-top:3px}.tdots i{width:5px;height:5px;border-radius:50%;background:rgba(36,52,60,.25)}.tdots i.on{background:#24343c}
-.chips span.sp{background:none;padding:0}
+.chips span.sp{background:none;padding:0;flex:1}
+.chips button.more{background:#e7eef0}.chips button.more.on{background:#24343c;color:#fff}.chips button.more.act:not(.on)::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff6b5a;margin-left:4px;vertical-align:middle}
+.pop .b.more,#pop .b.more{margin-top:6px;padding-top:6px;border-top:1px solid #eef2f3}#pop .b{display:flex;flex-wrap:wrap;gap:6px}#pop .b .btn{flex:1 1 30%}
+.morebox{background:#fff;border-radius:14px;padding:8px;margin:0 0 10px}
 #tut .tbox .hand{font-size:12.5px;color:#c27a00;font-weight:700;animation:pulse 1.2s ease-in-out infinite}#tut .tbox .sk{font-size:11.5px;opacity:.6}
 .fc .stars{font-size:12px;color:#f0a500;letter-spacing:1px;margin:1px 0}.fc .stars i{font-style:normal;color:#d9e1e3}
 #goal{left:50%!important;transform:translateX(-50%);max-width:calc(100% - 40px);font-size:12px!important;padding:5px 12px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1245,7 +1248,7 @@ const VB = { w: 360, h: 640, k: 1, sand: 600, top: 90 };
 const VIEW = { z: 1, cx: 180, cy: 320, x: 0, y: 0, w: 360, h: 640, follow: null };
 /* 🖼 감상 모드: 전시 어항 전체를 가로 화면 가득. 휴대폰을 세워 들고 있으면 화면을 90° 돌려 보여준다 */
 let VIEWMODE = false, VIEW_DIRTY = false;
-function viewBox() { const T = VB.tank, sv = $('#tank'); if (!T) return; const y = T.y + T.h * .1, x = T.x0 - 8; sv.setAttribute('viewBox', `${x.toFixed(1)} ${y.toFixed(1)} ${(T.x1 - T.x0 + 16).toFixed(1)} ${(T.f1 - y + 18).toFixed(1)}`); }
+function viewBox() { const T = VB.tank, sv = $('#tank'); if (!T) return; const y = T.y + (T.ih || T.h) * .1, x = T.x0 - 8; sv.setAttribute('viewBox', `${x.toFixed(1)} ${y.toFixed(1)} ${(T.x1 - T.x0 + 16).toFixed(1)} ${(T.f1 - y + 18).toFixed(1)}`); }
 function fitViewer() { if (!VIEWMODE) return; const W = innerWidth, H = innerHeight, port = H > W, v = $('#vin'); Object.assign(v.style, { width: (port ? H : W) + 'px', height: (port ? W : H) + 'px', transform: port ? `translate(${W}px,0) rotate(90deg)` : 'none' }); viewBox(); }
 function enterView() {
   if (!curTank().show || VIEWMODE) return; VIEWMODE = true; closePop && closePop(); $('#vin').appendChild($('#tank')); $('#viewer').classList.add('on'); fitViewer(); addEventListener('resize', fitViewer);
@@ -1256,21 +1259,23 @@ function exitView() {
   try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { }
   if (VIEW_DIRTY) { VIEW_DIRTY = false; layout(); } else applyView();
 }
+let Z0 = 1;   // 기본 확대: 위쪽 빈 벽을 잘라 내고, 어항이 위 HUD 아래부터 화면 아래까지 차게 (layout에서 계산)
 function applyView() {
   if (VIEWMODE) return viewBox();
-  const w = 360 / VIEW.z, h = VB.h / VIEW.z, WW = VB.W || 360;
+  const w = 360 / (VIEW.z * Z0), h = VB.h / (VIEW.z * Z0), WW = VB.W || 360;
   if (VIEW.follow && SW[VIEW.follow]) { VIEW.cx += (SW[VIEW.follow].x - VIEW.cx) * .12; VIEW.cy += (SW[VIEW.follow].y - VIEW.cy) * .12; }
   const x = Math.max(0, Math.min(WW - w, VIEW.cx - w / 2)), y = Math.max(0, Math.min(VB.h - h, VIEW.cy - h / 2));
   VIEW.cx = x + w / 2; VIEW.cy = y + h / 2; Object.assign(VIEW, { x, y, w, h });
   $('#tank').setAttribute('viewBox', `${x.toFixed(1)} ${y.toFixed(1)} ${w.toFixed(1)} ${h.toFixed(1)}`);
   const sb = $('#scroll'); if (sb) { const show = WW > 361 || VIEW.z > 1; sb.style.display = show ? 'block' : 'none';
+    if (show && VB.tank) { const ff = 0; }
     if (show) { if (VB.tank) sb.style.top = ((VB.tank.y + VB.tank.h - y) / h * $('#tankwrap').clientHeight + 8) + 'px'; const i = sb.firstChild; i.style.left = (x / WW * 100) + '%'; i.style.width = (w / WW * 100) + '%'; } }
 }
 function zoomAt(sx, sy, factor) {
   const r = $('#tankwrap').getBoundingClientRect(), px = VIEW.x + sx / r.width * VIEW.w, py = VIEW.y + sy / r.height * VIEW.h;
   VIEW.z = Math.max(1, Math.min(6, VIEW.z * factor));
-  const w = 360 / VIEW.z, h = VB.h / VIEW.z; VIEW.cx = px - sx / r.width * w + w / 2; VIEW.cy = py - sy / r.height * h + h / 2;
-  if (VIEW.z <= 1.01) { VIEW.z = 1; VIEW.follow = null; VIEW.cy = VB.h / 2; }
+  const w = 360 / (VIEW.z * Z0), h = VB.h / (VIEW.z * Z0); VIEW.cx = px - sx / r.width * w + w / 2; VIEW.cy = py - sy / r.height * h + h / 2;
+  if (VIEW.z <= 1.01) { VIEW.z = 1; VIEW.follow = null; VIEW.cy = VB.cy0; if ((VB.W || 360) <= 361) VIEW.cx = 180; }
   applyView(); zoomUi();
 }
 function placeCrowd() {
@@ -1318,17 +1323,17 @@ function artG(th, x, y, w, h) {   // 그림 테마: 한 장 그림 + 움직이�
   return g + '</svg>';
 }
 function divG(T) {   // 암수 칸막이: 가운데 투명한 판
-  if (!curTank().div) return ''; const mid = (T.x0 + T.x1) / 2, y = T.y + T.h * .15, h = T.f1 - y + 6;
+  if (!curTank().div) return ''; const mid = (T.x0 + T.x1) / 2, y = T.y + (T.ih || T.h) * .15, h = T.f1 - y + 6;
   return `<g pointer-events="none"><rect x="${mid - 2.5}" y="${y}" width="5" height="${h}" fill="#eef8fb" opacity=".35" stroke="#ffffff" stroke-opacity=".7" stroke-width=".8"/><rect x="${mid - 4}" y="${y - 3}" width="8" height="5" rx="1.5" fill="#2a3c44" opacity=".8"/><text x="${mid - 22}" y="${y + 12}" font-size="8" fill="#fff" opacity=".8" text-anchor="middle">♂</text><text x="${mid + 22}" y="${y + 12}" font-size="8" fill="#fff" opacity=".8" text-anchor="middle">♀</text></g>`;
 }
 function showBackG(T) {
-  const t = curTank(); if (!t.show) return ''; const th = C.THEMES[t.theme], A = t.addons || {}, x = T.x0 - 6, y = T.y + T.h * .13, w = T.x1 - T.x0 + 12, h = T.f1 - y + 14;
+  const t = curTank(); if (!t.show) return ''; const th = C.THEMES[t.theme], A = t.addons || {}, x = T.x0 - 6, y = T.y + (T.ih || T.h) * .13, w = T.x1 - T.x0 + 12, h = T.f1 - y + 14;
   if (th.art) return artG(th, x, y, w, h);
   if (false) return `<image href="${th.img}" x="${x}" y="${y}" width="${w}" height="${h}" preserveAspectRatio="xMidYMax slice"/>`;   // 그림 테마: 제미나이로 그린 3자 어항 한 장을 물속 전체에 깐다
   return `<defs><linearGradient id="thbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${th.bg[1]}"/><stop offset="1" stop-color="${th.bg[0]}"/></linearGradient></defs>${A.back ? `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="url(#thbg)" opacity=".8"/>` : ''}`;
 }
 function showFrontG(T) {
-  const t = curTank(); if (!t.show) return ''; const th = C.THEMES[t.theme], A = t.addons || {}, x = T.x0 - 6, y = T.y + T.h * .13, w = T.x1 - T.x0 + 12, h = T.f1 - y + 14;
+  const t = curTank(); if (!t.show) return ''; const th = C.THEMES[t.theme], A = t.addons || {}, x = T.x0 - 6, y = T.y + (T.ih || T.h) * .13, w = T.x1 - T.x0 + 12, h = T.f1 - y + 14;
   let g = A.moon || th.tint ? `<rect pointer-events="none" x="${x}" y="${y}" width="${w}" height="${h}" fill="${A.moon ? '#2a4a9a' : th.tint}" opacity="${A.moon ? .22 : th.ta}"/>` : '';
   if (th.art && A.light && !A.moon) g += `<rect pointer-events="none" x="${x}" y="${y}" width="${w}" height="${h}" fill="#fff3c4" opacity=".1"/>`;   // 그림 테마엔 이미 빛줄기가 있어서 따뜻한 빛만 살짝
   else if (A.light || A.moon) { const col = A.moon ? '#cfe0ff' : '#fff6d8'; g += `<defs><linearGradient id="thray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".55"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>`;
@@ -1341,18 +1346,23 @@ function layout() {
   const r = $('#tankwrap').getBoundingClientRect(); if (!r.width) return;
   VB.k = 360 / r.width; VB.h = Math.max(300, Math.round(r.height * VB.k)); VB.sand = VB.h - 34; VB.top = 96 * VB.k;
   if (typeof ART_BG !== 'undefined') {
-    const ih = 360 * ART_BG.h / ART_BG.w, iy = Math.max(VB.top + 4, VB.h - ih - 26), W = ART_BG.water, TW = 360 * C.SIZES[curTank().size].w;
-    VB.W = TW;
-    VB.tank = { y: iy, h: ih, w: TW, x0: 360 * W.x0, x1: TW - 360 * (1 - W.x1), a0: iy + ih * W.y0, a1: iy + ih * W.y1, f0: iy + ih * W.fy0, f1: iy + ih * W.fy1 };
+    const ih = 360 * ART_BG.h / ART_BG.w, W = ART_BG.water, TW = 360 * C.SIZES[curTank().size].w;
+    // 세로로 긴 화면: 물 부분(그림의 20~70%)만 늘려서 어항이 HUD 아래부터 화면 아래까지 차게 한다
+    Z0 = 1.12; const hw = VB.h / Z0, wpp = VB.k / Z0, Hn = hw - 150 * wpp - 14 * wpp;
+    const VS = Math.max(1, Math.min(1.9, (Hn / ih - .5) / .5)), H2 = ih * (.5 + .5 * VS), iy = VB.h - 14 * wpp - H2;
+    const yf = f => iy + (f <= .2 ? f * ih : f <= .7 ? .2 * ih + (f - .2) * ih * VS : .2 * ih + .5 * ih * VS + (f - .7) * ih);
+    VB.W = TW; VB.cy0 = VB.h - hw / 2;
+    VB.tank = { y: iy, h: H2, ih, VS, yf, w: TW, x0: 360 * W.x0, x1: TW - 360 * (1 - W.x1), a0: yf(W.y0), a1: yf(W.y1), f0: yf(W.fy0), f1: yf(W.fy1) };
   } else { VB.tank = null; VB.W = 360; }
-  const sv = $('#tank'); if (VIEW.z <= 1) { VIEW.cy = VB.h / 2; } applyView();
+  const sv = $('#tank'); if (!VB.tank) { Z0 = 1; VB.cy0 = VB.h / 2; }
+  if (VIEW.z <= 1) { VIEW.cy = VB.cy0; if ((VB.W || 360) <= 361) VIEW.cx = 180; } applyView();
   const h = VB.h, sy = VB.sand;
   if (VB.tank) {
     const T = VB.tank;
     sv.innerHTML = `<defs><radialGradient id="haloG"><stop offset="0" stop-color="#fff6c8" stop-opacity=".95"/><stop offset=".55" stop-color="#ffe27a" stop-opacity=".45"/><stop offset="1" stop-color="#ffe27a" stop-opacity="0"/></radialGradient><linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9dcdc"/><stop offset=".6" stop-color="#c7cbcc"/><stop offset="1" stop-color="#a9aeaf"/></linearGradient></defs>
       <rect x="-10" width="${T.w + 20}" height="${VB.h}" fill="url(#wall)"/><rect x="-10" y="${(T.y + T.h - 6).toFixed(1)}" width="${T.w + 20}" height="${(VB.h - T.y - T.h + 6).toFixed(1)}" fill="#8d7b68"/><rect x="-10" y="${(T.y + T.h - 6).toFixed(1)}" width="${T.w + 20}" height="5" fill="#a8947d"/>
       ${tankPieces(T)}
-      ${showBackG(T)}<g id="decoBack"></g><g id="plants"></g>${divG(T)}<g id="food"></g><g id="tetras"></g><g id="fishes"></g><g id="fryg"></g><g id="decoFront"></g>${showFrontG(T)}<rect id="murk" pointer-events="none" x="${(T.x0 - 14).toFixed(1)}" y="${(T.y + T.h * .13).toFixed(1)}" width="${(T.x1 - T.x0 + 28).toFixed(1)}" height="${(T.f1 - T.y - T.h * .13 + 16).toFixed(1)}" fill="#6f6b3c" opacity="0"/><g id="decoUI"></g>`;
+      ${showBackG(T)}<g id="decoBack"></g><g id="plants"></g>${divG(T)}<g id="food"></g><g id="tetras"></g><g id="fishes"></g><g id="fryg"></g><g id="decoFront"></g>${showFrontG(T)}<rect id="murk" pointer-events="none" x="${(T.x0 - 14).toFixed(1)}" y="${(T.y + (T.ih || T.h) * .13).toFixed(1)}" width="${(T.x1 - T.x0 + 28).toFixed(1)}" height="${(T.f1 - T.y - T.h * .13 + 16).toFixed(1)}" fill="#6f6b3c" opacity="0"/><g id="decoUI"></g>`;
     FOOD.length = 0;
     sv.classList.toggle('show', !!curTank().show); rosterSig = ''; drawPlants(); syncTank(); placeCrowd(); initTetras(); return;
   }
@@ -1386,7 +1396,8 @@ function tankPieces(T) {   // 넓은 어항: 1자 그림을 좌우로 뒤집어 
   const iw = ART_BG.w, ihp = ART_BG.h, src = ART_BG.src[bgLevel()], U = 360;
   const seg = (a, b, dx, flip) => {
     const dw = Math.abs(b - a) * U, lo = Math.min(a, b), hi = Math.max(a, b);
-    const inner = `<svg x="0" y="${T.y.toFixed(1)}" width="${dw.toFixed(1)}" height="${T.h.toFixed(1)}" viewBox="${lo * iw} 0 ${(hi - lo) * iw} ${ihp}" preserveAspectRatio="none"><image class="tbg" href="${src}" width="${iw}" height="${ihp}"/></svg>`;
+    const yf = T.yf || (f => T.y + f * T.h);
+    const inner = [[0, .2], [.2, .7], [.7, 1]].map(([a, b]) => `<svg x="0" y="${yf(a).toFixed(2)}" width="${dw.toFixed(1)}" height="${(yf(b) - yf(a) + .4).toFixed(2)}" viewBox="${lo * iw} ${a * ihp} ${(hi - lo) * iw} ${(b - a) * ihp}" preserveAspectRatio="none"><image class="tbg" href="${src}" width="${iw}" height="${ihp}"/></svg>`).join('');
     return [`<g transform="translate(${(flip ? dx + dw : dx).toFixed(1)} 0)${flip ? ' scale(-1 1)' : ''}">${inner}</g>`, dw];
   };
   if (T.w <= U + 1) return seg(0, 1, 0, false)[0];
@@ -1404,8 +1415,8 @@ let DECO_MODE = false;
 function slots() {
   const T = VB.tank; if (!T) return [];
   const sz = C.SIZES[curTank().size], nb = Math.round(3 * sz.w), nf = Math.round(4 * sz.w), x0 = T.x0 + 12, span = T.x1 - T.x0 - 24, out = [];
-  for (let i = 0; i < nb; i++) out.push({ x: x0 + (i + .5) * span / nb, y: T.y + T.h * .8, row: 'back', sc: .8 });
-  for (let i = 0; i < nf; i++) out.push({ x: x0 + (i + .5) * span / nf, y: T.y + T.h * .905, row: 'front', sc: 1 });
+  for (let i = 0; i < nb; i++) out.push({ x: x0 + (i + .5) * span / nb, y: T.yf ? T.yf(.8) : T.y + T.h * .8, row: 'back', sc: .8 });
+  for (let i = 0; i < nf; i++) out.push({ x: x0 + (i + .5) * span / nf, y: T.yf ? T.yf(.905) : T.y + T.h * .905, row: 'front', sc: 1 });
   return out;
 }
 function drawDeco() {
@@ -1723,12 +1734,13 @@ function swim(now) {
 /* ---------- 어항 위 구피 팝업 ---------- */
 function openPop(id) {
   closePop(); const f = S.fish.find(x => x.id === id), s = SW[id]; if (!f || !s) return;
+  if (UI.lastPop !== id) UI.popMore = false; UI.lastPop = id;
   s.hold = true; UI.pop = id; if (TUT.on && id === TUT.mom) tutOn('pop');
   const ad = C.isAdult(f), p = $('#pop');
   p.innerHTML = `<div class="t">${f.nick ? f.nick + ' · ' : ''}${label(f)} ${sexI(f)}</div>
     <div class="s">${ad ? `${Math.floor(f.age)}일/${f.life}일 · 혈통 ${hpBar(f.F)}${f.preg ? ` · <span class="tag preg">${f.preg === 1 ? '✨ 곧 낳아요' : '임신'}</span>` : ''}${f.sick ? ' · <span class="tag">🤒 아파요</span>' : ''} · 꼬리 ${C.tailWord(f)}` : `${f.gacha ? `꼬리 ${'★'.repeat(f.gacha)} · ` : ''}${f.goal ? `🎯 번식통 ${f.goalBox} 목표 심사 대기 · ` : ''}${C.MATURE - Math.floor(f.age)}일 뒤 어른이 되면 모습이 드러나요`}</div>
-    <div class="b">${ad ? `<button class="btn sell" data-a="sell" data-id="${f.id}">팔기 🪙${fmt(C.sellPrice(S, f))}</button><button class="btn give" data-a="donate" data-id="${f.id}">기증 ⭐+${C.donateRep(f)}</button>${C.frozen(S, f) ? '' : `<button class="btn go" data-a="tobox" data-id="${f.id}">번식통</button>`}` : ''}
-    ${C.frozen(S, f) ? '' : `<button class="btn" data-a="tonursery" data-id="${f.id}">보육통</button>`}<button class="btn" data-a="photo" data-id="${f.id}">📸 사진</button><button class="btn" data-a="mark" data-id="${f.id}">${f.mark ? '🏷 표시 떼기' : '🏷 표시'}</button><button class="btn" data-a="follow" data-id="${f.id}">👀 확대</button><button class="btn" data-a="fish" data-id="${f.id}">자세히</button></div>`;
+    <div class="b">${ad ? `<button class="btn sell" data-a="sell" data-id="${f.id}">팔기 🪙${fmt(C.sellPrice(S, f))}</button>` : ''}<button class="btn" data-a="follow" data-id="${f.id}">👀 확대</button><button class="btn ${UI.popMore ? 'on' : ''}" data-a="popmore" data-id="${f.id}">${UI.popMore ? '접기' : '⋯ 더보기'}</button></div>
+    ${UI.popMore ? `<div class="b more">${ad ? `<button class="btn give" data-a="donate" data-id="${f.id}">기증 ⭐+${C.donateRep(f)}</button>${C.frozen(S, f) ? '' : `<button class="btn" data-a="tobox" data-id="${f.id}">💞 번식통</button>`}` : ''}${C.frozen(S, f) ? '' : `<button class="btn" data-a="tonursery" data-id="${f.id}">🫙 보육통</button>`}<button class="btn" data-a="photo" data-id="${f.id}">📸 사진</button><button class="btn" data-a="mark" data-id="${f.id}">${f.mark ? '🏷 떼기' : '🏷 표시'}</button><button class="btn" data-a="fish" data-id="${f.id}">📋 자세히</button></div>` : ''}`;
   p.classList.add('show'); placePop();
 }
 function placePop() {
@@ -1857,15 +1869,14 @@ function spawnCustomers(e) {
 function showFishes() {
   const tk = C.tankUsed(S), nu = C.at(S, 'nursery'), nuAd = nu.filter(C.isAdult);
   const L = fishList(), fry = nu.filter(f => !C.isAdult(f)).length;
+  const MORE_TOOLS = (L.some(C.isAdult) && !UI.sel ? '<button class="btn sell" data-a="selmode">여러 마리 고르기</button>' : '') + `<button class="btn" data-a="autoset">🤖 자동 관리${S.auto.on ? ' 켜짐' : ''}</button>`;
   const chip = (k, v, t) => `<button class="${UI[k] === v ? 'on' : ''}" data-a="set" data-k="${k}" data-v="${v}">${t}</button>`;
   let h = head('🐟 내 구피') + `<div class="seg">${['tank', 'nursery', 'all'].map(w => `<button class="${UI.where === w ? 'on' : ''}" data-a="set" data-k="where" data-v="${w}">${w === 'tank' ? `${C.SIZES[curTank().size].n} 어항 ${tk}/${C.tankCap(S)}` : w === 'nursery' ? `보육통 ${nu.length}/${C.nurseryCap(S)}` : `전체 ${S.fish.length}`}</button>`).join('')}</div>
-    <div class="chips">${chip('sex', 'all', '전체')}${chip('sex', 'm', '♂ 수컷')}${chip('sex', 'f', '♀ 암컷')}${chip('sex', 'fry', '치어')}<span class="sp"></span>${chip('sort', 'kind', '🧬 품종별')}${chip('sort', 'price', '💰 값')}${chip('sort', 'age', '⏳ 나이')}${chip('sort', 'hp', '❤️ 혈통')}</div>
-    <div class="fsel">${[['ft', '꼬리', C.TAILS], ['fc', '색', C.COLORS], ['fp', '무늬', C.PATS]].map(([k, n, T]) => `<select onchange="UI.${k}=this.value;showFishes()"><option value="">${n} 전체</option>${Object.entries(T).map(([v, o]) => `<option value="${v}" ${UI[k] === v ? 'selected' : ''}>${o.n}</option>`).join('')}</select>`).join('')}</div>`;
+    <div class="chips">${chip('sex', 'all', '전체')}${chip('sex', 'm', '♂ 수컷')}${chip('sex', 'f', '♀ 암컷')}${chip('sex', 'fry', '치어')}<span class="sp"></span><button class="more ${UI.more ? 'on' : ''} ${UI.ft || UI.fc || UI.fp || (UI.sort && UI.sort !== 'price') ? 'act' : ''}" data-a="set" data-k="more" data-v="${UI.more ? '' : '1'}">🔍 정렬·찾기</button></div>
+    ${UI.more ? `<div class="morebox"><div class="chips">${chip('sort', 'kind', '🧬 품종별')}${chip('sort', 'price', '💰 값')}${chip('sort', 'age', '⏳ 나이')}${chip('sort', 'hp', '❤️ 혈통')}</div><div class="fsel">${[['ft', '꼬리', C.TAILS], ['fc', '색', C.COLORS], ['fp', '무늬', C.PATS]].map(([k, n, T]) => `<select onchange="UI.${k}=this.value;showFishes()"><option value="">${n} 전체</option>${Object.entries(T).map(([v, o]) => `<option value="${v}" ${UI[k] === v ? 'selected' : ''}>${o.n}</option>`).join('')}</select>`).join('')}</div><div class="row" style="margin:8px 0 0">${MORE_TOOLS}</div></div>` : ''}`;
   const tools = [];
   if (UI.where !== 'tank' && nuAd.length) tools.push(`<button class="btn go" data-a="allTank">다 자란 ${nuAd.length}마리 어항으로</button>`);
   if (UI.where === 'nursery' && fry) tools.push('<button class="btn ad" data-a="adgrow">📺 성장 촉진 +2일</button>');
-  if (!UI.sel && L.some(C.isAdult)) tools.push('<button class="btn sell" data-a="selmode">여러 마리 고르기</button>');
-  if (!UI.sel) tools.push(`<button class="btn" data-a="autoset">🤖 자동 관리${S.auto.on ? ' 켜짐' : ''}</button>`);
   if (tools.length) h += `<div class="row" style="margin:0 0 10px">${tools.join('')}</div>`;
   const mvBtns = (attr) => S.tanks.map((t, i) => `<button class="btn go" ${attr} data-t="${i}">→ ${C.SIZES[t.size].n}${S.tanks.length > 1 ? i + 1 : ''}</button>`).join('');
   if (UI.sort === 'kind' && L.length) {   // 품종별로 묶어서 보여 주고, 한 번에 어항을 옮긴다
@@ -2399,6 +2410,7 @@ function act(a, el) {
     case 'fish': closePop(); return showFish(id);
     case 'pick': return showPick(id, el.dataset.sex);
     case 'set': UI[el.dataset.k] = el.dataset.v; return showFishes();
+    case 'popmore': UI.popMore = !UI.popMore; return openPop(id);
     case 'selmode': UI.sel = new Set(); return showFishes();
     case 'selcancel': UI.sel = null; return showFishes();
     case 'pickf': { const f = S.fish.find(x => x.id === id); if (f && C.isAdult(f)) { UI.sel.has(id) ? UI.sel.delete(id) : UI.sel.add(id); } else toast('치어는 팔 수 없어요'); return showFishes(); }
@@ -2550,6 +2562,7 @@ function demo() {
   setTimeout(() => { VIEW.cx = 330; applyView(); toast('위의 어항 탭으로 폭포 ↔ 떠 있는 섬을 바꿔 보세요 · 좌우로 밀면 어항이 움직여요'); }, 400);
 }
 setTimeout(demo, 300);
+
 
 
 
