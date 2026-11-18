@@ -2130,7 +2130,12 @@ function tutLoop() {
 }
 function tutNext() { TUT.i++; if (TUT.i >= TS().length) return tutEnd(); tutShow(); }
 function tutOn(ev) { if (!TUT.on) return; const st = TS()[TUT.i]; if (!st || st.wait !== ev) return; if (ev === 'born') setTimeout(tutNext, 6500); else setTimeout(tutNext, ev === 'pop' ? 250 : ev === 'tx' ? 1600 : 400); }
+function offerDiv() {   // 튜토리얼 출산 뒤: 어항에서 저절로 새끼가 생기지 않게 칸막이를 권한다 (처음 한 번은 공짜)
+  if (S.divOffered) return; const t = S.tanks.findIndex(x => !x.show && !x.div); if (t < 0) return; S.divOffered = 1; save();
+  queue(() => notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🚧 칸막이를 세울까요?</h3><div class="recipe"><ul class="help"><li>🐟 수컷은 왼쪽, 암컷은 오른쪽</li><li>🙅 어항에서 저절로 새끼가 안 생겨요<br><small>치어 건지기 · 자리 정리가 줄어요</small></li><li>💞 새끼는 번식통에서 골라서 받아요</li><li>☰ 메뉴에서 언제든 걷을 수 있어요</li></ul></div><div class="row"><button class="btn" data-a="close">나중에</button><button class="btn go" data-a="divfree">무료로 세우기</button></div>`));
+}
 function tutEnd() {
+  if (!TUT.coach && !S.divOffered) setTimeout(offerDiv, 1800);
   if (TUT.coach) { TUT.on = false; TUT.coach = false; TUT.list = null; $('#tut').classList.remove('on'); save(); renderHud(); setTimeout(() => { if (!modalOpen && Q.length) Q.shift()(); }, 400); return; } setTimeout(() => { if (!modalOpen && Q.length) Q.shift()(); }, 400); setTimeout(checkAttend, 800); TUT.on = false; TUT.pause = false; $('#tut').classList.remove('on'); S.intro = true; S.tutDone = true; if (TUT.mom && SW[TUT.mom]) SW[TUT.mom].hold = false; save(); renderHud(); }
 /* 아이콘을 누르면 뜻을 말풍선으로 보여준다 (2.5초 뒤 사라짐) */
 let TXB_T = 0;
@@ -2440,6 +2445,7 @@ function act(a, el) {
     case 'put': err = C.moveTo(S, id, 'box' + el.dataset.box); if (!err) { save(); render(); return showBox(+el.dataset.box); } break;
     case 'boxopen': return showBox(id);
     case 'menu': return menuToggle();
+    case 'divfree': { const c = curTank(); if (c.show) S.cur = S.tanks.findIndex(x => !x.show); curTank().divOwn = true; C.buy(S, 'div'); closeSheet(); layout(); render(); save(); return toast('🚧 칸막이를 세웠어요 · 수컷은 왼쪽, 암컷은 오른쪽'); }
     case 'divt': { const own = curTank().divOwn; err = C.buy(S, 'div'); if (!err) { layout(); render(); save(); toast(curTank().div ? '🚧 칸막이를 세웠어요 · 수컷은 왼쪽, 암컷은 오른쪽' : '🚧 칸막이를 걷었어요'); if (UI.sheet === 'notice' && $('#sheet [data-a=divt]')) return showCare(); } break; }
     case 'helpon': return helpMode(true);
     case 'tprev': case 'tnext': { const n = S.tanks.length, j = (S.cur + (a === 'tnext' ? 1 : n - 1)) % n; return act('switch', { dataset: { id: String(j) } }); }
@@ -2543,6 +2549,7 @@ function demo() {
   setTimeout(() => { VIEW.cx = 330; applyView(); toast('위의 어항 탭으로 폭포 ↔ 떠 있는 섬을 바꿔 보세요 · 좌우로 밀면 어항이 움직여요'); }, 400);
 }
 setTimeout(demo, 300);
+
 
 
 
