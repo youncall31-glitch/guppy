@@ -165,6 +165,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 .tsw .tn{border:0;background:rgba(255,255,255,.72);border-radius:14px;padding:5px 14px;min-width:150px;text-align:center;color:#24343c;font:inherit;line-height:1.25}.tsw .tn b{display:block;font-size:14px}.tsw .tn span{font-size:11.5px;opacity:.85}.tsw .tn span.warn{color:#c2620a;font-weight:700}
 .tdots{display:flex;gap:4px;justify-content:center;margin-top:3px}.tdots i{width:5px;height:5px;border-radius:50%;background:rgba(36,52,60,.25)}.tdots i.on{background:#24343c}
 .chips span.sp{background:none;padding:0}
+#tut .tbox .hand{font-size:12.5px;color:#c27a00;font-weight:700;animation:pulse 1.2s ease-in-out infinite}#tut .tbox .sk{font-size:11.5px;opacity:.6}
 .fc .stars{font-size:12px;color:#f0a500;letter-spacing:1px;margin:1px 0}.fc .stars i{font-style:normal;color:#d9e1e3}
 #goal{left:50%!important;transform:translateX(-50%);max-width:calc(100% - 40px);font-size:12px!important;padding:5px 12px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pill.money{display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;padding:4px 12px 5px;min-width:84px}.pill.money .mv{font-weight:800;font-size:14px}.pill.money small{font-size:10.5px;opacity:.8;font-weight:600}.pill.money small.warn{color:#ffc36b}
@@ -1749,7 +1750,7 @@ function menuHtml() {
     + it('decomode', '🪴', '꾸미기', `<span>${C.decoStats(t).n}/${C.slotCount(t.size)}</span>`)
     + it('log', '📜', '가게 기록') + it('helpon', '❔', '궁금한 것 눌러 보기') + it('help', '📘', '도움말 · 튜토리얼');
 }
-function menuToggle(on) { const m = $('#menu'); on = on == null ? !m.classList.contains('on') : on; if (on) menuHtml(); m.classList.toggle('on', on); }
+function menuToggle(on) { const m = $('#menu'); on = on == null ? !m.classList.contains('on') : on; if (on) menuHtml(); m.classList.toggle('on', on); if (on) tutOn('menu'); }
 function renderHud() {
   $('#money').textContent = fmt(S.money); $('#day').textContent = `${S.day}일째`; $('#spd').textContent = (SPEEDS.find(x => x.v === S.speed) || SPEEDS[2]).i;
   const used = C.tankUsed(S), fryN = C.at(S, tankLoc()).filter(f => !C.isAdult(f)).length, inc = C.tankIncome(S), cap = C.tankCap(S);
@@ -1787,7 +1788,7 @@ function openSheet(html, kind, arg, tall) {
   const sh = $('#sheet'), same = UI.sheet === kind && UI.arg === arg, top = sh.scrollTop;
   const wasFull = sh.classList.contains('full'); UI.sheet = kind || null; UI.arg = arg; sh.className = 'sheet' + (tall ? ' tall' : '') + (same && wasFull ? ' full' : '');
   sh.innerHTML = '<div class="grip" data-a="grip" aria-label="창 크기"></div>' + html; $('#modal').classList.add('show'); modalOpen = true;
-  sh.scrollTop = same ? top : 0; renderHud();
+  sh.scrollTop = same ? top : 0; renderHud(); if (kind) tutOn('sheet:' + kind);
 }
 function closeSheet() { if (TIP_NOW.size) { S.tips = S.tips || {}; TIP_NOW.forEach(k => S.tips[k] = 1); TIP_NOW.clear(); } $('#modal').classList.remove('show'); modalOpen = false; UI.sheet = null; UI.sel = null; renderHud(); if (Q.length) setTimeout(() => { if (!modalOpen && Q.length) Q.shift()(); }, 250); }
 function queue(fn) { if (TUT.on || modalOpen) Q.push(fn); else fn(); }   // 튜토리얼 중에는 알림을 모아 두었다가 끝나고 보여 준다
@@ -2096,24 +2097,22 @@ const TUT_STEPS = [
   { t: '🐟 구피 가게에 오신 걸 환영해요', x: '구피 한 쌍으로 가게를 키워 봐요.', next: '시작' },
   { el: () => $('#feedBtn'), t: '🍤 먹이 주기', x: '버튼을 <b>끌어서</b> 어항 위에 놓아요.', wait: 'feed' },
   { el: () => { const m = TUT.mom && SW[TUT.mom]; return m && m.el; }, t: '✨ 빛나는 엄마 구피', x: '곧 낳을 엄마예요. 눌러 보세요.', wait: 'pop', start: () => { const m = momOf(); if (m) { TUT.mom = m.id; m.preg = 1; if (!m.mate) { const d = S.fish.find(f => f.sex === 'm'); if (d) m.mate = { id: d.id, g: d.g, line: d.line, ph: d.ph }; } } const s = SW[TUT.mom]; if (s) { s.hold = true; } } },
-  { el: () => $('#pop [data-a=follow]'), t: '👀 확대해서 보기', x: '<b>확대</b>를 눌러요.', wait: 'follow' },
+  { el: () => $('#pop [data-a=follow]'), t: '👀 확대해서 보기', x: '노랗게 빛나는 <b>👀 확대</b> 버튼을 눌러요.', wait: 'follow', top: true },
   { t: '🐣 곧 태어나요', x: '잘 지켜보세요!', banner: true, wait: 'born',
     start: () => { const s = SW[TUT.mom]; if (s) s.hold = false; S.safeBirth = true; S.clock = C.DAY_MS - 1500; TUT.pause = false; } },
-  { el: () => $('#rescue button'), t: '🫙 치어 건지기', x: '안 건지면 잡아먹혀요!', wait: 'rescue' },
-  { t: '🫙 보육통', x: '크면 <b>저절로 어항으로</b> 나와요.', next: '다음', start: () => { VIEW.follow = null; VIEW.z = 1; zoomUi(); } },
-  { el: () => $('#menuBtn'), t: '☰ 메뉴', x: '꾸미기 · 물과 먹이 · 속도는<br>여기 있어요. 수초에 치어가 숨어요.', next: '다음' },
-  { el: () => $('#dock [data-dock=fishes]'), t: '🐟 내 구피', x: '팔기 · 옮기기 · ★보호', next: '다음' },
-  { el: () => $('#dock [data-dock=boxes]'), t: '💞 번식', x: '원하는 한 쌍을 짝지어요.', next: '다음' },
-  { el: () => $('#dock [data-dock=album]'), t: '📖 사진첩', x: '새 모습을 모아요.', next: '다음' },
-  { el: () => $('#dock [data-dock=shop]'), t: '🛒 상점', x: '어항 · 새 혈통 · 뽑기', next: '다음' },
-  { el: () => $('#menuBtn'), t: '❔ 궁금할 땐', x: '☰ → <b>❔ 궁금한 것 눌러 보기</b>를 켜고<br>아무거나 누르면 뜻이 나와요.', next: '다음' },
-  { el: () => $('#goal'), t: '🎯 목표', x: '따라가면 보상이 있어요!', next: '시작하기', start: () => { renderHud(); } }
+  { el: () => $('#rescue button'), t: '🫙 치어 건지기', x: '주황 버튼을 눌러요. 안 건지면 잡아먹혀요!', wait: 'rescue' },
+  { el: () => $('#dock [data-dock=fishes]'), t: '🐟 내 구피', x: '<b>내 구피</b>를 눌러 건진 치어를 봐요.<br><small>보육통에서 크면 저절로 어항으로 나와요</small>', wait: 'sheet:fishes', start: () => { VIEW.follow = null; VIEW.z = 1; zoomUi(); UI.where = 'nursery'; } },
+  { el: () => $('#dock [data-dock=boxes]'), t: '💞 번식', x: '<b>번식</b>을 눌러 봐요.<br><small>원하는 한 쌍을 골라 짝지어요</small>', wait: 'sheet:boxes' },
+  { el: () => $('#dock [data-dock=album]'), t: '📖 사진첩', x: '<b>사진첩</b>을 눌러 봐요.<br><small>새로 만난 모습이 모여요</small>', wait: 'sheet:album' },
+  { el: () => $('#dock [data-dock=shop]'), t: '🛒 상점', x: '<b>상점</b>을 눌러 봐요.<br><small>어항 · 새 구피 · 뽑기</small>', wait: 'sheet:shop' },
+  { el: () => $('#menuBtn'), t: '☰ 메뉴', x: '<b>☰</b>를 눌러 봐요.<br><small>꾸미기 · 물과 먹이 · 속도 · 도움말</small>', wait: 'menu' },
+  { el: () => $('#goal'), t: '🎯 목표', x: '<b>목표</b>를 눌러 봐요. 따라가면 보상!', wait: 'goal', start: () => { renderHud(); } }
 ];
 function startTut() { TUT.on = true; TUT.i = 0; TUT.pause = true; S.clock = 0; $('#tut').classList.add('on'); tutShow(); requestAnimationFrame(tutLoop); }
 function tutShow() {
   const st = TS()[TUT.i]; if (!st) return tutEnd(); if (st.start) st.start();
   const b = $('#tut .tbox'), last = TUT.i === TS().length - 1;
-  b.innerHTML = `<b class="tt">${st.t}</b>${st.x}<div class="tb"><button class="sk" data-t="skip">${last || TUT.coach ? '' : '건너뛰기'}</button><span class="dots">${TS().length > 1 ? `${TUT.i + 1} / ${TS().length}` : ''}</span>${st.next ? `<button class="go" data-t="next">${st.next}</button>` : '<span></span>'}</div>`;
+  b.innerHTML = `<b class="tt">${st.t}</b>${st.x}<div class="tb"><button class="sk" data-t="skip">${last || TUT.coach || TUT.i === 0 ? '' : '튜토리얼 그만하기'}</button><span class="dots">${TS().length > 1 ? `${TUT.i + 1} / ${TS().length}` : ''}</span>${st.next ? `<button class="go" data-t="next">${st.next}</button>` : st.wait && st.el ? '<span class="hand">👆 반짝이는 곳</span>' : '<span></span>'}</div>`;
 }
 function tutLoop() {
   if (!TUT.on) return; const st = TS()[TUT.i], P = $('#tut').querySelectorAll('.tp'), ring = $('#tut .tring'), box = $('#tut .tbox'), W = innerWidth, H = innerHeight;
@@ -2124,12 +2123,14 @@ function tutLoop() {
     const set = (p, l, t, w, h) => { p.style.display = ''; Object.assign(p.style, { left: l + 'px', top: t + 'px', width: Math.max(0, w) + 'px', height: Math.max(0, h) + 'px' }); };
     set(P[0], 0, 0, W, y0); set(P[1], 0, y1, W, H - y1); set(P[2], 0, y0, x0, y1 - y0); set(P[3], x1, y0, W - x1, y1 - y0);
     ring.style.display = ''; Object.assign(ring.style, { left: x0 + 'px', top: y0 + 'px', width: (x1 - x0) + 'px', height: (y1 - y0) + 'px' });
-    if (y0 > H * .5) { box.style.top = ''; box.style.bottom = (H - y0 + 14) + 'px'; } else { box.style.bottom = ''; box.style.top = (y1 + 14) + 'px'; }
+    if (st.top) { box.style.bottom = ''; box.style.top = '12px'; } else if (y0 > H * .5) { box.style.top = ''; box.style.bottom = (H - y0 + 14) + 'px'; } else { box.style.bottom = ''; box.style.top = (y1 + 14) + 'px'; }
   } else { P.forEach((p, i) => { p.style.display = i ? 'none' : ''; Object.assign(p.style, { left: 0, top: 0, width: W + 'px', height: H + 'px' }); }); ring.style.display = 'none'; box.style.bottom = ''; box.style.top = (H * .32) + 'px'; }
   requestAnimationFrame(tutLoop);
 }
 function tutNext() { TUT.i++; if (TUT.i >= TS().length) return tutEnd(); tutShow(); }
-function tutOn(ev) { if (!TUT.on) return; const st = TS()[TUT.i]; if (!st || st.wait !== ev) return; if (ev === 'born') setTimeout(tutNext, 6500); else setTimeout(tutNext, ev === 'pop' ? 250 : ev === 'tx' ? 1600 : 400); }
+function tutOn(ev) { if (!TUT.on) return; const st = TS()[TUT.i]; if (!st || st.wait !== ev) return;
+  if (/^sheet:|^menu$/.test(ev)) { TUT.peek = true; $('#tut').classList.remove('on'); setTimeout(() => { if (ev === 'menu') menuToggle(false); else closeSheet(); TUT.peek = false; if (TUT.on) { $('#tut').classList.add('on'); tutNext(); } }, 1700); return; }
+  if (ev === 'born') setTimeout(tutNext, 6500); else setTimeout(tutNext, ev === 'pop' ? 250 : ev === 'tx' ? 1600 : 400); }
 function offerDiv() {   // 튜토리얼 출산 뒤: 어항에서 저절로 새끼가 생기지 않게 칸막이를 권한다 (처음 한 번은 공짜)
   if (S.divOffered) return; const t = S.tanks.findIndex(x => !x.show && !x.div); if (t < 0) return; S.divOffered = 1; save();
   queue(() => notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🚧 칸막이를 세울까요?</h3><div class="recipe"><ul class="help"><li>🐟 수컷은 왼쪽, 암컷은 오른쪽</li><li>🙅 어항에서 저절로 새끼가 안 생겨요<br><small>치어 건지기 · 자리 정리가 줄어요</small></li><li>💞 새끼는 번식통에서 골라서 받아요</li><li>☰ 메뉴에서 언제든 걷을 수 있어요</li></ul></div><div class="row"><button class="btn" data-a="close">나중에</button><button class="btn go" data-a="divfree">무료로 세우기</button></div>`));
@@ -2163,12 +2164,12 @@ document.addEventListener('click', e => {
   if (HELP_ON && !e.target.closest('#tut')) { e.stopPropagation(); e.preventDefault(); if (el) showTx(el); else { const b = document.getElementById('txb'); if (b) b.classList.remove('on'); } return; }
   if (!el) { const b = document.getElementById('txb'); if (b) b.classList.remove('on'); return; }
   if (el.dataset.a) {   // 눌러서 하는 일이 있는 버튼: 그 일을 하고, 맨 처음 한 번만 뜻도 보여준다
-    S.txSeen = S.txSeen || {}; const k = el.dataset.tx.slice(0, 12); if (!S.txSeen[k] && el.id !== 'menuBtn') { S.txSeen[k] = 1; setTimeout(() => showTx(el), 60); }
+    S.txSeen = S.txSeen || {}; const k = el.dataset.tx.slice(0, 12); if (!S.txSeen[k] && el.id !== 'menuBtn' && !TUT.on) { S.txSeen[k] = 1; setTimeout(() => showTx(el), 60); }
     return;
   }
   e.stopPropagation(); e.preventDefault(); showTx(el);
 }, true);
-document.addEventListener('click', e => { const t = e.target.closest('#tut [data-t]'); if (!t) return; e.stopPropagation(); if (t.dataset.t === 'next') tutNext(); else if (t.dataset.t === 'skip') tutEnd(); }, true);
+document.addEventListener('click', e => { const t = e.target.closest('#tut [data-t]'); if (!t) return; e.stopPropagation(); if (t.dataset.t === 'next') tutNext(); else if (t.dataset.t === 'skip') { if (t.dataset.sure) tutEnd(); else { t.dataset.sure = 1; t.textContent = '한 번 더 누르면 끝나요'; t.style.opacity = 1; } } }, true);
 /* 시간 흐름 조절: 천천히 보고 싶을 땐 느리게. 자리를 비운 동안은 따로 천천히(하루 10분) 흐른다 */
 const SPEEDS = [{ v: .25, i: '🐌', n: '아주 천천히', d: '80초' }, { v: .5, i: '🐢', n: '천천히', d: '40초' }, { v: 1, i: '🐟', n: '보통', d: '20초' }, { v: 2, i: '🐇', n: '빠르게', d: '10초' }];
 function showSpeed() {
@@ -2425,7 +2426,7 @@ function act(a, el) {
     case 'care': return showCare();
     case 'feedkind': S.feedKind = el.dataset.id; save(); return showCare();
     case 'wc': { const e = C.waterChange(S, S.cur); if (e) return toast(e); toast('💧 물을 깨끗하게 갈았어요'); save(); render(); return showCare(); }
-    case 'goal': { const r = C.claimGoal(S); if (r) { floatMoney(r); toast(`🎁 목표 보상 🪙${r}`); save(); render(); } else { const g = C.goalNow(S); if (g) toast(g.h); } return; }
+    case 'goal': { tutOn('goal'); const r = C.claimGoal(S); if (r) { floatMoney(r); toast(`🎁 목표 보상 🪙${r}`); save(); render(); } else { const g = C.goalNow(S); if (g) toast(g.h); } return; }
     case 'decomode': DECO_MODE = !DECO_MODE; if (modalOpen) closeSheet(); if (DECO_MODE) { VIEW.z = 1; VIEW.follow = null; zoomUi(); toast('어항의 + 자리를 눌러 꾸며 보세요'); } drawDeco(); return;
     case 'slot': return showSlot(id);
     case 'place': err = C.placeItem(S, S.cur, id, el.dataset.k || null); if (!err) { closeSheet(); toast(el.dataset.k ? `${C.ITEMS[el.dataset.k].n}을(를) 놓았어요` : '치웠어요'); } break;
