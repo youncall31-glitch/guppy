@@ -216,8 +216,9 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
 @keyframes bub{from{transform:translateY(0);opacity:.7}to{transform:translateY(-480px);opacity:0}}
 .fishg{cursor:pointer}
 #tank{touch-action:none}
-#viewBtn{position:absolute;left:10px;bottom:64px;z-index:3;height:40px;padding:0 12px;border-radius:12px;background:rgba(6,26,38,.5);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font-size:14px;font-weight:700}
-#viewer{position:fixed;inset:0;z-index:200;background:#0b1418;display:none;overflow:hidden}#viewer.on{display:block}#vin{position:absolute;left:0;top:0;transform-origin:0 0}#vin svg{pointer-events:none}#vx{position:absolute;right:12px;top:calc(12px + env(safe-area-inset-top));width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:18px;z-index:2}
+#viewBtn{position:absolute;right:10px;bottom:16px;z-index:3;height:40px;padding:0 12px;border-radius:12px;background:rgba(6,26,38,.5);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font-size:14px;font-weight:700}
+#viewer{position:fixed;inset:0;z-index:200;background:#0b1418;display:none;overflow:hidden}#viewer.on{display:block}#vin{position:absolute;left:0;top:0;transform-origin:0 0}#vin svg{pointer-events:none}#vhint{position:absolute;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(0,0,0,.45);color:#fff;font-size:12.5px;padding:6px 12px;border-radius:99px;transition:opacity .6s;pointer-events:none;white-space:nowrap}#vhint.off{opacity:0}
+#vx{position:absolute;right:12px;top:calc(12px + env(safe-area-inset-top));width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:18px;z-index:2}
 #tank.show #fishes{filter:drop-shadow(0 0 1.3px rgba(255,255,255,.9)) drop-shadow(0 1.5px 2.5px rgba(0,25,35,.4))}
 #decoBtn{position:absolute;left:10px;bottom:16px;z-index:3;height:40px;padding:0 12px;border-radius:12px;background:rgba(6,26,38,.5);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font-size:14px;font-weight:700}
 #decoBtn.on{background:var(--accent)}
@@ -295,7 +296,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     <button data-a="album" data-dock="album" data-tx="📖 만난 구피 모음"><i>📖</i><span>사진첩</span></button>
     <button data-a="shop" data-dock="shop" data-tx="🛒 어항 · 새 혈통 · 뽑기"><i>🛒</i><span>상점</span></button>
   </nav>
-  <div id="viewer"><div id="vin"></div><button id="vx" data-a="viewexit" aria-label="감상 끝내기">✕</button></div>
+  <div id="viewer"><div id="vin"></div><button id="vx" data-a="viewexit" aria-label="감상 끝내기">✕</button><div id="vhint">🍤 화면을 톡 치면 그 자리에 먹이를 줘요</div></div>
   <div id="modal"><div class="sheet" id="sheet"></div></div>
   <div class="toast" id="toast"></div>
 </div>
@@ -550,7 +551,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     const t = S.tanks[curT(S, ti)], F = FOODS[kind]; if (!t || !F) return '먹이를 줄 수 없다';
     if (kind === 'color' && !S.food) return '발색 사료는 상점에서 먼저 들여야 해요';
     if (S.money < F.price) return '돈이 모자라요';
-    careOf(t); S.money -= F.price; const over = t.full >= 2.5; if (over) t.water = Math.max(0, t.water - 8); t.full = Math.min(3, t.full + 1.5); if (kind === 'brine') t.brine = 2; if (kind === 'color') t.color = 3;
+    careOf(t); S.money -= F.price; const over = t.full >= 2.5 && !t.show; if (over) t.water = Math.max(0, t.water - 8); t.full = Math.min(3, t.full + 1.5); if (kind === 'brine') t.brine = 2; if (kind === 'color') t.color = 3;
     S.stats.fed = (S.stats.fed || 0) + 1; return over ? 'over' : null;
   }
   function waterChange(S, ti) {
@@ -1251,9 +1252,15 @@ let VIEWMODE = false, VIEW_DIRTY = false;
 function viewBox() { const T = VB.tank, sv = $('#tank'); if (!T) return; const y = T.y + (T.ih || T.h) * .1, x = T.x0 - 8; sv.setAttribute('viewBox', `${x.toFixed(1)} ${y.toFixed(1)} ${(T.x1 - T.x0 + 16).toFixed(1)} ${(T.f1 - y + 18).toFixed(1)}`); }
 function fitViewer() { if (!VIEWMODE) return; const W = innerWidth, H = innerHeight, port = H > W, v = $('#vin'); Object.assign(v.style, { width: (port ? H : W) + 'px', height: (port ? W : H) + 'px', transform: port ? `translate(${W}px,0) rotate(90deg)` : 'none' }); viewBox(); }
 function enterView() {
-  if (!curTank().show || VIEWMODE) return; VIEWMODE = true; closePop && closePop(); $('#vin').appendChild($('#tank')); $('#viewer').classList.add('on'); fitViewer(); addEventListener('resize', fitViewer);
+  if (!curTank().show || VIEWMODE) return; VIEWMODE = true; { const h = $('#vhint'); if (h) { h.classList.remove('off'); setTimeout(() => h.classList.add('off'), 4000); } } closePop && closePop(); $('#vin').appendChild($('#tank')); $('#viewer').classList.add('on'); fitViewer(); addEventListener('resize', fitViewer);
   try { const d = document.documentElement; if (d.requestFullscreen) d.requestFullscreen().then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').then(fitViewer).catch(() => { })).catch(() => { }); } catch (e) { }
 }
+/* 감상 모드: 화면을 톡 치면 그 자리에 먹이 (돌아간 화면에서도 어항 좌표로 바꿔서) */
+document.addEventListener('click', e => {
+  if (!VIEWMODE || e.target.closest('#vx')) return; const p = toTank(e.clientX, e.clientY), T = VB.tank; if (!p || !T || p.x < T.x0 + 4 || p.x > T.x1 - 4) return;
+  const k = S.feedKind || 'flake', r = C.feed(S, S.cur, k); if (r && r !== 'over') return toast(r);
+  dropFood(k, p.x); save(); renderHud(); const h = $('#vhint'); if (h) h.classList.add('off');
+}, true);
 function exitView() {
   if (!VIEWMODE) return; VIEWMODE = false; removeEventListener('resize', fitViewer); $('#viewer').classList.remove('on'); $('#tankwrap').insertBefore($('#tank'), $('#tankwrap').firstChild);
   try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { }
@@ -1784,7 +1791,7 @@ function renderHud() {
   const g = C.goalNow(S), gb = $('#goal');
   if (gb) { gb.style.display = g && !DECO_MODE && (!TUT.on || TUT.coach || TUT.i >= TS().length - 1) ? '' : 'none'; if (g) { const ok = g.ok(S); gb.classList.toggle('ready', ok); gb.innerHTML = ok ? `🎁 ${g.t} · 🪙${g.r} 받기` : `🎯 ${g.t} · 🪙${g.r}`; gb.dataset.tx = ok ? '' : `💡 ${g.h}`; } }
   const T = C.careOf(curTank()), fb = $('#feedBtn');
-  if (fb) { fb.style.display = VB.tank && !DECO_MODE && !curTank().show ? '' : 'none'; const vb = $('#viewBtn'); if (vb) vb.style.display = VB.tank && !DECO_MODE && curTank().show ? '' : 'none'; fb.textContent = `${C.FOODS[S.feedKind || 'flake'].i} 먹이`; }
+  if (fb) { fb.style.display = VB.tank && !DECO_MODE ? '' : 'none'; const vb = $('#viewBtn'); if (vb) vb.style.display = VB.tank && !DECO_MODE && curTank().show ? '' : 'none'; fb.textContent = `${C.FOODS[S.feedKind || 'flake'].i} 먹이`; }
   { const db = $('#decoBtn'); if (db) db.style.display = DECO_MODE ? '' : 'none'; }
   murk();
   const nurAd = C.at(S, 'nursery').filter(C.isAdult).length;
