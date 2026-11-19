@@ -1849,7 +1849,7 @@ function swim(now) {
       let kh = s.dir, kb = s.dir;
       if (tp < 1) { const E = u => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); }; kh = s.tf + (s.dir - s.tf) * E(tp / .62); kb = s.tf + (s.dir - s.tf) * E((tp - .38) / .62); }
       const oh = Math.max(0, 1 - Math.abs(kh) / .42), ob = Math.max(0, 1 - Math.abs(kb) / .42), ox = Math.max(oh, ob);
-      const cl = k => (k < 0 ? -1 : 1) * (.34 + .66 * Math.abs(k)); kh = cl(kh); kb = cl(kb);   // 아무리 돌아도 몸 두께(34%)는 남는다
+      const cl = k => { const a = Math.abs(k), u = Math.min(1, a / .32); return (k < 0 ? -1 : 1) * (a >= .32 ? .34 + .66 * (a - .32) / .68 : .34 * u * u * (3 - 2 * u)); }; kh = cl(kh); kb = cl(kb);   // 몸 두께(34%)를 유지하다가, 정면을 지나는 아주 짧은 순간에만 매끄럽게 넘어간다
       const P = s.ch.x1, sh = (52 - P) * (1 - (kh + kb) / 2), T = k => `translate(${(sh + P).toFixed(2)} 0) scale(${k.toFixed(3)} 1) translate(${(-P).toFixed(2)} 0)`;
       if (s._kh !== kh || s._kb !== kb) { s.ch.hd.setAttribute('transform', T(kh)); s.ch.bd.setAttribute('transform', T(kb)); s._kh = kh; s._kb = kb; } rsx = 1;
       if (XS_ON && s.ch.xs && (ox > 0 || s._ox)) { s.ch.xs.setAttribute('opacity', Math.min(1, ox * 1.6).toFixed(2)); s.ch.xs.setAttribute('transform', `translate(${(sh + P - (oh >= ob ? -6 : 10) * (kh + kb) / 2).toFixed(1)} 30)`); s.ch.xe.setAttribute('opacity', Math.min(1, oh * 1.8).toFixed(2)); s._ox = ox; }
