@@ -756,11 +756,11 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
       if (t.lock || t.show || t.div) return;
       const L = at(S, 'tank' + ti), males = L.filter(f => f.sex === 'm' && isAdult(f));
       const room = tankCap(S, ti) - tankUsed(S, ti), pm = (room <= 0 ? 0.02 : TANK_BREED * Math.min(1, room / (tankCap(S, ti) * 0.4) + 0.2)) * (t.brine > 0 ? 1.3 : 1);   // 붐비면 스트레스로 덜 낳는다
-      if (males.length) L.filter(fertile).forEach(f => { if (rng() < pm) { const d = males[Math.floor(rng() * males.length)]; f.preg = GEST; f.mate = { id: d.id, g: d.g, line: d.line, ph: d.ph }; } });
+      if (males.length) L.filter(fertile).forEach(f => { if (rng() < pm) { const d = males[Math.floor(rng() * males.length)]; f.preg = GEST; f.pregAt = 'tank' + ti; f.mate = { id: d.id, g: d.g, line: d.line, ph: d.ph }; } });
     });
     for (let i = 0; i < S.boxes; i++) {
       const b = at(S, 'box' + i).filter(f => !f.sep), m = b.find(f => f.sex === 'm' && isAdult(f)), f = b.find(fertile);
-      if (m && f && rng() < 0.6) { f.preg = GEST; f.mate = { id: m.id, g: m.g, line: m.line, ph: m.ph }; }
+      if (m && f && rng() < 0.6) { f.preg = GEST; f.pregAt = 'box' + i; f.mate = { id: m.id, g: m.g, line: m.line, ph: m.ph }; }
     }
     // 4-1) 구피가 한 마리도 없고 새로 들일 돈도 없으면 이웃이 한 쌍을 나눠 준다
     if (!S.fish.length && S.money < FOUNDER_COST * 2) {
@@ -1986,6 +1986,12 @@ function passAp() {   // 튜토리얼·수습 패스: 남은 수습 보상(졸�
   if ((S.goal || 0) >= C.AP_N) return; const before = Object.assign({}, S.unl || {}), c = C.skipAp(S); floatMoney(c); save();
   setTimeout(() => showUnlocked(Object.keys(S.unl).filter(k => !before[k]), true), 600);
 }
+function pregGuard(i, newF, then) {   // 번식통의 임신한 암컷을 꺼내면 어항(칸막이와 상관없이)에서 낳게 된다 · 먼저 물어본다
+  const pf = C.at(S, 'box' + i).find(f => !f.sep && f.sex === 'f' && f.preg); if (!pf || (newF && newF.sex !== 'f') || UI.pregOk) { const was = UI.pregOk; UI.pregOk = 1; try { return then(); } finally { UI.pregOk = was; } }
+  UI.pend = then; UI.hold = 1;
+  notice(`<h3 style="font-family:'Gowun Dodum'">🤰 이 암컷은 임신 중이에요</h3><div class="big">${fishSVG(pf)}</div><p class="note" style="text-align:center">${pf.preg}일 뒤에 새끼를 낳아요.<br>지금 꺼내면 <b>어항에서</b> 낳게 돼요 · 칸막이가 있어도 이미 가진 새끼는 태어나요.</p>
+    <div class="row"><button class="btn go" data-a="close">낳을 때까지 둘게요</button><button class="btn" data-a="pregok">그래도 꺼내기</button></div>`);
+}
 function claimWithUnlock() { const before = Object.assign({}, S.unl || {}), g0 = C.goalNow(S), r = C.claimGoal(S); if (r) { const nw = Object.keys(S.unl || {}).filter(k => !before[k]); setTimeout(() => showUnlocked(nw, !!(g0 && g0.grad)), 500); } return r; }
 function menuHtml() {
   const t = curTank(), sp = (SPEEDS.find(x => x.v === S.speed) || SPEEDS[2]), on = (S.orders || []).length, ready = on && S.orders.some(o => C.orderMatches(S, o).length), w = C.careOf(t).water;
@@ -2054,7 +2060,7 @@ function floatMoney(n) { if (!n) return; const el = $('#float'); el.textContent 
 /* 내 구피: 어항·보육통을 한곳에서, 2열 카드 + 필터 + 여러 마리 팔기 */
 function fcard(f) {
   const ad = C.isAdult(f), sel = UI.sel && UI.sel.has(f.id);
-  const tags = []; if (f.preg) tags.push(`<span class="tag preg">임신 ${f.preg}일</span>`);
+  const tags = []; if (f.preg) tags.push(`<span class="tag preg">임신 ${f.preg}일${f.pregAt && f.pregAt.startsWith('box') && f.loc !== f.pregAt ? ` · 번식통${+f.pregAt.slice(3) + 1}에서` : ''}</span>`);
   const fix = Math.max(f.line.sword, f.line.veil || 0, f.line.grass || 0, f.line.dorsal || 0, f.line.yellow, f.line.purple || 0, f.line.green || 0, f.line.mosaic); if (fix && ad) tags.push(`<span class="tag fix">고정 ${fix}대</span>`);
   if (ad && f.age > f.life * .75) tags.push('<span class="tag old">노년</span>');
   if (ad && (S.orders || []).some(o => C.orderMatches(S, o).some(x => x.id === f.id))) tags.push('<span class="tag" style="background:#e3f4ff;color:#1d5f8a">📋 의뢰감</span>');
@@ -2859,7 +2865,7 @@ function act(a, el) {
       if (target == null) target = 0;
       err = C.moveTo(S, id, 'box' + target); if (!err) { closePop(); toast(`번식통 ${target + 1}에 넣었어요`); save(); render(); return showBoxes(); } break;
     }
-    case 'put': err = C.moveTo(S, id, 'box' + el.dataset.box); if (!err) { save(); render(); return showBox(+el.dataset.box); } break;
+    case 'put': if (!UI.pregOk) { const nf = S.fish.find(x => x.id === id); return pregGuard(+el.dataset.box, nf, () => act('put', el)); } err = C.moveTo(S, id, 'box' + el.dataset.box); if (!err) { save(); render(); return showBox(+el.dataset.box); } break;
     case 'boxopen': return showBox(id);
     case 'menu': return menuToggle();
     case 'divfree': { const c = curTank(); if (c.show) S.cur = S.tanks.findIndex(x => !x.show); curTank().divOwn = true; C.buy(S, 'div'); closeSheet(); layout(); render(); save(); return toast('🚧 칸막이를 세웠어요 · 수컷은 왼쪽, 암컷은 오른쪽'); }
@@ -2874,6 +2880,7 @@ function act(a, el) {
     case 'sellmiss': { let n = 0, c = 0; boxFry(id).filter(x => x.goalMiss && C.isAdult(x)).forEach(x => { const p = C.sell(S, x.id); if (typeof p === 'number') { n++; c += p; } }); toast(`🪙 목표 미달 ${n}마리를 ${fmt(c)}에 팔았어요`); if (c) floatMoney(c); save(); render(); return showBox(id); }
     case 'birthdest': { const v = el.dataset.v; (el.dataset.ids || '').split(',').map(Number).forEach(k => { const x = S.fish.find(y => y.id === k); if (x && x.sep) x.dest = v; }); save(); closeSheet(); return toast(v === 'tank' ? '🐣 자라면 어항으로 나가요' : '🐣 번식통에서 계속 자라요'); }
     case 'autopair': {
+      if (!UI.pregOk && boxPar(id).length) return pregGuard(id, null, () => act('autopair', el));
       const gl = (S.boxGoal || {})[id];
       if (gl) {   // 목표가 있으면 목표가 가장 잘 나오는 짝을 고른다
         const r = C.planFor(S, gl, id);
@@ -2885,7 +2892,8 @@ function act(a, el) {
       C.moveTo(S, p.m.id, 'box' + id); C.moveTo(S, p.f.id, 'box' + id);
       toast(`✨ ${C.nameOf(p.m.ph)} ♂ × ${C.nameOf(p.f.ph)} ♀ · 새끼 혈통 ${Math.round(p.h * 100)}%`); break;
     }
-    case 'emptybox': boxPar(id).forEach(f => { if (C.moveTo(S, f.id, 'tank')) C.moveTo(S, f.id, 'nursery'); }); save(); render(); return showBox(id);
+    case 'pregok': { const f = UI.pend; UI.pend = null; closeSheet(); UI.pregOk = 1; try { f && f(); } finally { UI.pregOk = 0; } return; }
+    case 'emptybox': if (!UI.pregOk) return pregGuard(id, null, () => act('emptybox', el)); boxPar(id).forEach(f => { if (C.moveTo(S, f.id, 'tank')) C.moveTo(S, f.id, 'nursery'); }); save(); render(); return showBox(id);
     case 'allTank': { let n = 0; C.at(S, 'nursery').filter(C.isAdult).forEach(f => { if (!C.moveTo(S, f.id, 'tank')) n++; }); toast(n ? `${n}마리를 어항으로 옮겼어요` : '어항이 가득 찼어요'); break; }
     case 'buy': err = C.buy(S, id); if (!err) toast('구입했어요'); break;
     case 'boost': { const i = +el.dataset.id, b = C.at(S, 'box' + i), m = b.find(x => x.sex === 'm'), f = b.find(x => x.sex === 'f'), gl = (S.boxGoal || {})[i]; if (!m || !f || !gl || f.care) break;
