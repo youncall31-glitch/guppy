@@ -167,6 +167,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 .chips span.sp{background:none;padding:0;flex:1}
 .btn.danger{background:#fde6e2;color:#b3261e;border-color:#f3b5ab}#menu .danger{color:#b3261e}
 .gh{margin:10px 2px 6px;font-size:12.5px;font-weight:700;color:#33525e}.gideas{display:flex;flex-direction:column;gap:6px}.gi{display:flex;align-items:center;gap:8px;background:#f1f6f7;border-radius:12px;padding:6px 8px}.gi>i{width:54px;flex:none}.gi>i svg{width:54px;height:auto}.gi>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}.gi b{font-size:13.5px}.gi small{font-size:11px;color:#5a707a}.gl{font-size:11px;font-weight:700}.gl.easy{color:#1f8a4c}.gl.mid{color:#b7791f}.gl.hard{color:#c2412d}.gi .btn{flex:none;padding:8px 12px}.gnone{text-align:center;margin:10px 0}.gcur{display:flex;align-items:center;gap:8px;background:#fff6dd;border-radius:10px;padding:7px 10px;font-size:12.5px}.gcur b{flex:1}.gman{margin-top:12px}.gman summary{font-size:12.5px;font-weight:700;color:#33525e;padding:6px 2px;cursor:pointer}
+.flash{animation:flash 0.9s ease-in-out 3;box-shadow:0 0 0 3px #ffcf4a,0 0 18px 4px rgba(255,207,74,.75)!important;border-radius:12px;position:relative;z-index:5}@keyframes flash{50%{box-shadow:0 0 0 6px #ffcf4a,0 0 26px 8px rgba(255,207,74,.9)}}
 .mkt{font-size:11px;font-weight:600}.mkt.dn{color:#c2412d}.mkt.up{color:#1f8a4c}
 .starter{background:linear-gradient(135deg,#fff4d6,#ffe3ef);border-radius:16px;padding:10px 12px;margin:0 0 12px}.starter>b{font-size:15px}.starter small{display:block;color:#7a5a00;font-size:12px;margin:3px 0}
 .sg{display:flex;flex-direction:column;gap:6px;margin:8px 0}.sc{display:flex;align-items:center;gap:8px;background:#fff;border-radius:12px;padding:6px 8px}.sc i{width:16px;height:16px;border-radius:50%}.sc b{flex:1;font-size:14px}.sc .btn{min-width:48px}.sc.off{opacity:.45}
@@ -1360,6 +1361,7 @@ function exitView() {
 let Z0 = 1;   // 기본 확대: 위쪽 빈 벽을 잘라 내고, 어항이 위 HUD 아래부터 화면 아래까지 차게 (layout에서 계산)
 function applyView() {
   if (VIEWMODE) return viewBox();
+  if (VIEW.z <= 1.001 && !VIEW.follow && VB.cy0 != null) { VIEW.z = 1; VIEW.cy = VB.cy0; if ((VB.W || 360) <= 361) VIEW.cx = 180; }   // 확대를 다 풀면 어항 기본 자리로
   const w = 360 / (VIEW.z * Z0), h = VB.h / (VIEW.z * Z0), WW = VB.W || 360;
   if (VIEW.follow && SW[VIEW.follow]) { VIEW.cx += (SW[VIEW.follow].x - VIEW.cx) * .12; VIEW.cy += (SW[VIEW.follow].y - VIEW.cy) * .12; }
   const x = Math.max(0, Math.min(WW - w, VIEW.cx - w / 2)), y = Math.max(0, Math.min(VB.h - h, VIEW.cy - h / 2));
@@ -2303,6 +2305,22 @@ function showCare() {
 }
 const ordGoal = o => { const g = {}; ['color', 'tail', 'pat', 'star', 'metal', 'bigd', 'albino', 'fin'].forEach(k => { if (o[k]) g[k] = o[k]; }); return g; };
 function mk(f) { const p = C.mktPct(S, f); if (!p) return ''; const base = Math.round(C.sellPrice(S, f) / (1 + p / 100)); return ` <small class="mkt ${p < 0 ? 'dn' : 'up'}" data-tx="같은 품종을 많이 팔면 값이 내려가고, 며칠 지나면 돌아와요">(정가 ${fmt(base)} · 시세 ${p > 0 ? '+' : ''}${p}%)</small>`; }
+/* 목표를 눌렀는데 아직이면: 말로만 알려 주지 않고, 해야 할 곳으로 데려가서 누를 버튼을 반짝여 준다 */
+function flash(sel, ms) { setTimeout(() => { const e = typeof sel === 'string' ? document.querySelector(sel) : sel; if (!e) return; e.scrollIntoView && e.scrollIntoView({ block: 'center', behavior: 'smooth' }); e.classList.add('flash'); setTimeout(() => e.classList.remove('flash'), ms || 3200); }, 260); }
+function goalGo(g) {
+  const t = g.t, freeBox = () => { for (let i = 0; i < S.boxes; i++) if (!C.at(S, 'box' + i).filter(x => !x.sep).length) return i; return 0; };
+  if (/먹이/.test(t)) { note('🍤 이 버튼을 끌어서 어항 위에 놓아요'); return flash('#feedBtn'); }
+  if (/건져/.test(t)) { if ($('#rescue').classList.contains('show') || $('#rescue button').offsetParent) return flash('#rescue button');
+    const m = S.fish.find(f => f.preg && f.loc && f.loc.startsWith('tank')); note(m ? `🐣 ${m.preg <= 1 ? '곧' : m.preg + '일 뒤'} 새끼가 태어나요 · 그때 뜨는 버튼을 눌러요` : '💞 먼저 짝을 지어 새끼를 받아요'); return; }
+  if (/특혜/.test(t)) { showShop(); return flash('.starter'); }
+  if (/짝을 넣어/.test(t)) { const i = freeBox(); showBox(i); return flash(`[data-a=autopair][data-id="${i}"]`); }
+  if (/의뢰/.test(t)) { showOrders(); return flash(document.querySelector('#sheet .req.ok [data-a=fulfil]') || document.querySelector('#sheet .req [data-a=pathord]') || '#sheet .req'); }
+  if (/자라/.test(t)) { const y = S.fish.filter(f => !C.isAdult(f) && C.bornHere(S, f)).sort((a, b) => b.age - a.age)[0]; note(y ? `🐟 가장 큰 치어가 ${Math.max(1, Math.ceil(6 - y.age))}일 뒤 어른이 돼요 · 그동안 의뢰를 해결해 봐요` : '💞 번식통에서 새끼를 받아 키워요'); return; }
+  if (/목표를 정해/.test(t)) { showGoal(0); return flash('#sheet .gi [data-a=goalset]'); }
+  if (/사진첩/.test(t)) { showGoal(freeBox()); return flash('#sheet .gi'); }
+  if (/전시 어항/.test(t)) { showShop(); return flash(document.querySelector('#sheet [data-a=buyshow]') && document.querySelector('#sheet [data-a=buyshow]').closest('div,li') || '#sheet [data-a=buyshow]'); }
+  toast(g.h);
+}
 function showOrders() {
   const L = S.orders || [];
   openSheet(head(`📋 의뢰 ${L.length}`) + `${tip('orders', '맞는 구피를 보내면 보상을 받아요. 기한은 없어요 · 하나만 남으면 3~5일 뒤 새 의뢰가 몰려와요.')}
@@ -2335,7 +2353,7 @@ function coach(id, steps) {
   $('#tut').classList.add('on'); tutShow(); requestAnimationFrame(tutLoop);
 }
 const TUT_STEPS = [
-  { t: '🐟 구피 가게에 오신 걸 환영해요', x: '구피 한 쌍으로 가게를 키워 봐요.', next: '시작' },
+  { t: '🐟 구피 가게에 오신 걸 환영해요', x: '구피를 <b>짝지어 새끼</b>를 받고,<br>손님 <b>의뢰</b>에 맞는 구피를 보내 돈을 벌어요.<br><small>돈으로 어항을 늘리고 📖 사진첩을 채워요</small>', next: '시작' },
   { el: () => $('#feedBtn'), t: '🍤 먹이 주기', x: '버튼을 <b>끌어서</b> 어항 위에 놓아요.', wait: 'feed' },
   { el: () => { const m = TUT.mom && SW[TUT.mom]; return m && m.el; }, t: '✨ 빛나는 엄마 구피', x: '곧 낳을 엄마예요. 눌러 보세요.', wait: 'pop', start: () => { const m = momOf(); if (m) { TUT.mom = m.id; m.preg = 1; if (!m.mate) { const d = S.fish.find(f => f.sex === 'm'); if (d) m.mate = { id: d.id, g: d.g, line: d.line, ph: d.ph }; } } const s = SW[TUT.mom]; if (s) { s.hold = true; } } },
   { el: () => $('#pop [data-a=follow]'), t: '👀 확대해서 보기', x: '노랗게 빛나는 <b>👀 확대</b> 버튼을 눌러요.', wait: 'follow', top: true },
@@ -2347,7 +2365,7 @@ const TUT_STEPS = [
   { el: () => $('#dock [data-dock=album]'), t: '📖 사진첩', x: '<b>사진첩</b>을 눌러 봐요.<br><small>새로 만난 모습이 모여요</small>', wait: 'sheet:album' },
   { el: () => $('#dock [data-dock=shop]'), t: '🛒 상점', x: '<b>상점</b>을 눌러 봐요.<br><small>어항 · 새 구피 · 뽑기</small>', wait: 'sheet:shop' },
   { el: () => $('#menuBtn'), t: '☰ 메뉴', x: '<b>☰</b>를 눌러 봐요.<br><small>꾸미기 · 물과 먹이 · 속도 · 도움말</small>', wait: 'menu' },
-  { el: () => $('#goal'), t: '🎯 목표', x: '<b>목표</b>를 눌러 봐요. 따라가면 보상!', wait: 'goal', start: () => { renderHud(); } }
+  { el: () => $('#goal'), t: '🎯 목표', x: '<b>목표</b>를 눌러 봐요. 따라가면 보상!<br><small>뭘 할지 모르겠으면 언제든 목표를 눌러요 · 할 곳으로 데려가 줘요</small>', wait: 'goal', start: () => { renderHud(); } }
 ];
 function startTut() { TUT.on = true; TUT.i = 0; TUT.pause = true; S.clock = 0; $('#tut').classList.add('on'); tutShow(); requestAnimationFrame(tutLoop); }
 function tutShow() {
@@ -2703,7 +2721,7 @@ function act(a, el) {
     case 'feedkind': S.feedKind = el.dataset.id; save(); return showCare();
     case 'wc': { const e = C.waterChange(S, S.cur); if (e) return toast(e); toast('💧 물을 깨끗하게 갈았어요'); save(); render(); return showCare(); }
     case 'goal': { tutOn('goal'); const g0 = C.goalNow(S); if (TUT.on) { const r = C.claimGoal(S); if (r) { floatMoney(r); save(); render(); } return; }
-      if (g0 && g0.who) return showReq(g0); const r = C.claimGoal(S); if (r) { floatMoney(r); toast(`🎁 목표 보상 🪙${r}`); save(); render(); } else if (g0) toast(g0.h); return; }
+      if (g0 && g0.who) return showReq(g0); const r = C.claimGoal(S); if (r) { floatMoney(r); toast(`🎁 목표 보상 🪙${r}`); save(); render(); } else if (g0) goalGo(g0); return; }
     case 'reqsend': { const g0 = C.goalNow(S), r = C.claimGoal(S); if (r) { floatMoney(r); const L = S.lastSent; notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">💌 ${g0.who}</h3><div class="big">${L ? phSVG(L.ph, L.sex) : ''}</div><p style="text-align:center">"고마워요! 정말 예쁘네요"</p><p class="note" style="text-align:center">${L ? L.name : ''}를 보냈어요 · 🪙+${r}</p><div class="row"><button class="btn go" data-a="close">다음 의뢰 보기</button></div>`); save(); render(); } else closeSheet(); return; }
     case 'decomode': DECO_MODE = !DECO_MODE; if (modalOpen) closeSheet(); if (DECO_MODE) { VIEW.z = 1; VIEW.follow = null; zoomUi(); toast('어항의 + 자리를 눌러 꾸며 보세요'); } drawDeco(); return;
     case 'slot': return showSlot(id);
