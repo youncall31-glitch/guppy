@@ -1239,7 +1239,7 @@ const tailVis = z => Math.max(.6, Math.min(typeof SIZE !== 'undefined' ? SIZE.ca
 function chainG(img, x0, head, px) {
   const id = 'tf' + (++TFID), ov = Math.max(1.5, (head - px) * .06), t1 = px - (px - x0) * .34, t2 = px - (px - x0) * .66, ovt = Math.max(ov, (px - x0) * .13), b1 = px + (head - px) * .56, b2 = px + (head - px) * .28, r = (a, b) => `<rect x="${a.toFixed(1)}" y="-60" width="${(b - a).toFixed(1)}" height="180"/>`;
   return `<defs><clipPath id="${id}h">${r(b1 - .4, head + 60)}</clipPath><clipPath id="${id}1">${r(b2 - .4, b1 + ov)}</clipPath><clipPath id="${id}2">${r(px - .4, b2 + ov)}</clipPath><clipPath id="${id}t">${r(t1 - .4, px + ov)}</clipPath><clipPath id="${id}u">${r(t2 - .4, t1 + ovt)}</clipPath><clipPath id="${id}v">${r(x0 - 60, t2 + ovt)}</clipPath></defs>
-    <g clip-path="url(#${id}h)">${img}</g><g class="j1" data-x="${b1.toFixed(1)}"><g clip-path="url(#${id}1)">${img}</g><g class="j2" data-x="${b2.toFixed(1)}"><g clip-path="url(#${id}2)">${img}</g><g class="tl" data-px="${px.toFixed(1)}"><g clip-path="url(#${id}t)">${img}</g><g class="t2" data-x="${t1.toFixed(1)}"><g clip-path="url(#${id}u)">${img}</g><g class="t3" data-x="${t2.toFixed(1)}"><g clip-path="url(#${id}v)">${img}</g></g></g></g></g></g>`;
+    <g class="hd"><g clip-path="url(#${id}h)">${img}</g></g><g class="bd"><g class="j1" data-x="${b1.toFixed(1)}"><g clip-path="url(#${id}1)">${img}</g><g class="j2" data-x="${b2.toFixed(1)}"><g clip-path="url(#${id}2)">${img}</g><g class="tl" data-px="${px.toFixed(1)}"><g clip-path="url(#${id}t)">${img}</g><g class="t2" data-x="${t1.toFixed(1)}"><g clip-path="url(#${id}u)">${img}</g><g class="t3" data-x="${t2.toFixed(1)}"><g clip-path="url(#${id}v)">${img}</g></g></g></g></g></g></g>`;
 }
 let SPR_BUDGET = 3; const SPR_Q = [];
 // 암컷은 꼬리가 몸에 비해 훨씬 작다: 꼬리 크기 차이를 3분의 1만 반영하고 1.12배를 넘지 않게
@@ -1259,7 +1259,7 @@ function tankFishG(ph, sex, vi, T) {
   const s = sprite(ph, sex, vi, T), k = 108 / 386, w = s.w * k, h = s.h * k, x = 108 - w, y = 30 - h / 2, px = x + s.px * k;
   return chainG(`<image href="${s.url}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${h.toFixed(1)}"/>`, x, 108, px);
 }
-function chainOf(el) { const j1 = el.querySelector('.j1'); if (!j1) return null; const j2 = el.querySelector('.j2'), tl = el.querySelector('.tl'), t2 = el.querySelector('.t2'), t3 = el.querySelector('.t3'); return { j1, j2, tl, t2, t3, x1: +j1.dataset.x, x2: +j2.dataset.x, p: +tl.dataset.px, y1: +t2.dataset.x, y2: +t3.dataset.x }; }
+function chainOf(el) { const j1 = el.querySelector('.j1'); if (!j1) return null; const j2 = el.querySelector('.j2'), tl = el.querySelector('.tl'), t2 = el.querySelector('.t2'), t3 = el.querySelector('.t3'); return { hd: el.querySelector('.hd'), bd: el.querySelector('.bd'), j1, j2, tl, t2, t3, x1: +j1.dataset.x, x2: +j2.dataset.x, p: +tl.dataset.px, y1: +t2.dataset.x, y2: +t3.dataset.x }; }
 function bend(c, a1, a2, a3, sx, ts, a4, a5, fx) {
   const q = fx || [1, 1, 1, 1];   // [가운데 가로, 가운데 세로, 끝 가로, 끝 세로]
   c.t2.setAttribute('transform', `translate(${c.y1} 30) rotate(${(a4 || 0).toFixed(2)}) scale(${q[0].toFixed(3)} ${q[1].toFixed(3)}) translate(${-c.y1} -30)`);
@@ -1834,8 +1834,15 @@ function swim(now) {
     if (s.disp) tilt += Math.sin(CLOCK * 9 + s.ph) * 5;
     s.tiltS = s.tiltS == null ? tilt : s.tiltS + (tilt - s.tiltS) * Math.min(1, dt * (s.turnK ? 9 : 4)); tilt = s.tiltS;
     if (s.stage === 'f') { tilt += Math.sin(CLOCK * 2 + s.ph) * 4; if (s.fc0) { const curl = s.w0 && CLOCK - s.w0 < .4; s.fc0.style.display = curl ? '' : 'none'; s.fch.style.display = curl ? 'none' : ''; } }   // 치어는 지렁이처럼 꿈틀거리며 헤엄
-    const f = s.sz || .3;
-    s.el.setAttribute('transform', `translate(${s.x.toFixed(1)} ${s.y.toFixed(1)}) rotate(${tilt.toFixed(1)}) scale(${(f * fs * (s.ex || 1)).toFixed(3)} ${(f * (s.ey || 1) * (1 + .07 * (s.turnK || 0))).toFixed(3)})`);
+    const f = s.sz || .3; let rsx = fs;
+    if (s.ch && s.ch.hd && s.stage !== 'f') {   // 머리가 먼저 돌고 몸통·꼬리가 뒤따라 C자로 접혔다 펴진다
+      let kh = s.dir, kb = s.dir;
+      if (tp < 1) { const E = u => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); }; kh = s.tf + (s.dir - s.tf) * E(tp / .62); kb = s.tf + (s.dir - s.tf) * E((tp - .38) / .62); }
+      const cl = k => (k < 0 ? -1 : 1) * Math.max(.1, Math.abs(k)); kh = cl(kh); kb = cl(kb);
+      const P = s.ch.x1, sh = (52 - P) * (1 - (kh + kb) / 2), T = k => `translate(${(sh + P).toFixed(2)} 0) scale(${k.toFixed(3)} 1) translate(${(-P).toFixed(2)} 0)`;
+      if (s._kh !== kh || s._kb !== kb) { s.ch.hd.setAttribute('transform', T(kh)); s.ch.bd.setAttribute('transform', T(kb)); s._kh = kh; s._kb = kb; } rsx = 1;
+    }
+    s.el.setAttribute('transform', `translate(${s.x.toFixed(1)} ${s.y.toFixed(1)}) rotate(${tilt.toFixed(1)}) scale(${(f * rsx * (s.ex || 1)).toFixed(3)} ${(f * (s.ey || 1) * (1 + .07 * (s.turnK || 0))).toFixed(3)})`);
     if (s.ch && (MANY ? ((FRAME + (s.ph * 10 | 0)) & 1) === 0 : true)) {
       if (s.stage === 'f') {   // 치어: 파닥일 때만 빠르고 크게 꿈틀, 미끄러질 땐 거의 가만히
         const wig = s.wig && CLOCK < s.wig, burst = wig || s.bt > 0 || s.rush || s.lure;
