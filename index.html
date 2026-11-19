@@ -1383,27 +1383,33 @@ const toScreen = (x, y) => { const r = $('#tankwrap').getBoundingClientRect(); r
 const PT = new Map(); let pinch = null, dragged = 0, lastTap = 0;
 function bindZoom() {
   const sv = $('#tank'), rel = e => { const r = sv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
-  let holdT = 0, hold0 = null;
+  let holdT = 0, hold0 = null, down0 = null;
   const inWater = p => p && VB.tank && p.x > VB.tank.x0 + 4 && p.x < VB.tank.x1 - 4 && p.y > VB.tank.a0 - 10 && p.y < VB.tank.f1 + 10;
   sv.addEventListener('pointerdown', e => { PT.set(e.pointerId, rel(e)); if (PT.size === 2) { const [a, b] = [...PT.values()]; pinch = { d: Math.hypot(a[0] - b[0], a[1] - b[1]) }; } dragged = 0;
-    clearTimeout(holdT); FINGER = null; hold0 = null;
-    if (PT.size === 1 && !e.target.closest('.fishg') && !DECO_MODE) { const p = toTank(e.clientX, e.clientY); if (inWater(p)) { hold0 = { x: p.x, y: p.y, t: performance.now() };
+    clearTimeout(holdT); FINGER = null; hold0 = null; down0 = [e.clientX, e.clientY];
+    const fg = e.target.closest('#fishes .fishg');
+    if (PT.size === 1 && fg && !DECO_MODE && !TUT.on) { const id = +fg.dataset.id, s = SW[id];   // 구피를 꾹 누르면 집어 든다
+      if (s && s.stage !== 'f' && !s.pend) { const pid = e.pointerId; holdT = setTimeout(() => { if (PT.size === 1 && down0) { startDrag(id); try { sv.setPointerCapture(pid); } catch (er) { } } }, 380); } }
+    else if (PT.size === 1 && !e.target.closest('.fishg') && !DECO_MODE) { const p = toTank(e.clientX, e.clientY); if (inWater(p)) { hold0 = { x: p.x, y: p.y, t: performance.now() };
       holdT = setTimeout(() => { if (dragged <= 6 && PT.size === 1) { FINGER = { x: hold0.x, y: hold0.y }; ripple(FINGER.x, FINGER.y, 12, .5); try { navigator.vibrate && navigator.vibrate(8); } catch (er) { } } }, 380); } } });
   sv.addEventListener('pointermove', e => {
     if (!PT.has(e.pointerId)) return; const prev = PT.get(e.pointerId), cur = rel(e); PT.set(e.pointerId, cur);
+    if (down0 && Math.hypot(e.clientX - down0[0], e.clientY - down0[1]) > 9 && !DRAG && !FINGER) { clearTimeout(holdT); down0 = null; hold0 = null; }   // 움직이면 꾹 누르기가 아니다
+    if (DRAG) { dragMove(e); return; }
     if (FINGER) { const p = toTank(e.clientX, e.clientY); if (inWater(p)) { FINGER.x = p.x; FINGER.y = p.y; } return; }
     if (PT.size === 2 && pinch) { const [a, b] = [...PT.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch.d > 10) zoomAt((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, d / pinch.d); pinch.d = d; dragged = 99; return; }
     if (PT.size === 1 && (VIEW.z > 1 || (VB.W || 360) > 361)) { const r = sv.getBoundingClientRect(), dx = cur[0] - prev[0], dy = cur[1] - prev[1]; dragged += Math.abs(dx) + Math.abs(dy); if (dragged > 6) { VIEW.follow = null; VIEW.cx -= dx / r.width * VIEW.w; VIEW.cy -= dy / r.height * VIEW.h; applyView(); zoomUi(); } }
   });
   const up = e => { PT.delete(e.pointerId); if (PT.size < 2) pinch = null; };
   sv.addEventListener('pointerup', e => {
-    const p = PT.get(e.pointerId); up(e); clearTimeout(holdT);
+    const p = PT.get(e.pointerId); up(e); clearTimeout(holdT); down0 = null;
+    if (DRAG) { endDrag(e); window.NOCLICK = performance.now() + 400; return; }
     if (FINGER) { FINGER = null; hold0 = null; window.NOCLICK = performance.now() + 350; return; }
     if (hold0 && dragged <= 6 && !VIEWMODE && !TUT.on) startle(hold0.x, hold0.y); hold0 = null;
     if (dragged > 6 || !p) return; const now = Date.now();
     if (now - lastTap < 300 && !e.target.closest('.fishg')) { zoomAt(p[0], p[1], VIEW.z > 1.5 ? 1 / VIEW.z : 2.5); lastTap = 0; } else lastTap = now;
   });
-  sv.addEventListener('pointercancel', e => { up(e); clearTimeout(holdT); FINGER = null; hold0 = null; });
+  sv.addEventListener('pointercancel', e => { up(e); clearTimeout(holdT); FINGER = null; hold0 = null; down0 = null; if (DRAG) endDrag(null); });
   sv.addEventListener('wheel', e => { e.preventDefault(); const r = sv.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, e.deltaY < 0 ? 1.15 : 1 / 1.15); }, { passive: false });
 }
 /* 전시 어항 테마: 배경 필름 · 물빛 · 햇살/달빛 조명 · 기포기 */
@@ -1617,6 +1623,37 @@ function ripple(x, y, r1, dur) {   // 물결 동그라미
   c.innerHTML = `<animate attributeName="r" from="1" to="${r1 || 22}" dur="${dur || .6}s" fill="freeze"/><animate attributeName="opacity" from="1" to="0" dur="${dur || .6}s" fill="freeze"/>`;
   g.appendChild(c); setTimeout(() => c.remove(), (dur || .6) * 1000 + 60);
 }
+let DRAG = null;
+const tankLabel = j => { const t = S.tanks[j]; return t.show ? C.THEMES[t.theme].n + ' 전시 어항' : C.SIZES[t.size].n + ' 어항 ' + S.tanks.slice(0, j + 1).filter(x => !x.show).length; };
+function startDrag(id) {
+  const s = SW[id]; if (!s || !s.el) return; closePop && closePop(); s.hold = true; s.drag = 1; s.disp = 1; s.court = null; DRAG = { id, x: s.x, y: s.y, tgt: null, arrow: null };
+  try { navigator.vibrate && navigator.vibrate(12); } catch (er) { }
+  if (!(S.coach || {}).drag) { (S.coach = S.coach || {}).drag = 1; toast('🖐 집었어요! 다른 성별 구피 위에 놓으면 💞 번식통으로 · ◀ ▶ 위에 놓으면 옆 어항으로'); }
+}
+function dragMove(e) {
+  const T = VB.tank, p = toTank(e.clientX, e.clientY); if (!p || !T) return;
+  DRAG.x = Math.max(T.x0 + 8, Math.min(T.x1 - 8, p.x)); DRAG.y = Math.max(T.a0 - 4, Math.min(T.f1, p.y));
+  const ar = document.elementFromPoint(e.clientX, e.clientY); DRAG.arrow = ar && ar.closest('[data-a=tprev],[data-a=tnext]') ? ar.closest('[data-a]').dataset.a : null;
+  const me = SW[DRAG.id], mf = me && me.f; let best = null, bd = 30;
+  if (mf && C.isAdult(mf)) for (const id in SW) { const q = SW[id]; if (+id === DRAG.id || !q.el || !q.adult || !q.f || q.f.sex === mf.sex || q.pend) continue; const d = Math.hypot(q.x - DRAG.x, q.y - DRAG.y); if (d < bd) { bd = d; best = +id; } }
+  DRAG.tgt = best;
+}
+function endDrag(e) {
+  const d = DRAG; DRAG = null; const s = d && SW[d.id]; if (!s) return; s.drag = 0; s.disp = 0; s.hold = false; s.vx *= .2; s.vy *= .2; s.rest = .3;
+  const f = S.fish.find(x => x.id === d.id); if (!f || !e) return;
+  if (d.arrow) { const n = S.tanks.length, j = (S.cur + (d.arrow === 'tnext' ? 1 : n - 1)) % n, r = C.moveTo(S, f.id, 'tank' + j); if (r) return toast(r); toast(`🐟 ${tankLabel(j)}(으)로 옮겼어요`); save(); render(); return; }
+  if (d.tgt) { const g = S.fish.find(x => x.id === d.tgt); if (g) return dragPair(f, g); }
+  ripple(s.x, s.y, 16, .5);
+}
+function dragPair(a, b) {
+  const m = a.sex === 'm' ? a : b, f = a.sex === 'm' ? b : a;
+  if (!C.isAdult(m) || !C.isAdult(f)) return toast('다 자란 구피끼리만 짝을 지을 수 있어요');
+  let bi = -1; for (let i = 0; i < S.boxes; i++) if (!C.at(S, 'box' + i).filter(x => !x.sep).length) { bi = i; break; }
+  if (bi < 0) return toast('빈 번식통이 없어요 · 🛒 상점에서 늘릴 수 있어요');
+  const from = m.loc, e1 = C.moveTo(S, m.id, 'box' + bi); if (e1) return toast(e1);
+  const e2 = C.moveTo(S, f.id, 'box' + bi); if (e2) { C.moveTo(S, m.id, from); return toast(e2); }
+  toast(`💞 번식통 ${bi + 1}에 짝을 넣었어요`); save(); render();
+}
 function startle(x, y) {   // 물을 톡 치면 근처 구피가 깜짝 놀라 흩어진다
   ripple(x, y, 26, .6); ripple(x, y, 14, .45);
   for (const id in SW) { const s = SW[id]; if (!s.el || s.hold || s.pend || s.wig) continue; const dx = s.x - x, dy = s.y - y, d = Math.hypot(dx, dy); if (d > 100 || d < .1) continue;
@@ -1745,7 +1782,7 @@ function swim(now) {
       }
     }
     if (s.halo) { const f = s.f, due = f && f.preg === 1 && f.mate && s.adult, birthing = s.birthUntil > CLOCK, p = S.clock / C.DAY_MS;
-      s.halo.setAttribute('opacity', due || birthing ? ((birthing ? .75 : .25 + .45 * p) + Math.sin(CLOCK * (2 + p * 4)) * .15).toFixed(2) : 0); }
+      s.halo.setAttribute('opacity', DRAG && DRAG.tgt === +id ? (.75 + Math.sin(CLOCK * 8) * .15).toFixed(2) : due || birthing ? ((birthing ? .75 : .25 + .45 * p) + Math.sin(CLOCK * (2 + p * 4)) * .15).toFixed(2) : 0); }
     let food = null;
     if (!s.hold && FOOD.length) { let bd = 1e9; const m = 56 * (s.sz || .3); for (const p of FOOD) { if (p.gone || (p.fry && (!s.adult || CLOCK < p.wig || (CLOCK < p.wig + 1.5 && +id !== p.hunter)))) continue; const d = Math.abs(p.x - s.x) + Math.abs(p.y - s.y) * 1.5; if (d < bd) { bd = d; food = p; } } }
     // 눈앞의 치어는 바로 사냥감: 어른은 근처의 숨지 못한 치어를 쫓아가 잡아먹는다(수초 가까이 숨으면 포기)
@@ -1834,6 +1871,10 @@ function swim(now) {
         for (const oid in SW) { const o = SW[oid]; if (!o.adult || !o.el || o === s) continue; if (Math.abs(o.x - s.x) < 40 && Math.abs(o.y - s.y) < 26) { const H = hidePts(); if (H.length) { const hp = H.reduce((a, b) => Math.hypot(b.x - s.x, b.y - s.y) < Math.hypot(a.x - s.x, a.y - s.y) ? b : a); s.tx = hp.x + (Math.random() - .5) * 10; s.ty = hp.y - 4; } else { s.tx = s.x + (s.x - o.x) * 1.5; } s.bt = .3; s.rest = 0; break; } }
       }
     } else { s.vx *= .9; s.vy *= .9; }
+    if (s.drag && DRAG && +id === DRAG.id) {   // 집힌 구피: 손끝을 따라오며 파닥파닥
+      const k = Math.min(1, dt * 12), nx = s.x + (DRAG.x - s.x) * k, ny = s.y + (DRAG.y - s.y) * k; s.vx = (nx - s.x) / Math.max(dt, .001); s.vy = (ny - s.y) / Math.max(dt, .001); s.x = nx; s.y = ny;
+      if (Math.abs(s.vx) > 25) s.dir = s.vx > 0 ? 1 : -1;
+    }
     // 방향 바꾸기: 종이처럼 천천히 뒤집지 않고, 몸을 C자로 말며 위나 아래로 살짝 호를 그리듯 휙 돈다
     if (s.tdir == null) s.tdir = s.dir || 1;
     if (s.dir !== s.tdir) { s.tdir = s.dir; s.t0 = CLOCK; s.tf = s.face; s.tup = s.vy > 4 ? 1 : s.vy < -4 ? -1 : (Math.random() < .5 ? -1 : 1); s.tD = s.stage === 'f' ? .26 : s.rush ? .3 : s.dart > 0 ? .38 : .55 + Math.random() * .2; }
