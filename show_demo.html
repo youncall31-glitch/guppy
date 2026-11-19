@@ -1717,7 +1717,7 @@ function swim(now) {
   const LOCKED = !!curTank().lock, CT = curTank(); HUNGRY = !CT.show && !TUT.on && CT.full != null && CT.full <= 0;
   for (const id in SW) {
     const s = SW[id]; if (!s.el) continue;
-    if (s.social == null) { s.social = Math.random() < .15; s.home = null; s.ox = (Math.random() - .5) * 110; s.oy = (Math.random() - .5) * 60; s.vx = 0; s.vy = 0; s.face = s.dir || 1; s.ph = Math.random() * 6.28; s.tph = Math.random() * 6.28; s.cruise = (s.adult ? 7 : 4) + Math.random() * 5; s.dart = 0; s.rest = 0; s.tdir = s.dir || 1; s.curious = Math.random() < .75; }
+    if (s.social == null) { s.social = Math.random() < .15; s.home = null; s.ox = (Math.random() - .5) * 110; s.oy = (Math.random() - .5) * 60; s.vx = 0; s.vy = 0; s.face = s.dir || 1; s.ph = Math.random() * 6.28; s.tph = Math.random() * 6.28; s.cruise = (s.adult ? 8.5 : 4.5) + Math.random() * 5; s.dart = 0; s.rest = 0; s.tdir = s.dir || 1; s.curious = Math.random() < .75; }
     if (s.pend) {   // 아직 엄마 배 속: 엄마 뒤에 숨겨 두었다가 차례가 되면 톡
       const m = SW[s.momId];
       if (CLOCK < s.pend && m) { const [vx, vy] = ventOf(m); s.x = vx; s.y = vy; continue; }
@@ -1744,7 +1744,7 @@ function swim(now) {
       else if (Math.random() < dt * .25) { let bd = 75, bq = 0; for (const qid in SW) { const q = SW[qid]; if (q.stage !== 'f' || !q.f || !q.f.atRisk || q.pend || q.wig || hiddenAt(q)) continue; const d = Math.hypot(q.x - s.x, q.y - s.y); if (d < bd) { bd = d; bq = qid; } } if (bq) { s.prey = bq; s.preyT = 2.6; SW[bq].flee = id; SW[bq].bt = .4; SW[bq].rest = 0; } }
       if (s.prey) { const q = SW[s.prey]; food = { x: q.x, y: q.y, prey: s.prey, hp: 1, vx: 0, vy: 0 }; }
     }
-    s.rush = !!food; s.lure = 0;
+    s.rush = !!food; s.lure = 0; s.cl = 0;
     if (!s.hold && food) {
       const m = 56 * (s.sz || .3) * (s.ex || 1), side = food.x >= s.x ? 1 : -1; s.rest = 0; s.dir = side;
       if (s.chew > 0) { s.chew -= dt; const kk = Math.min(1, dt * 7); s.vx -= s.vx * kk; s.vy -= s.vy * kk; }       // 한 입 물고 잠깐 오물오물
@@ -1768,7 +1768,7 @@ function swim(now) {
       const fd = FINGER ? Math.hypot(FINGER.x - s.x, FINGER.y - s.y) : 1e9;
       if (FINGER && s.stage !== 'f' && s.curious && fd < 190) {   // 손가락을 대고 있으면 호기심 많은 아이들이 다가와 손끝을 콕콕
         const m = 56 * (s.sz || .3), side = FINGER.x >= s.x ? 1 : -1; s.tx = FINGER.x - side * (m + 2) + s.ox * .22; s.ty = FINGER.y + s.oy * .2; s.rest = 0; s.lure = 1; s.court = null; s.disp = 0;
-        if (Math.abs(s.x + side * m - FINGER.x) < 16 && Math.abs(s.y - FINGER.y) < 16 && CLOCK > (s.peck || 0)) { s.vx += side * 42; s.peck = CLOCK + .45 + Math.random() * .9; s.dir = side; }
+        if (Math.abs(s.x + side * m - FINGER.x) < 16 && Math.abs(s.y - FINGER.y) < 16 && CLOCK > (s.peck || 0)) { s.vx += side * 24; s.peck = CLOCK + .6 + Math.random() * 1.1; s.dir = side; }
       }
       else if (s.stage === 'f' && FINGER && fd < 85) { const H = hidePts(); if (H.length) { const hp = H.reduce((a, b) => Math.hypot(b.x - s.x, b.y - s.y) < Math.hypot(a.x - s.x, a.y - s.y) ? b : a); s.tx = hp.x; s.ty = hp.y - 6; } else { s.tx = s.x + (s.x - FINGER.x); s.ty = s.y; } s.rest = 0; if (!(s.bt > 0)) s.bt = .3; }
       else if (LURE) { const m = 56 * (s.sz || .3), side = LURE.x >= s.x ? 1 : -1; s.tx = LURE.x - side * m + s.ox * .35; s.ty = LURE.y + 10 + Math.abs(s.oy) * .4; s.rest = 0; s.lure = 1; }
@@ -1783,7 +1783,7 @@ function swim(now) {
       else if (s.adult && s.f && s.f.sex === 'm' && !DIV_ON && !LOCKED && !TUT.on && (s.court || (Math.random() < dt * .045 && (s.court = pickMate(s))))) {   // 수컷 구애 춤: 암컷 머리 앞에서 몸을 S자로 굽히고 지느러미를 쫙
         const q = SW[s.court.id];
         if (!q || !q.el || CLOCK > s.court.until || q.rush) { if (q && q.el && s.disp) { q.dart = .45; q.tx = q.x + (q.x > s.x ? 1 : -1) * 70; q.ty = q.y + (Math.random() - .5) * 30; q.rest = 0; } s.court = null; s.disp = 0; s.rest = .6 + Math.random(); }
-        else { const qf = q.face < 0 ? -1 : 1, L = 120 * (q.sz || .3); s.tx = q.x + qf * L * 1.05; s.ty = q.y + L * .22; s.rest = 0; s.lure = Math.hypot(s.tx - s.x, s.ty - s.y) > 30 ? 1 : 0;
+        else { const qf = q.face < 0 ? -1 : 1, L = 120 * (q.sz || .3); s.tx = q.x + qf * L * 1.05; s.ty = q.y + L * .22; s.rest = 0; s.cl = 1;
           s.disp = Math.hypot(s.tx - s.x, s.ty - s.y) < 12 ? (s.disp || CLOCK) : 0; if (s.disp) s.court.until = Math.max(s.court.until, s.disp + 2.2); }
       }
       else if (s.adult && s.social) {
@@ -1800,7 +1800,7 @@ function swim(now) {
         s.tx = Math.max(bx0, Math.min(bx1, far ? bx0 + Math.random() * (bx1 - bx0) : s.home + (Math.random() - .5) * 80));
         s.ty = Math.max(y0, Math.min(y1, far ? y0 + Math.random() * (y1 - y0) : s.homeY + (Math.random() - .5) * 40));
       }
-      if (s.dart > 0) s.dart -= dt; else if (Math.random() < dt * (s.adult ? .04 : .08)) s.dart = .35 + Math.random() * .3;   // 가끔 휙
+      if (s.dart > 0) s.dart -= dt; else if (Math.random() < dt * (s.adult ? .022 : .06)) s.dart = .5 + Math.random() * .4;   // 가끔 휙
       if (DIV_ON && s.adult) {   // 칸막이: 수컷은 왼쪽, 암컷은 오른쪽
         const mid = (VB.tank.x0 + VB.tank.x1) / 2, M = s.f.sex === 'm', ok = M ? s.x < mid - 6 : s.x > mid + 6;
         if (M) s.tx = Math.min(s.tx, mid - 12); else s.tx = Math.max(s.tx, mid + 12);
@@ -1813,11 +1813,11 @@ function swim(now) {
       const dx = s.tx - s.x, dy = s.ty - s.y, d = Math.hypot(dx, dy) || 1;
       let fk = LOCKED ? .35 : 1, glide = false;
       if (s.stage === 'f') { if (s.bt > 0) { s.bt -= dt; fk = 2.6; } else { s.gt = (s.gt || 0) - dt; fk = 0; glide = true; if (s.gt <= 0) { s.bt = .18 + Math.random() * .25; s.gt = .4 + Math.random() * 1.3; } } }
-      const want = s.rest > 0 ? 0 : s.lure ? Math.min(55, d * 4) * (s.stage === 'f' ? Math.max(.5, fk) : 1) : fk *  Math.min(s.cruise * (s.dart > 0 ? 3.2 : 1) * (s.f && s.f.preg === 1 ? .55 : 1), d * .9);
-      const k = Math.min(1, dt * (glide ? .9 : s.stage === 'f' ? 6 : s.lure ? 4.5 : s.dart > 0 ? 4 : 1.4));                // 관성: 천천히 속도를 바꾼다
+      const want = s.rest > 0 ? 0 : s.cl ? Math.min(20, Math.hypot(s.tx - s.x, s.ty - s.y) * 1.5) : s.lure ? Math.min(40, d * 3) * (s.stage === 'f' ? Math.max(.5, fk) : 1) : fk *  Math.min(s.cruise * (s.dart > 0 ? 2.1 : 1) * (s.f && s.f.preg === 1 ? .55 : 1), d * .9);
+      const k = Math.min(1, dt * (glide ? .9 : s.stage === 'f' ? 6 : s.lure ? 2.6 : s.dart > 0 ? 2 : 1.2));                // 관성: 천천히 속도를 바꾼다
       s.vx += (dx / d * want - s.vx) * k; s.vy += (dy / d * want * (s.lure ? 1 : .6) - s.vy) * k;
       s.x += s.vx * dt; s.y += s.vy * dt + Math.sin(CLOCK * 1.1 + s.ph) * 1.2 * dt;  // 물살에 살짝 오르내림
-      if (Math.abs(s.vx) > 1.2) s.dir = s.vx > 0 ? 1 : -1;
+      { const nd = s.vx > 0 ? 1 : -1; if (Math.abs(s.vx) > 2.5 && nd !== s.dir) { s.flipW = (s.flipW || 0) + dt; if (s.flipW > (s.dart > 0 || s.lure ? .06 : .22)) { s.dir = nd; s.flipW = 0; } } else s.flipW = 0; }
       if (s.disp && s.court && SW[s.court.id]) { s.dir = SW[s.court.id].x > s.x ? 1 : -1; s.vx *= 1 - Math.min(1, dt * 4); }
       if (s.stage === 'f' && !s.flee && !s.wig && ((FRAME + (s.ph * 10 | 0)) % 9 === 0)) {   // 치어는 어른이 가까이 오면 수초로 쏙
         for (const oid in SW) { const o = SW[oid]; if (!o.adult || !o.el || o === s) continue; if (Math.abs(o.x - s.x) < 40 && Math.abs(o.y - s.y) < 26) { const H = hidePts(); if (H.length) { const hp = H.reduce((a, b) => Math.hypot(b.x - s.x, b.y - s.y) < Math.hypot(a.x - s.x, a.y - s.y) ? b : a); s.tx = hp.x + (Math.random() - .5) * 10; s.ty = hp.y - 4; } else { s.tx = s.x + (s.x - o.x) * 1.5; } s.bt = .3; s.rest = 0; break; } }
@@ -1825,16 +1825,17 @@ function swim(now) {
     } else { s.vx *= .9; s.vy *= .9; }
     // 방향 바꾸기: 종이처럼 천천히 뒤집지 않고, 몸을 C자로 말며 위나 아래로 살짝 호를 그리듯 휙 돈다
     if (s.tdir == null) s.tdir = s.dir || 1;
-    if (s.dir !== s.tdir) { s.tdir = s.dir; s.t0 = CLOCK; s.tf = s.face; s.tup = s.vy > 4 ? 1 : s.vy < -4 ? -1 : (Math.random() < .5 ? -1 : 1); s.tD = s.stage === 'f' ? .16 : s.rush || s.dart > 0 ? .2 : .3 + Math.random() * .1; }
+    if (s.dir !== s.tdir) { s.tdir = s.dir; s.t0 = CLOCK; s.tf = s.face; s.tup = s.vy > 4 ? 1 : s.vy < -4 ? -1 : (Math.random() < .5 ? -1 : 1); s.tD = s.stage === 'f' ? .26 : s.rush ? .3 : s.dart > 0 ? .38 : .55 + Math.random() * .2; }
     const tp = s.t0 != null ? Math.min(1, (CLOCK - s.t0) / s.tD) : 1, te = tp * tp * (3 - 2 * tp);
     s.face = tp < 1 ? s.tf + (s.dir - s.tf) * te : s.dir; s.turnK = tp < 1 ? Math.sin(Math.PI * tp) : 0;
-    if (s.turnK) s.vy += (s.tup || 1) * s.turnK * 30 * dt;
+    if (s.turnK) s.vy += (s.tup || 1) * s.turnK * 14 * dt;
     const fs = (s.face < 0 ? -1 : 1) * Math.max(.1, Math.abs(s.face)), spd = Math.hypot(s.vx, s.vy);
-    let tilt = Math.max(-14, Math.min(14, Math.atan2(s.vy, Math.max(3, Math.abs(s.vx))) * 57.3 * .6)) * (fs < 0 ? -1 : 1) + s.turnK * 17 * (s.tup || 1);
+    let tilt = Math.max(-14, Math.min(14, Math.atan2(s.vy, Math.max(3, Math.abs(s.vx))) * 57.3 * .6)) * (fs < 0 ? -1 : 1) + s.turnK * 10 * (s.tup || 1);
     if (s.disp) tilt += Math.sin(CLOCK * 9 + s.ph) * 5;
+    s.tiltS = s.tiltS == null ? tilt : s.tiltS + (tilt - s.tiltS) * Math.min(1, dt * (s.turnK ? 9 : 4)); tilt = s.tiltS;
     if (s.stage === 'f') { tilt += Math.sin(CLOCK * 2 + s.ph) * 4; if (s.fc0) { const curl = s.w0 && CLOCK - s.w0 < .4; s.fc0.style.display = curl ? '' : 'none'; s.fch.style.display = curl ? 'none' : ''; } }   // 치어는 지렁이처럼 꿈틀거리며 헤엄
     const f = s.sz || .3;
-    s.el.setAttribute('transform', `translate(${s.x.toFixed(1)} ${s.y.toFixed(1)}) rotate(${tilt.toFixed(1)}) scale(${(f * fs * (s.ex || 1)).toFixed(3)} ${(f * (s.ey || 1) * (1 + .12 * (s.turnK || 0))).toFixed(3)})`);
+    s.el.setAttribute('transform', `translate(${s.x.toFixed(1)} ${s.y.toFixed(1)}) rotate(${tilt.toFixed(1)}) scale(${(f * fs * (s.ex || 1)).toFixed(3)} ${(f * (s.ey || 1) * (1 + .07 * (s.turnK || 0))).toFixed(3)})`);
     if (s.ch && (MANY ? ((FRAME + (s.ph * 10 | 0)) & 1) === 0 : true)) {
       if (s.stage === 'f') {   // 치어: 파닥일 때만 빠르고 크게 꿈틀, 미끄러질 땐 거의 가만히
         const wig = s.wig && CLOCK < s.wig, burst = wig || s.bt > 0 || s.rush || s.lure;
@@ -1845,7 +1846,7 @@ function swim(now) {
         const mv = Math.min(1, spd / 8);
         s.tph += dt * 6.28 * Math.min(7, .15 + mv * (.75 + spd * .09) + (s.dart > 0 ? 1.2 : 0));
         if (s.disp) s.tph += dt * 6.28 * 2.6;   // 구애 춤: 제자리에서 몸 전체를 크게 S자로 떤다
-        const A = s.disp ? 9 : .8 + mv * (2.2 + Math.min(7, spd * .45)), turn = (s.turnK || 0) * 22 * (s.tup || 1);
+        const A = s.disp ? 9 : .8 + mv * (2.2 + Math.min(7, spd * .45)), turn = (s.turnK || 0) * 17 * (s.tup || 1);
         const drift = Math.sin(CLOCK * 1.1 + s.ph) * 2.5, drift2 = Math.sin(CLOCK * 1.1 + s.ph - 1.1) * 3.8;   // 쉬고 있어도 꼬리 끝이 천천히 너울
         const male = s.f && s.f.sex === 'm', m = (male ? 1.35 : .8) * (s.disp ? 1.3 : 1), slow = CLOCK * .9 + s.ph;
         // 좌우: 꼬리가 옆으로 휘면 옆에서 볼 때 짧아 보인다 / 위아래: 꼬리가 펼쳐졌다 오므라든다. 끝으로 갈수록 늦고 크게
