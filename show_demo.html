@@ -320,7 +320,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
   const SIZES = [{ n: '1자', cm: 30, cap: 8, w: 1 }, { n: '자반', cm: 45, cap: 18, w: 1.5 }, { n: '2자', cm: 60, cap: 35, w: 2 }, { n: '3자', cm: 90, cap: 70, w: 3 }];   // 취미가들이 실제로 무리 없이 키우는 수준(물 약 1.5~2L에 한 마리)
   const TANK_PRICE = [100, 400, 1500, 4500], TANK_MAX = 8;   // TANK_PRICE는 예전 저장을 바꿀 때 돌려줄 값 계산용
   /* 어항은 두 가지: 1자 교배 어항(시간이 흐르고 새끼를 낳는다)과 3자 전시 어항(시간이 멈추고, 늙지도 죽지도 않는다 · 교배 불가 · 손님 수입의 중심) */
-  const BREED_PRICE = [0, 150, 350, 700, 1200, 2000], BREED_MAX = 6, SHOW_MAX = 3, SHOW_CAP = 20;
+  const BREED_PRICE = [0, 400, 550, 800, 1200, 2000], BREED_MAX = 6, SHOW_MAX = 3, SHOW_CAP = 20;
   const THEMES = {
     forest: { n: '초록 숲', i: '🌿', price: 1500, d: '빽빽한 수초 숲', tint: '#2e8a4a', ta: .1, bg: ['#0c3626', '#3d8a5c'],
       back: ['stem', 'n_sword', 'n_wisteria', 'grass', 'n_sword', 'stem', 'n_wisteria', 'grass', 'stem'], front: ['n_hairgrass', 'moss', 'n_javafern', 'n_montecarlo', 'n_crypt', 'wood_b', 'n_hairgrass', 'anubias', 'n_montecarlo', 'moss', 'n_crypt', 'n_hairgrass'] },
@@ -575,18 +575,18 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
   const bornHere = (S, f) => (S.reg[f.id] || [])[0] != null;
   const sendable = (S, f) => isAdult(f) && !frozen(S, f) && !isParent(f) && !f.fav && !f.preg;
   const GOALS = [
-    { t: '먹이를 줘 보세요', h: '🍤 먹이 버튼을 끌어다 어항 위에서 손을 떼요', r: 20, ok: S => (S.stats.fed || 0) >= 1 },
-    { t: '치어를 건져 보세요', h: '새끼가 태어나면 뜨는 🐣 버튼을 눌러요', r: 30, ok: S => (S.stats.rescued || 0) >= 1 },
-    { t: '초보 사장님 특혜로 색깔 구피 들이기', h: '🛒 상점 맨 위 🎁 특혜 · 두 가지 색을 싸게', r: 40, ok: S => !!(S.starter && Object.keys(S.starter.got || {}).length) },
-    { t: '번식통에 짝을 넣어 보세요', h: '아래 💞 번식 → ✨ 추천 짝', r: 50, ok: S => { for (let i = 0; i < S.boxes; i++) { const b = at(S, 'box' + i).filter(f => !f.sep); if (b.some(f => f.sex === 'm') && b.some(f => f.sex === 'f')) return true; } return false; } },
-    { t: '📋 의뢰를 하나 해결해 보세요', h: '☰ → 📋 의뢰 · 맞는 구피를 보내요', r: 60, ok: S => (S.stats.orders || 0) >= 1 },
-    { t: '치어가 자라 정체를 드러내요', h: '태어난 지 6일이면 어른이 돼요', r: 60, ok: S => S.fish.some(f => isAdult(f) && bornHere(S, f)) },
-    { t: '🎯 번식통 목표를 정해 보세요', h: '번식통 → 🎯 목표 → 🧭 길 찾기', r: 60, ok: S => Object.keys(S.boxGoal || {}).length > 0 },
-    { t: '의뢰 5개 해결하기', h: '☰ → 📋 의뢰', r: 150, ok: S => (S.stats.orders || 0) >= 5 },
-    { t: '사진첩에 모습 10가지 모으기', h: '다양한 짝을 지어 봐요', r: 150, ok: S => Object.keys(S.album).length >= 10 },
-    { t: '전시 어항을 들여 보세요', h: '🛒 상점 → 전시 어항 · 손님은 전시 어항을 보러 와요', r: 200, ok: S => S.tanks.some(t => t.show) },
-    { t: '의뢰 20개 해결하기', h: '어려운 의뢰일수록 보상이 커요', r: 400, ok: S => (S.stats.orders || 0) >= 20 },
-    { t: '사진첩에 모습 30가지 모으기', h: '새 색은 사진첩을 채우면 열려요', r: 500, ok: S => Object.keys(S.album).length >= 30 }];
+    { t: '먹이를 줘 보세요', h: '🍤 먹이 버튼을 끌어다 어항 위에서 손을 떼요', r: 10, ok: S => (S.stats.fed || 0) >= 1 },
+    { t: '치어를 건져 보세요', h: '새끼가 태어나면 뜨는 🐣 버튼을 눌러요', r: 20, ok: S => (S.stats.rescued || 0) >= 1 },
+    { t: '초보 사장님 특혜로 색깔 구피 들이기', h: '🛒 상점 맨 위 🎁 특혜 · 두 가지 색을 싸게', r: 25, ok: S => !!(S.starter && Object.keys(S.starter.got || {}).length) },
+    { t: '번식통에 짝을 넣어 보세요', h: '아래 💞 번식 → ✨ 추천 짝', r: 30, ok: S => { for (let i = 0; i < S.boxes; i++) { const b = at(S, 'box' + i).filter(f => !f.sep); if (b.some(f => f.sex === 'm') && b.some(f => f.sex === 'f')) return true; } return false; } },
+    { t: '📋 의뢰를 하나 해결해 보세요', h: '☰ → 📋 의뢰 · 맞는 구피를 보내요', r: 35, ok: S => (S.stats.orders || 0) >= 1 },
+    { t: '치어가 자라 정체를 드러내요', h: '태어난 지 6일이면 어른이 돼요', r: 35, ok: S => S.fish.some(f => isAdult(f) && bornHere(S, f)) },
+    { t: '🎯 번식통 목표를 정해 보세요', h: '번식통 → 🎯 목표 → 🧭 길 찾기', r: 35, ok: S => Object.keys(S.boxGoal || {}).length > 0 },
+    { t: '의뢰 5개 해결하기', h: '☰ → 📋 의뢰', r: 90, ok: S => (S.stats.orders || 0) >= 5 },
+    { t: '사진첩에 모습 10가지 모으기', h: '다양한 짝을 지어 봐요', r: 90, ok: S => Object.keys(S.album).length >= 10 },
+    { t: '전시 어항을 들여 보세요', h: '🛒 상점 → 전시 어항 · 손님은 전시 어항을 보러 와요', r: 120, ok: S => S.tanks.some(t => t.show) },
+    { t: '의뢰 20개 해결하기', h: '어려운 의뢰일수록 보상이 커요', r: 240, ok: S => (S.stats.orders || 0) >= 20 },
+    { t: '사진첩에 모습 30가지 모으기', h: '새 색은 사진첩을 채우면 열려요', r: 300, ok: S => Object.keys(S.album).length >= 30 }];
   GOALS.forEach(g => { if (g.send) g.ok = S => S.fish.some(f => sendable(S, f) && g.send(S, f)); });
   const goalNow = S => GOALS[S.goal || 0] || null;
   function claimGoal(S) { const g = goalNow(S); if (!g || !g.ok(S)) return 0;
@@ -853,6 +853,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
   const WHO = ['🧒 민지 학생', '👵 동네 할머니', '🧑‍💼 김 사장님', '👨‍🔬 어항 동호회', '👩‍🍳 카페 사장님', '🧑‍🎨 그림 그리는 손님', '👴 낚시 할아버지', '👩‍🏫 유치원 선생님'];
   /* 📋 의뢰: 한 번에 3~5개, 시간 제한 없음. 1개만 남으면 다음 날 새 의뢰가 몰려온다. 가진 구피로 할 수 있는 것부터 조금 어려운 것까지 */
   const REQ_WHO = [['🧒 민지', '어항에 처음 넣을 친구가 필요해요!'], ['👵 동네 할머니', '손주 방에 둘 예쁜 아이로 부탁해요'], ['🧑‍💼 김 사장님', '가게 카운터에 둘 거라네'], ['👨‍🔬 어항 동호회', '품평회에 낼 아이를 찾고 있어요'], ['👩‍🍳 카페 사장님', '카페 손님들이 좋아할 아이요'], ['🧑‍🎨 그림 작가', '그림 모델로 삼고 싶어요'], ['👴 낚시 할아버지', '허허, 이런 녀석은 처음이야'], ['👩‍🏫 유치원 선생님', '아이들 관찰 수업에 쓸게요'], ['🏪 수족관 사장님', '우리 가게에 들일 물건이야'], ['📷 사진작가', '빛 받으면 예쁜 아이로요'], ['👨‍👩‍👧 이웃 가족', '아이 생일 선물이에요'], ['🧑‍🚀 수집가', '도감에 없는 아이를 모으는 중이에요']];
+  const ORD_K = [1.2, 10, 0.3], ORD_GAP = [3, 5];   // 의뢰 보상 = (품종값×1.2+10)×별×조건 수 · 다음 묶음은 3~5일 뒤
   const REQ_KEYS = ['sex', 'color', 'tail', 'pat', 'star', 'metal', 'bigd', 'albino', 'fin', 'born'];
   function makeOrder(S, rng) {
     const own = S.fish.filter(isAdult), alb = Object.values(S.album).map(a => a.ph), pool = own.map(f => f.ph).concat(alb);
@@ -869,7 +870,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
       if (x === 'metal') o.metal = 1; if (x === 'bigd') o.bigd = 1; if (x === 'albino') o.albino = 1; if (x === 'fin') { o.fin = pick(['ribbon', 'swallow', 'dumbo']); o.sex = 'm'; o.tail = o.fin === 'ribbon' ? 'delta' : o.fin === 'dumbo' ? 'delta' : o.tail; }
     });
     const ph = { tail: o.tail || 'round', color: o.color || 'gray', pat: o.pat || 'plain', albino: !!o.albino, plat: false, metal: !!o.metal, bigd: !!o.bigd, fin: o.fin || null };
-    o.reward = Math.round((basePrice(ph) * 2 + 20) * (1 + 0.35 * Math.max(0, (o.star || 0) - 2)) * (1 + 0.15 * k.length) / 5) * 5; o.rep = 2 + k.length;
+    o.reward = Math.round((basePrice(ph) * ORD_K[0] + ORD_K[1]) * (1 + 0.35 * Math.max(0, (o.star || 0) - 2)) * (1 + ORD_K[2] * (k.length - 1)) / 5) * 5; o.rep = 2 + k.length;
     o.ph = ph; return o;
   }
   const orderText = o => [o.born && '가게에서 태어난', o.metal && '메탈', o.albino && '알비노', o.color && COLORS[o.color].n, o.pat && PATS[o.pat].n, o.bigd && '빅도살', o.fin && FINS[o.fin].n, o.tail && TAILS[o.tail].n, o.sex ? (o.sex === 'm' ? '수컷' : '암컷') : '구피', o.star && `· 꼬리 ${'★'.repeat(o.star)} 이상`].filter(Boolean).join(' ');
@@ -885,8 +886,10 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
   }
   function orderTick(S, rng, ev) {
     S.orders = (S.orders || []).filter(o => o.ph);   // 예전 형식 주문은 정리
-    if (S.orders.length <= 1 && S.day >= (S.nextOrder || 2)) { const n = 3 + Math.floor(rng() * 3); let add = 0; while (S.orders.length < n) { S.orders.push(makeOrder(S, rng)); add++; } S.nextOrder = S.day + 1; if (add) ev.push({ t: 'order', n: add }); }
-    else if (S.orders.length > 1) S.nextOrder = S.day + 1;
+    if (S.orders.length <= 1) {   // 1개 이하로 줄면 며칠 뒤 새 의뢰가 몰려온다 (첫 의뢰는 바로)
+      if (S.ordWait == null) { S.ordWait = 1; S.nextOrder = (S.stats.orders || 0) ? S.day + ORD_GAP[0] + Math.floor(rng() * (ORD_GAP[1] - ORD_GAP[0] + 1)) : Math.max(2, S.nextOrder || 2); }
+      if (S.day >= S.nextOrder) { const n = 3 + Math.floor(rng() * 3); let add = 0; while (S.orders.length < n) { S.orders.push(makeOrder(S, rng)); add++; } delete S.ordWait; if (add) ev.push({ t: 'order', n: add }); }
+    } else delete S.ordWait;
   }
   const ATTEND = [{ c: 50 }, { c: 80 }, { t: 1 }, { c: 120 }, { c: 150 }, { c: 200 }, { c: 300, t: 1 }];
   function attend(S, today, yesterday) {   // 하루 한 번. 어제도 왔으면 이어지고, 7일째가 지나면 처음부터
@@ -1059,7 +1062,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     S.fish.forEach(f => { walk(f.id, 0); if (f.mate) walk(f.mate.id, 0); });
     for (const k in S.reg) if (!keep.has(+k)) delete S.reg[k];
   }
-  root.CORE = { buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
+  root.CORE = { ORD_K, ORD_GAP, buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
     newState, express, score, basePrice, keyOf, nameOf, recipeLines, recipeCost, health, inbreed, makeChild, dayTick, sell, moveTo, rescue, buyFounder, buy, buyRecipe, boostBirth, growFry,
     sellPrice, dailyOf, tankIncome, comment, survival, at, isAdult, tankCap, tankUsed, inTank, roomTank, maxPlants, donate, donateRep, repMult, autoManage, AUTO_DEFAULT, nurseryCap, pagesDone, pruneReg, randomGenes };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2172,10 +2175,10 @@ function showCare() {
 const ordGoal = o => { const g = {}; ['color', 'tail', 'pat', 'star', 'metal', 'bigd', 'albino', 'fin'].forEach(k => { if (o[k]) g[k] = o[k]; }); return g; };
 function showOrders() {
   const L = S.orders || [];
-  openSheet(head(`📋 의뢰 ${L.length}`) + `${tip('orders', '맞는 구피를 보내면 보상을 받아요. 기한은 없어요 · 하나만 남으면 곧 새 의뢰가 와요.')}
-    ${L.length ? L.map(o => { const m = C.orderMatches(S, o), gl = ordGoal(o), hard = Object.keys(gl).length && !C.canHave(S, gl);
+  openSheet(head(`📋 의뢰 ${L.length}`) + `${tip('orders', '맞는 구피를 보내면 보상을 받아요. 기한은 없어요 · 하나만 남으면 3~5일 뒤 새 의뢰가 몰려와요.')}
+    ${L.length === 1 && S.nextOrder > S.day ? `<p class="note" style="text-align:center">📮 새 의뢰 묶음까지 ${S.nextOrder - S.day}일</p>` : ''}${L.length ? L.map(o => { const m = C.orderMatches(S, o), gl = ordGoal(o), hard = Object.keys(gl).length && !C.canHave(S, gl);
       return `<div class="req ${m.length ? 'ok' : ''}"><i>${phSVG(o.ph || { tail: 'round', color: o.color || 'gray', pat: 'plain' }, o.sex || 'm')}</i><div class="rq"><b>${o.who}</b><q>${o.say || ''}</q><span class="want">${C.orderText(o)}</span><small>🪙 ${fmt(o.reward)} · ⭐+${o.rep}${m.length ? ` · 맞는 구피 ${m.length}마리` : hard ? ' · 🔒 필요한 형질이 아직 없어요' : ''}</small></div>
-        <div class="rb">${m.length ? `<button class="btn go" data-a="fulfil" data-id="${o.id}">보내기</button>` : Object.keys(gl).length ? `<button class="btn" data-a="pathord" data-id="${o.id}">🧭 만드는 법</button>` : ''}</div></div>`; }).join('') : '<p class="note" style="text-align:center;margin:20px 0">의뢰를 다 끝냈어요! 내일 새 의뢰가 와요.</p>'}`, 'orders');
+        <div class="rb">${m.length ? `<button class="btn go" data-a="fulfil" data-id="${o.id}">보내기</button>` : Object.keys(gl).length ? `<button class="btn" data-a="pathord" data-id="${o.id}">🧭 만드는 법</button>` : ''}</div></div>`; }).join('') : `<p class="note" style="text-align:center;margin:20px 0">의뢰를 다 끝냈어요! ${S.nextOrder > S.day ? `새 의뢰는 ${S.nextOrder - S.day}일 뒤에 와요.` : '곧 새 의뢰가 와요.'}</p>`}`, 'orders');
 }
 /* 🧭 길 찾기: 목표 구피까지 어떻게 가는지, 재료 구피는 누구인지 */
 function showPath(g, back) {
