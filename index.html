@@ -174,6 +174,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 .gdr{background:#fff6e6;border-radius:12px;padding:8px 10px;margin:0 0 10px}.gdr b{display:block;font-size:12.5px;margin-bottom:5px}.gdr .chips button{font-size:11.5px;padding:5px 9px}.gdr .chips button:not(.on){opacity:.6;text-decoration:line-through}
 .pill.money{cursor:pointer}
 .sr{cursor:pointer;border-radius:8px;padding:1px 4px}.sr.on{background:rgba(31,138,76,.13)}.sr u{text-decoration:none;font-size:13px;color:#1f8a4c;width:14px}.mvr{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:7px}.mvr span{font-size:11px;color:#5a707a;font-weight:700}.mvr button{border:0;border-radius:999px;background:#e3eef1;color:#24434f;font-size:11.5px;font-weight:700;padding:5px 10px}.mvr button.cur{opacity:.45}.hsb{flex-direction:column;align-items:stretch;gap:6px;background:#fff!important;border-radius:14px;box-shadow:0 -4px 18px rgba(0,0,0,.12);padding:10px!important}.hsbt{display:flex;align-items:center;justify-content:space-between}.hsbt .btn{flex:none;width:auto!important}.sr i.wh{width:auto;font-style:normal;font-size:10.5px;color:#5a707a;background:#e3eef1;border-radius:6px;padding:1px 5px}
+#dream{position:absolute;right:10px;top:calc(66px + env(safe-area-inset-top));width:52px;height:40px;border-radius:14px;background:rgba(255,246,214,.9);border:2px solid #ffcf4a;box-shadow:0 3px 10px rgba(0,0,0,.18);padding:2px 4px;z-index:3}#dream svg{width:100%;height:100%}#dream b{position:absolute;top:-8px;left:-8px;font-size:15px}
 .sgp{background:#f4f8f9;border-radius:14px;padding:10px 11px;margin:0 0 10px}.sgp.dup{background:#eaf7f1}.sgp.old{background:#f3f0fa}.sgp.prot{background:#fff6e6}.shh b{display:block;font-size:14px}.shh b span{font-weight:600;color:#5a707a;font-size:12px}.shh small{display:block;font-size:11px;color:#5a707a;margin:1px 0 6px}
 .srs{display:flex;flex-direction:column;gap:3px;max-height:30vh;overflow:auto;margin-bottom:8px}.sr{display:flex;align-items:center;gap:8px;font-size:12.5px}.sr i{width:40px;flex:none}.sr i svg{width:40px;height:auto;display:block}.sr b{flex:1;font-weight:600}.sr em{font-style:normal;font-weight:800;color:#1f8a4c}.sr small{font-size:10.5px;color:#8a6a1e}.sgp .btn{width:100%}
 .sfbtn{display:block;width:100%;text-align:left;background:#eef4f5;border:0;border-radius:12px;padding:9px 12px;margin:0 0 10px;font-weight:700;font-size:13px;color:#24434f}.sfbtn small{display:block;font-weight:500;font-size:11px;color:#5a707a}.sfr{margin:0 0 6px}.sfr label{display:block;font-size:11.5px;font-weight:700;color:#5a707a;margin:0 2px 3px}.sfl{max-height:24vh;overflow:auto}
@@ -303,6 +304,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
       <button class="pill" id="helpBtn" data-a="helpmode" aria-label="도움말">?</button>
       <button class="pill" id="menuBtn" data-a="menu" aria-label="메뉴" data-tx="☰ 속도 · 주문 · 물과 먹이 · 꾸미기 · 기록 · 도움말">☰<b class="dot"></b></button>
       <div id="menu"></div>
+      <button id="dream" data-a="dreampath" aria-label="목표 구피" style="display:none"></button>
     </div>
     <div id="stats" style="display:none"></div>
     <div id="shelf"></div>
@@ -2029,6 +2031,7 @@ function renderHud() {
   if (risk) { $('#rtxt').textContent = big ? `🐣 치어 ${risk}마리를 건져 주세요!` : `🐣 치어 ${risk} 건지기`; $('#rsub').textContent = `오늘이 지나면 어른 구피가 먹어요 · 수초에 숨을 확률 ${Math.round(C.survival(S) * 100)}%`; }
   const g = C.goalNow(S), gb = $('#goal');
   if (gb) { gb.style.display = g && !DECO_MODE && (!TUT.on || TUT.coach || TUT.i >= TS().length - 1) ? '' : 'none'; if (g) { const ok = g.ok(S); gb.classList.toggle('ready', ok); gb.innerHTML = g.who ? (ok ? `💌 ${g.who}에게 보내기 · 🪙${g.r}` : `💌 ${g.who} · ${g.t}`) : (ok ? `🎁 ${g.t} · 🪙${g.r + (g.grad || 0)} 받기` : `${g.ap ? `🎓 ${(S.goal || 0) + 1}/${C.AP_N} · ` : '🎯 '}${g.t} · 🪙${g.r}`); gb.dataset.tx = ok ? '' : `💡 ${g.h}`; gb.classList.toggle('req', !!g.who); } }
+  dreamChip();
   const T = C.careOf(curTank()), fb = $('#feedBtn');
   if (fb) { fb.style.display = VB.tank && !DECO_MODE ? '' : 'none'; const vb = $('#viewBtn'); if (vb) vb.style.display = VB.tank && !DECO_MODE && curTank().show ? '' : 'none'; fb.textContent = `${C.FOODS[S.feedKind || 'flake'].i} 먹이`; }
   { const db = $('#decoBtn'); if (db) db.style.display = DECO_MODE ? '' : 'none'; }
@@ -2404,8 +2407,13 @@ function showEntry(key) {
   openSheet(head(s ? a.name : '아직 못 본 구피', 'album') + `<div class="big" ${s ? '' : 'style="filter:blur(4px) saturate(.75);opacity:.6"'}>${phSVG(s ? s.ph : a.ph, s ? s.sex : 'm')}</div>
     ${s ? `<p>${s.day}일째에 처음 만났다 · 기준 판매가 🪙 ${fmt(C.basePrice(a.ph))}</p><div class="row" style="margin:4px 0 2px">${['m', 'f'].map(x => `<button class="btn ${x === 'm' ? 'go' : ''}" data-a="buyknown" data-id="${key}" data-sex="${x}" ${S.money < C.knownCost(a.ph) ? 'disabled' : ''}>🛒 ${x === 'm' ? '수컷' : '암컷'} 데려오기 🪙${fmt(C.knownCost(a.ph))}</button>`).join('')}</div><p class="note" style="margin:2px 2px 10px">꼬리는 ★2~3</p>` : '<p class="note">흐릿하게만 보인다. 대충 어떤 모습일지 짐작해 보자.</p>'}
     ${has || s ? `<div class="recipe"><b>📜 조합 공식</b><ul>${C.recipeLines(a).map(l => `<li>${l}</li>`).join('')}</ul><span class="note">공식을 알아도 결과는 확률이다. 비싼 구피일수록 확률이 낮다.</span></div>` : `<div class="row"><button class="btn go" data-a="recipe" data-id="${key}" ${S.money < C.recipeCost(a) ? 'disabled' : ''}>📜 조합 공식 사기 🪙${fmt(C.recipeCost(a))}</button></div>`}`, 'entry', key, true);
+  { const g = dreamGoal(a), on = S.dream && S.dream.key === key; $('#sheet').insertAdjacentHTML('beforeend', g ? `<div class="row" style="margin-top:8px">${on ? `<button class="btn" data-a="dreamoff">🌟 목표 구피 그만두기</button><button class="btn go" data-a="dreampath">🧭 가는 길 보기</button>` : `<button class="btn ad" data-a="dreamset" data-id="${key}">🌟 이 구피를 목표로 · 가는 길 찾기</button>`}</div>` : '<p class="note" style="text-align:center">플래티넘·전설은 아주 드문 돌연변이라 길을 정할 수 없어요</p>'); }
   if (s) setTimeout(() => coach('known', [{ el: () => $('#modal [data-a=buyknown]'), t: '🛒 다시 데려오기', x: '만난 품종은 언제든 데려와요.' }]), 350);
 }
+/* 🌟 목표 구피: 사진첩에서 하나 골라 거기까지 가는 길을 늘 띄워 둔다 */
+function dreamGoal(a) { const p = a.ph; if (p.plat) return null; const g = { color: p.color }; if (p.albino) g.albino = true; else if (a.page === 'trait') { if (p.metal) g.metal = true; if (p.bigd) g.bigd = true; if (p.fin) { g.fin = p.fin; g.tail = 'delta'; } } else { g.tail = p.tail; g.pat = p.pat; } return g; }
+function dreamBox() { const d = S.dream; if (!d) return 0; for (let i = 0; i < S.boxes; i++) if (JSON.stringify((S.boxGoal || {})[i]) === JSON.stringify(d.g)) return i; for (let i = 0; i < S.boxes; i++) if (!C.at(S, 'box' + i).filter(x => !x.sep).length) return i; return 0; }
+function dreamChip() { const c = $('#dream'); if (!c) return; const d = S.dream; c.style.display = d && !DECO_MODE && !(TUT.on && !TUT.coach) ? '' : 'none'; if (!d) return; const a = C.ALBUM_BY[d.key]; if (c.dataset.k !== d.key) { c.dataset.k = d.key; c.innerHTML = `${phSVG(a.ph, 'm')}<b>🌟</b>`; } }
 function showAuto() {
   const A = S.auto, sw = (k, t, d) => `<div class="opt" data-a="autok" data-k="${k}"><div><b>${t}</b><small>${d}</small></div><span class="sw ${A[k] ? 'on' : ''}"></span></div>`;
   openSheet(head('🤖 자동 관리', 'fishes') + `${tip('auto', '매일 규칙대로 처리해요. ★보호·임신·번식통 구피는 빼요.')}
@@ -2482,7 +2490,8 @@ function showPath(g, back) {
   if (r.missing.length) steps = `<div class="ps no">🔒 <b>${r.missing.join(', ')}</b> 형질을 가진 구피가 있어야 해요</div>`;
   else if (!r.steps.length) steps = `<div class="ps no">${r.far ? '지금 구피로는 두 세대 안에 닿기 어려워요 · 형질을 가진 구피를 더 들여 보세요' : '짝지을 다 자란 수컷·암컷이 필요해요'}</div>`;
   else steps = r.steps.map((st, k) => `<div class="ps"><span class="pn">${k + 1}세대</span>${st.sib ? '<span class="pf sib">🐣 1세대 새끼끼리</span>' : `${mini(st.m)}<b class="x">×</b>${mini(st.f)}`}<span class="ar">→</span><span class="po"><b>${st.out}</b><small>${Math.round(st.p * 100)}%</small></span></div>`).join('<div class="pd">↓</div>');
-  notice(`<h3 style="font-family:'Gowun Dodum'">🧭 ${C.goalText(g)}</h3>
+  const isDream = S.dream && JSON.stringify(S.dream.g) === JSON.stringify(g);
+  notice(`<h3 style="font-family:'Gowun Dodum'">${isDream ? '🌟' : '🧭'} ${C.goalText(g)}</h3>${isDream ? `<div class="big" style="max-height:110px">${phSVG(C.ALBUM_BY[S.dream.key].ph, 'm')}</div>` : ''}
     <p class="note" style="margin:0 2px 8px">가진 구피로 가는 길이에요 · 재료 구피가 떠나면 다시 계산돼요</p>
     <div class="psteps">${steps}</div><h5 class="bh"><span>🔍 재료 스캔</span></h5>${items || '<p class="note">조건이 없어요</p>'}
     <div class="row">${back != null ? `<button class="btn" data-a="boxgoal" data-id="${back}">◀ 목표</button>` : ''}${r.steps.length && !r.steps[0].sib && back != null ? `<button class="btn go" data-a="pathput" data-id="${back}" data-m="${r.steps[0].m.id}" data-f="${r.steps[0].f.id}">1세대 짝 넣기</button>` : '<button class="btn go" data-a="close">닫기</button>'}</div>`);
@@ -2736,6 +2745,8 @@ function handle(ev, quiet) {
     if (e.t === 'cull') ev.filter(x => x.t === 'mature' && x.box).forEach(x => { if ((e.ids || []).includes(x.id)) { const L = S.boxRes[x.box - 1]; if (L) { const y = L.list.find(z => z.id === x.id); if (y) y.cut = true; } } });
     if (e.t === 'cull' && !quiet) note(`🎯 선별 · ${e.keep}마리 남김${e.cut ? ` · ${e.cut}마리 분양 🪙+${fmt(e.coins)}` : ''}`);
     if (e.t === 'release' && !quiet) note(`🫙 보육통에서 자란 치어 ${e.n}마리가 어항으로 나왔어요`);
+    if (e.t === 'mature' && S.dream) { const f = S.fish.find(x => x.id === e.id); if (f && C.goalMatch(f, S.dream.g)) { const a = C.ALBUM_BY[S.dream.key], days = S.day - (S.dream.day || S.day); S.dream = null; S.money += 100; S.stats.dreams = (S.stats.dreams || 0) + 1; inc += 100;
+      queue(() => { UI.hold = 1; notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🌟 목표 구피를 만들었어요!</h3><div class="big">${fishSVG(f)}</div><p style="text-align:center"><b>${a.name}</b> · ${days}일 걸렸어요<br>보너스 🪙100</p><p class="note" style="text-align:center">📖 사진첩에서 다음 목표 구피를 골라 보세요</p><div class="row"><button class="btn" data-a="close">좋아요</button><button class="btn go" data-a="album">📖 다음 목표 고르기</button></div>`); }); } }
     if (e.t === 'mature' && !quiet && !e.box && !TUT.on) { const f = S.fish.find(x => x.id === e.id); if (f && !f.gacha) (UI.revealQ = UI.revealQ || []).push({ id: f.id, nw: ev.some(x => x.t === 'album' && x.id === f.id) }); }
     if (e.t === 'mature' && !quiet) { const f = S.fish.find(x => x.id === e.id); if (f && f.gacha) { const nw = ev.some(x => x.t === 'album' && x.id === f.id); queue(() => showReveal(f, nw)); } }
     if (e.t === 'birth' && e.where === 'box' && !S.seenBoxBirth && e.ids && e.ids.length) { S.seenBoxBirth = 1; const d = (S.boxDest || {})[e.box] || 'tank'; queue(() => notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🐣 번식통에서 첫 새끼!</h3><div class="big">${miniTank(e.box, true)}</div><div class="recipe"><ul class="help"><li>🚧 점선 오른쪽 칸에서 안전하게 자라요</li><li>🐟 ${d === 'stay' ? '번식통에 계속 둬요' : '3일쯤 크면 알아서 어항으로 나가요'}</li><li>⚙️ 번식통을 누르면 바꿀 수 있어요</li></ul></div><div class="row"><button class="btn go" data-a="close">알겠어요</button></div>`)); }
@@ -2843,6 +2854,9 @@ function act(a, el) {
       const done = () => location.reload(); toast('🔄 새 가게를 여는 중…');
       (CLOUD.ref ? CLOUD.ref.set({ v: txt, t: N.savedAt }).catch(() => { }) : Promise.resolve()).then(() => setTimeout(done, 300)); return; }
     case 'entry': return showEntry(id);
+    case 'dreamset': { const a = C.ALBUM_BY[id], g = dreamGoal(a); if (!g) return; S.dream = { key: id, g, day: S.day }; save(); dreamChip(); toast(`🌟 목표 구피: ${a.name} · 오른쪽 위 🌟를 누르면 언제든 길을 봐요`); const bi = dreamBox(); if (U('goal')) C.setBoxGoal(S, bi, g); save(); return showPath(g, bi); }
+    case 'dreampath': { if (!S.dream) return; return showPath(S.dream.g, dreamBox()); }
+    case 'dreamoff': S.dream = null; save(); dreamChip(); toast('🌟 목표 구피를 내려놓았어요'); return closeSheet();
     case 'fish': closePop(); return showFish(id);
     case 'pick': return showPick(id, el.dataset.sex);
     case 'set': UI[el.dataset.k] = el.dataset.v; return showFishes();
