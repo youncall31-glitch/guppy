@@ -171,6 +171,8 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 .flash{animation:flash 0.9s ease-in-out 3;box-shadow:0 0 0 3px #ffcf4a,0 0 18px 4px rgba(255,207,74,.75)!important;border-radius:12px;position:relative;z-index:5}@keyframes flash{50%{box-shadow:0 0 0 6px #ffcf4a,0 0 26px 8px rgba(255,207,74,.9)}}
 .surp{display:flex;align-items:center;gap:10px;background:#fff6dd;border-radius:12px;padding:9px 11px;margin:0 0 10px}.surp>div{flex:1;display:flex;flex-direction:column}.surp small{font-size:11px;color:#6b5a2a}.surp .btn{flex:none;padding:8px 11px;font-size:12.5px}
 .sfbar{position:sticky;bottom:-14px;background:linear-gradient(transparent,#f4f8f9 30%);padding:14px 0 12px;margin-top:6px;z-index:2}
+.gdr{background:#fff6e6;border-radius:12px;padding:8px 10px;margin:0 0 10px}.gdr b{display:block;font-size:12.5px;margin-bottom:5px}.gdr .chips button{font-size:11.5px;padding:5px 9px}.gdr .chips button:not(.on){opacity:.6;text-decoration:line-through}
+.pill.money{cursor:pointer}
 .sgp{background:#f4f8f9;border-radius:14px;padding:10px 11px;margin:0 0 10px}.sgp.dup{background:#eaf7f1}.sgp.old{background:#f3f0fa}.sgp.prot{background:#fff6e6}.shh b{display:block;font-size:14px}.shh b span{font-weight:600;color:#5a707a;font-size:12px}.shh small{display:block;font-size:11px;color:#5a707a;margin:1px 0 6px}
 .srs{display:flex;flex-direction:column;gap:3px;max-height:30vh;overflow:auto;margin-bottom:8px}.sr{display:flex;align-items:center;gap:8px;font-size:12.5px}.sr i{width:40px;flex:none}.sr i svg{width:40px;height:auto;display:block}.sr b{flex:1;font-weight:600}.sr em{font-style:normal;font-weight:800;color:#1f8a4c}.sr small{font-size:10.5px;color:#8a6a1e}.sgp .btn{width:100%}
 .sfbtn{display:block;width:100%;text-align:left;background:#eef4f5;border:0;border-radius:12px;padding:9px 12px;margin:0 0 10px;font-weight:700;font-size:13px;color:#24434f}.sfbtn small{display:block;font-weight:500;font-size:11px;color:#5a707a}.sfr{margin:0 0 6px}.sfr label{display:block;font-size:11.5px;font-weight:700;color:#5a707a;margin:0 2px 3px}.sfl{max-height:24vh;overflow:auto}
@@ -292,7 +294,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
   <section id="tankwrap">
     <svg id="tank" role="img" aria-label="전시 어항"></svg>
     <div id="hud">
-      <div class="pill money" data-tx="🪙 가진 돈 · 아래는 하루 손님 수입"><span class="mv">🪙 <span id="money">0</span></span><small id="inc"></small></div>
+      <div class="pill money" data-a="sellhub" data-tx="🪙 가진 돈 · 누르면 💰 팔기 정리"><span class="mv">🪙 <span id="money">0</span></span><small id="inc"></small></div>
       <div class="pill day" data-tx="게임 날짜 · 막대가 차면 하루가 지나요"><span id="day">1일째</span><span class="bar"><i id="daybar"></i></span></div>
       <button class="pill" data-a="speed" id="spd" aria-label="속도" data-tx="⏱ 시간 빠르기 바꾸기">×1</button>
       <button class="pill" id="ordBtn" data-a="orders" aria-label="주문" data-tx="📋 손님 주문" style="display:none">📋</button>
@@ -1977,7 +1979,7 @@ function closePop() { if (UI.pop && SW[UI.pop]) SW[UI.pop].hold = false; UI.pop 
 const U = k => C.unl(S, k);
 const UNL_N = { fishes: '🐟 내 구피', boxes: '💞 번식', sell: '💰 팔기', orders: '📋 의뢰', goal: '🎯 번식 목표', album: '📖 사진첩', starter: '🎁 초보 특혜(상점)', shop: '🛒 상점', show: '🖼 전시 어항', auto: '🤖 자동 관리', deco: '🪴 꾸미기', gacha: '🎲 치어 뽑기' };
 const UNL_EL = { fishes: '#dock [data-dock=fishes]', boxes: '#dock [data-dock=boxes]', album: '#dock [data-dock=album]', starter: '#dock [data-dock=shop]', shop: '#dock [data-dock=shop]', orders: '#menuBtn', deco: '#menuBtn' };
-function lockMsg(k) { const g = (S.goal || 0) < C.AP_N; toast(`🔒 ${UNL_N[k] || '이 기능'}은(는) ${g ? `수습 과정을 진행하면 열려요 · 지금 ${(S.goal || 0) + 1}/${C.AP_N}단계` : '목표를 진행하면 열려요'}`); }
+function lockMsg(k) { const g = (S.goal || 0) < C.AP_N; toast(`🔒 ${UNL_N[k] || '이 기능'} · ${g ? `수습 과정을 진행하면 열려요 (지금 ${(S.goal || 0) + 1}/${C.AP_N}단계)` : '목표를 진행하면 열려요'}`); }
 function showUnlocked(keys, grad) {
   if (!keys.length && !grad) return; render();
   const L = keys.map(k => `<li><b>${UNL_N[k] || k}</b></li>`).join('');
@@ -2146,12 +2148,15 @@ function sellMatch() {
   const keep = Object.assign({}, S.market); let coins = 0; L.forEach(f => { coins += C.sellPrice(S, f); const k = C.keyOf(f.ph); S.market[k] = (S.market[k] || 0) + 1; }); S.market = keep;
   return { L, coins, prot };
 }
-/* 💰 팔기 정리: 게임이 먼저 크게 나눠 주고, 묶음째 판다 */
+/* 💰 팔기 정리: 게임이 먼저 크게 나눠 주고, 묶음째 판다 · 🛡 지킬 조건은 체크로 켜고 끈다 */
+const GUARDS = [['last', '하나뿐인 모습'], ['gene', '숨은 유전자'], ['fix', '고정 혈통(2대+)'], ['ord', '📋 의뢰감'], ['fav', '⭐ 즐겨찾기·이름']];
+const guard = () => Object.assign({ last: 1, gene: 1, fix: 1, ord: 1, fav: 1 }, S.guard || {});
+const guardOf = r => /뿐/.test(r) ? 'last' : /숨은/.test(r) ? 'gene' : /의뢰/.test(r) ? 'ord' : 'fav';
 const fixOf = f => Math.max(0, ...Object.values(f.line || {}).map(v => +v || 0));
 function sortSell() {
   const P = sellPool(), byLook = {}, out = { dup: [], old: [], one: [], prot: [] };
   P.forEach(f => { const k = label(f) + '|' + f.sex; (byLook[k] = byLook[k] || []).push(f); });
-  const why = new Map(); P.forEach(f => { const R = whyPrecious(f); if (fixOf(f) >= 2) R.push(`🧬 고정 ${fixOf(f)}대 혈통`); if (R.length) why.set(f.id, R); });
+  const G = guard(), why = new Map(); P.forEach(f => { const R = whyPrecious(f).filter(r => G[guardOf(r)]); if (G.fix && fixOf(f) >= 2) R.push(`🧬 고정 ${fixOf(f)}대 혈통`); if (R.length) why.set(f.id, R); });
   Object.values(byLook).forEach(A => {
     A.sort((a, b) => C.sellPrice(S, b) - C.sellPrice(S, a));
     A.forEach((f, i) => { if (why.has(f.id)) out.prot.push(f); else if (f.age > f.life * .75) out.old.push(f); else if (i > 0) out.dup.push(f); else out.one.push(f); });
@@ -2166,7 +2171,9 @@ function sellRows(L, why) {
 function showSellHub() {
   const { out, why, est } = sortSell(), sec = (k, ic, t, d, L, btn) => L.length ? `<div class="sgp ${k}"><div class="shh"><b>${ic} ${t} <span>${L.length}마리</span></b><small>${d}</small></div><div class="srs">${sellRows(L, k === 'prot' ? why : null)}</div>${btn ? `<button class="btn ${k === 'dup' ? 'go' : 'sell'}" data-a="hubsell" data-k="${k}">${btn} ${L.length}마리 팔기 · 🪙${fmt(est(L))}</button>` : ''}</div>` : '';
   const none = !out.dup.length && !out.old.length && !out.one.length;
-  openSheet(head('💰 팔기 정리', 'fishes') + `<p class="note" style="margin:0 2px 10px">⏸ 보는 동안 시간이 멈춰요 · 임신 중 · 번식통 · 전시 어항 아이는 여기 없어요</p>
+  const G = guard();
+  openSheet(head('💰 팔기 정리', 'fishes') + `<p class="note" style="margin:0 2px 8px">⏸ 보는 동안 시간이 멈춰요 · 임신 중 · 번식통 · 전시 어항 아이는 여기 없어요</p>
+    <div class="gdr"><b>🛡 팔지 않고 지킬 아이</b><div class="chips">${GUARDS.map(([k, n]) => `<button class="${G[k] ? 'on' : ''}" data-a="guard" data-k="${k}">${G[k] ? '☑' : '☐'} ${n}</button>`).join('')}</div></div>
     ${sec('dup', '🔁', '같은 모습이 여러 마리', '모습마다 가장 값진 한 마리는 남기고 나머지', out.dup, '남는')}
     ${sec('old', '🌙', '나이 든 아이', '곧 떠날 아이들 · 하나뿐인 모습은 아래 🛡에 있어요', out.old, '나이 든')}
     ${sec('one', '🐟', '모습별 한 마리씩', '같은 모습이 번식통·전시 어항에도 있어서 팔아도 모습은 남아요', out.one, '이것도')}
@@ -2803,7 +2810,7 @@ async function cloudInit() {
 }
 
 /* ---------- 입력 ---------- */
-const ACT_LK = { fishes: 'fishes', boxes: 'boxes', album: 'album', orders: 'orders', boxgoal: 'goal', sell: 'sell', sellf: 'sell', sellhub: 'sell', hubsell: 'sell', surpask: 'sell', revsell: 'sell', selmode: 'sell', decomode: 'deco', autoset: 'auto', gacha: 'gacha', gachaad: 'gacha', gachatk: 'gacha', buyshow: 'show', newtank: 'shop', founder: 'shop' };
+const ACT_LK = { fishes: 'fishes', boxes: 'boxes', album: 'album', orders: 'orders', boxgoal: 'goal', sell: 'sell', sellf: 'sell', sellhub: 'sell', hubsell: 'sell', guard: 'sell', surpask: 'sell', revsell: 'sell', selmode: 'sell', decomode: 'deco', autoset: 'auto', gacha: 'gacha', gachaad: 'gacha', gachatk: 'gacha', buyshow: 'show', newtank: 'shop', founder: 'shop' };
 function act(a, el) {
   if (a === 'shop' && !U('shop') && !U('starter')) return lockMsg('shop');
   if (ACT_LK[a] && !U(ACT_LK[a])) return lockMsg(ACT_LK[a]);
@@ -2856,7 +2863,8 @@ function act(a, el) {
     case 'oldpair': { const f = S.fish.find(x => x.id === id); if (!f) return closeSheet(); let bi = -1; for (let i = 0; i < S.boxes; i++) if (!C.at(S, 'box' + i).filter(x => !x.sep).length) { bi = i; break; }
       if (bi < 0) { toast('빈 번식통이 없어요 · 번식통 하나를 비우거나 🛒 늘려요'); return showBoxes(); } const r = C.moveTo(S, f.id, 'box' + bi); if (r) return toast(r); save(); render(); return showPick(bi, f.sex === 'm' ? 'f' : 'm'); }
     case 'sellf': return showSellF();
-    case 'sellhub': return showSellHub();
+    case 'sellhub': return UI.sheet === 'sellhub' ? closeSheet() : showSellHub();
+    case 'guard': { const G = guard(); G[el.dataset.k] = G[el.dataset.k] ? 0 : 1; S.guard = G; save(); return showSellHub(); }
     case 'hubsell': { const { out } = sortSell(), L = out[el.dataset.k] || []; let tot = 0, n = 0; L.forEach(f => { const p = C.sell(S, f.id); if (typeof p === 'number') { tot += p; n++; } }); if (n) { toast(`💰 ${n}마리를 🪙${fmt(tot)}에 팔았어요`); floatMoney(tot); } save(); render(); return showSellHub(); }
     case 'revsell': { const f = S.fish.find(x => x.id === id); if (!f) return; const R = whyPrecious(f);
       if (R.length && !el.dataset.sure) { el.dataset.sure = 1; el.classList.add('warn'); el.textContent = '⚠️ ' + R[0].replace(/ · .*/, '') + ' · 한 번 더 누르면 팔아요'; return; }
@@ -2977,7 +2985,7 @@ document.addEventListener('click', e => {
   if (fishEl && dragged > 6) return;
   if (fishEl) { const id = +fishEl.dataset.id; return UI.pop === id ? closePop() : openPop(id); }
   const b = e.target.closest('[data-a]');
-  if (!b) { if (e.target.id === 'modal') return closeSheet(); if (UI.pop && !e.target.closest('#pop') && dragged <= 6) closePop(); return; }
+  if (!b) { if (e.target.id === 'modal') { const r = $('.pill.money').getBoundingClientRect(); if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) return act('sellhub', $('.pill.money')); return closeSheet(); } if (UI.pop && !e.target.closest('#pop') && dragged <= 6) closePop(); return; }
   act(b.dataset.a, b);
 });
 addEventListener('resize', () => { layout(); });
