@@ -914,10 +914,10 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
   const orderText = o => [o.born && '가게에서 태어난', o.metal && '메탈', o.albino && '알비노', o.color && COLORS[o.color].n, o.pat && PATS[o.pat].n, o.bigd && '빅도살', o.fin && FINS[o.fin].n, o.tail && TAILS[o.tail].n, o.sex ? (o.sex === 'm' ? '수컷' : '암컷') : '구피', o.star && `· 꼬리 ${'★'.repeat(o.star)} 이상`].filter(Boolean).join(' ');
   const orderMatches = (S, o) => S.fish.filter(f => isAdult(f) && !f.sick && !f.fav && !f.preg && !frozen(S, f) && !isParent(f) && (!o.sex || f.sex === o.sex) && (!o.color || f.ph.color === o.color) && (!o.tail || f.ph.tail === o.tail) && (!o.pat || f.ph.pat === o.pat) && tailStar(f) >= (o.star || 0)
     && (!o.metal || f.ph.metal) && (!o.bigd || f.ph.bigd) && (!o.albino || f.ph.albino) && (!o.fin || f.ph.fin === o.fin) && (!o.born || bornHere(S, f)));
-  function fulfil(S, oid) {
+  function fulfil(S, oid, pick) {
     const i = (S.orders || []).findIndex(o => o.id === oid); if (i < 0) return { err: '없는 주문이에요' };
     const o = S.orders[i], m = orderMatches(S, o); if (!m.length) return { err: '조건에 맞는 구피가 없어요' };
-    const f = m.reduce((a, b) => sellPrice(S, b) < sellPrice(S, a) ? b : a);   // 맞는 구피 중 가장 싼 아이를 보낸다
+    const f = (pick && m.find(x => x.id === pick)) || m.reduce((a, b) => sellPrice(S, b) < sellPrice(S, a) ? b : a);   // 고른 아이, 아니면 맞는 구피 중 가장 싼 아이
     S.fish = S.fish.filter(x => x !== f); S.money += o.reward; S.rep = (S.rep || 0) + o.rep; S.stats.earned += o.reward; S.stats.orders = (S.stats.orders || 0) + 1;
     S.orders.splice(i, 1); log(S, `📋 ${o.who}에게 ${nameOf(f.ph)}을(를) 보냈다 · 🪙+${o.reward} ⭐+${o.rep}`);
     return { f, o };
@@ -2120,12 +2120,13 @@ function spawnCustomers(e) {
 }
 /* 남는 구피: 같은 모습(품종)마다 가장 좋은 ♂♀ 한 쌍만 남기고 나머지. 의뢰에 맞는 아이·즐겨찾기·이름 붙인 아이·부모·임신 중·번식통·전시 어항은 건드리지 않는다 */
 /* 소중한 아이: 팔거나 떠나보내면 되돌릴 수 없는 경우만 */
+const ALL_AL = [['tail', 'r', '라운드'], ['tail', 'd', '델타'], ['color', 'g', '그레이'], ['color', 'b', '블루'], ['color', 'r', '레드'], ['color', 'o', '탠저린'], ['pat', 'n', '무지'], ['pat', 'k', '코브라'], ['pat', 'h', '하프블랙']];
 const RARE_AL = [['alb', 'a', '알비노'], ['plat', 'P', '플래티넘'], ['met', 'T', '메탈'], ['dor', 'b', '빅도살'], ['color', 'y', '옐로'], ['color', 'u', '퍼플'], ['color', 'e', '에메랄드'], ['color', 'k', '모스코 블랙'], ['tail', 's', '더블소드'], ['tail', 'v', '베일테일'], ['pat', 'm', '모자이크'], ['pat', 'q', '그라스'], ['fin', 'w', '스왈로우'], ['fin', 'e', '덤보이어'], ['fin', 'r', '리본']];
 function whyPrecious(f, others) {
   const O = (others || S.fish).filter(x => x.id !== f.id), R = [], gl = (x, l) => x.g[l] || C.GDEF[l] || [];
   if (C.isAdult(f) && !O.some(x => C.isAdult(x) && C.keyOf(x.ph) === C.keyOf(f.ph))) R.push('이 모습은 이 아이뿐이에요');
-  const last = RARE_AL.filter(([l, a]) => gl(f, l).includes(a) && !O.some(x => gl(x, l).includes(a))).map(x => x[2]);
-  if (last.length) R.push(`숨은 ${last.slice(0, 3).join('·')} 유전자를 가진 마지막 아이예요`);
+  const last = RARE_AL.concat(ALL_AL).filter(([l, a]) => gl(f, l).includes(a) && !O.some(x => gl(x, l).includes(a))).map(x => x[2]);
+  if (last.length) R.push(`${last.slice(0, 3).join('·')} 유전자를 가진 마지막 아이예요`);
   const od = (S.orders || []).find(o => C.orderMatches(S, o).some(x => x.id === f.id)); if (od) R.push(`📋 ${od.who} 의뢰에 맞아요 · 보내면 🪙${fmt(od.reward)}`);
   if (f.fav) R.push('⭐ 즐겨찾기한 아이예요'); else if (f.nick) R.push(`이름(${f.nick})을 붙여 준 아이예요`);
   return R;
@@ -2995,7 +2996,12 @@ function act(a, el) {
     case 'photoshare': { (async () => { try { const b = await (await fetch(UI.photo)).blob(), fl = new File([b], 'guppy.png', { type: 'image/png' });
         if (navigator.canShare && navigator.canShare({ files: [fl] })) await navigator.share({ files: [fl], title: '내 구피', text: '작은 어항 구피 가게에서 키운 구피예요 🐟' }); else toast('이 기기에선 바로 공유가 안 돼요 · 저장 후 공유해 주세요'); } catch (e) { } })(); return; }
     case 'orders': return showOrders();
-    case 'fulfil': { const r = C.fulfil(S, +el.dataset.id); if (r.err) return toast(r.err); floatMoney(r.o.reward); toast(`📦 ${r.o.who}에게 보냈어요 · 🪙+${r.o.reward} ⭐+${r.o.rep}`); save(); render(); return (S.orders || []).length ? showOrders() : closeSheet(); }
+    case 'fulfil': { const o = (S.orders || []).find(x => x.id === +el.dataset.id); if (!o) return;
+      const M = C.orderMatches(S, o).sort((a, b) => C.sellPrice(S, a) - C.sellPrice(S, b)), why = f => whyPrecious(f).filter(r => !r.startsWith('📋')), safe = M.find(f => !why(f).length);
+      const pick = el.dataset.pick ? +el.dataset.pick : safe ? safe.id : null;
+      if (!pick && M.length) { const f = M[0]; UI.hold = 1; return notice(`<h3 style="font-family:'Gowun Dodum'">잠깐, 이 아이를 보낼까요?</h3><div class="big">${fishSVG(f)}</div><ul class="help">${why(f).map(r => `<li>${r}</li>`).join('')}</ul><p class="note" style="text-align:center">사진첩에 있어도 지금 가진 아이가 사라지면 다시 만들기 어려워요</p>
+        <div class="row"><button class="btn" data-a="orders">남길게요</button><button class="btn go" data-a="fulfil" data-id="${o.id}" data-pick="${f.id}">그래도 보내기 · 🪙${fmt(o.reward)}</button></div>`); }
+      const r = C.fulfil(S, +el.dataset.id, pick); if (r.err) return toast(r.err); floatMoney(r.o.reward); toast(`📦 ${r.o.who}에게 보냈어요 · 🪙+${r.o.reward} ⭐+${r.o.rep}`); save(); render(); return (S.orders || []).length ? showOrders() : closeSheet(); }
     case 'gacha': { const r = C.gacha(S, Math.random, false); if (r.err) return toast(r.err); save(); render(); return showGacha(r); }
     case 'gachatk': { const r = C.gacha(S, Math.random, 'ticket'); if (r.err) return toast(r.err); save(); render(); return showGacha(r); }
     case 'gachaad': return fakeAd('하루 한 번 무료 치어 뽑기', () => { const r = C.gacha(S, Math.random, true); if (r.err) return toast(r.err); S.freeDate = new Date().toDateString(); save(); render(); showGacha(r); });
