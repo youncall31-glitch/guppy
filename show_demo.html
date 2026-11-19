@@ -173,6 +173,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 .sfbar{position:sticky;bottom:-14px;background:linear-gradient(transparent,#f4f8f9 30%);padding:14px 0 12px;margin-top:6px;z-index:2}
 .gdr{background:#fff6e6;border-radius:12px;padding:8px 10px;margin:0 0 10px}.gdr b{display:block;font-size:12.5px;margin-bottom:5px}.gdr .chips button{font-size:11.5px;padding:5px 9px}.gdr .chips button:not(.on){opacity:.6;text-decoration:line-through}
 .pill.money{cursor:pointer}
+.sr{cursor:pointer;border-radius:8px;padding:1px 4px}.sr.on{background:rgba(31,138,76,.13)}.sr u{text-decoration:none;font-size:13px;color:#1f8a4c;width:14px}.mvr{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:7px}.mvr span{font-size:11px;color:#5a707a;font-weight:700}.mvr button{border:0;border-radius:999px;background:#e3eef1;color:#24434f;font-size:11.5px;font-weight:700;padding:5px 10px}.mvr button.cur{opacity:.45}.hsb{flex-direction:column;align-items:stretch;gap:6px;background:#fff!important;border-radius:14px;box-shadow:0 -4px 18px rgba(0,0,0,.12);padding:10px!important}.hsbt{display:flex;align-items:center;justify-content:space-between}.hsbt .btn{flex:none;width:auto!important}.sr i.wh{width:auto;font-style:normal;font-size:10.5px;color:#5a707a;background:#e3eef1;border-radius:6px;padding:1px 5px}
 .sgp{background:#f4f8f9;border-radius:14px;padding:10px 11px;margin:0 0 10px}.sgp.dup{background:#eaf7f1}.sgp.old{background:#f3f0fa}.sgp.prot{background:#fff6e6}.shh b{display:block;font-size:14px}.shh b span{font-weight:600;color:#5a707a;font-size:12px}.shh small{display:block;font-size:11px;color:#5a707a;margin:1px 0 6px}
 .srs{display:flex;flex-direction:column;gap:3px;max-height:30vh;overflow:auto;margin-bottom:8px}.sr{display:flex;align-items:center;gap:8px;font-size:12.5px}.sr i{width:40px;flex:none}.sr i svg{width:40px;height:auto;display:block}.sr b{flex:1;font-weight:600}.sr em{font-style:normal;font-weight:800;color:#1f8a4c}.sr small{font-size:10.5px;color:#8a6a1e}.sgp .btn{width:100%}
 .sfbtn{display:block;width:100%;text-align:left;background:#eef4f5;border:0;border-radius:12px;padding:9px 12px;margin:0 0 10px;font-weight:700;font-size:13px;color:#24434f}.sfbtn small{display:block;font-weight:500;font-size:11px;color:#5a707a}.sfr{margin:0 0 6px}.sfr label{display:block;font-size:11.5px;font-weight:700;color:#5a707a;margin:0 2px 3px}.sfl{max-height:24vh;overflow:auto}
@@ -2164,12 +2165,15 @@ function sortSell() {
   const est = L => { const keep = Object.assign({}, S.market); let c = 0; L.forEach(f => { c += C.sellPrice(S, f); const k = C.keyOf(f.ph); S.market[k] = (S.market[k] || 0) + 1; }); S.market = keep; return c; };
   return { out, why, est };
 }
-function sellRows(L, why) {
-  const G = {}; L.forEach(f => { const k = label(f) + '|' + f.sex; (G[k] = G[k] || { f, n: 0 }).n++; });
-  return Object.values(G).map(({ f, n }) => `<div class="sr"><i>${phSVG(f.ph, f.sex)}</i><b>${label(f)} ${sexI(f)}</b>${n > 1 ? `<em>×${n}</em>` : ''}${why && why.get(f.id) ? `<small>${why.get(f.id).map(r => /뿐/.test(r) ? '하나뿐' : /숨은/.test(r) ? '숨은 유전자' : /의뢰/.test(r) ? '📋 의뢰감' : /즐겨/.test(r) ? '⭐' : /이름/.test(r) ? '이름' : /고정/.test(r) ? r.replace('🧬 ', '').replace(' 혈통', '') : '').filter(Boolean).join(' · ')}</small>` : ''}</div>`).join('');
+function sellRows(L, why, sec) {
+  const G = {}; L.forEach(f => { const k = label(f) + '|' + f.sex; (G[k] = G[k] || { f, n: 0, k, at: new Set() }).n++; G[k].at.add(f.loc); });
+  const where = A => { if (S.tanks.length < 2) return ''; if (A.size > 1) return '여러 곳'; const l = [...A][0]; return l === 'nursery' ? '보육통' : l.startsWith('tank') ? '1자 ' + S.tanks.slice(0, +l.slice(4) + 1).filter(x => !x.show).length : ''; };
+  return Object.values(G).map(({ f, n, k, at }) => `<div class="sr ${UI.hsel && UI.hsel.has(sec + ':' + k) ? 'on' : ''}" data-a="hsel" data-k="${encodeURIComponent(sec + ':' + k)}"><u>${UI.hsel && UI.hsel.has(sec + ':' + k) ? '☑' : '☐'}</u><i>${phSVG(f.ph, f.sex)}</i><b>${label(f)} ${sexI(f)}</b>${where(at) ? `<i class="wh">${where(at)}</i>` : ''}${n > 1 ? `<em>×${n}</em>` : ''}${why && why.get(f.id) ? `<small>${why.get(f.id).map(r => /뿐/.test(r) ? '하나뿐' : /숨은/.test(r) ? '숨은 유전자' : /의뢰/.test(r) ? '📋 의뢰감' : /즐겨/.test(r) ? '⭐' : /이름/.test(r) ? '이름' : /고정/.test(r) ? r.replace('🧬 ', '').replace(' 혈통', '') : '').filter(Boolean).join(' · ')}</small>` : ''}</div>`).join('');
 }
+const tankBtns = attr => S.tanks.map((t, j) => `<button class="${j === S.cur ? 'cur' : ''}" ${attr} data-t="${j}">${t.show ? '🖼 ' + C.THEMES[t.theme].n : '🐟 1자 ' + (S.tanks.slice(0, j + 1).filter(x => !x.show).length)}</button>`).join('');
+function hubPicked() { const { out } = sortSell(), ids = []; Object.entries(out).forEach(([sec, L]) => L.forEach(f => { if (UI.hsel && UI.hsel.has(sec + ':' + label(f) + '|' + f.sex)) ids.push(f.id); })); return ids; }
 function showSellHub() {
-  const { out, why, est } = sortSell(), sec = (k, ic, t, d, L, btn) => L.length ? `<div class="sgp ${k}"><div class="shh"><b>${ic} ${t} <span>${L.length}마리</span></b><small>${d}</small></div><div class="srs">${sellRows(L, k === 'prot' ? why : null)}</div>${btn ? `<button class="btn ${k === 'dup' ? 'go' : 'sell'}" data-a="hubsell" data-k="${k}">${btn} ${L.length}마리 팔기 · 🪙${fmt(est(L))}</button>` : ''}</div>` : '';
+  UI.hsel = UI.hsel || new Set(); const { out, why, est } = sortSell(), sec = (k, ic, t, d, L, btn) => L.length ? `<div class="sgp ${k}"><div class="shh"><b>${ic} ${t} <span>${L.length}마리</span></b><small>${d}</small></div><div class="srs">${sellRows(L, k === 'prot' ? why : null, k)}</div>${btn ? `<button class="btn ${k === 'dup' ? 'go' : 'sell'}" data-a="hubsell" data-k="${k}">${btn} ${L.length}마리 팔기 · 🪙${fmt(est(L))}</button>` : ''}<div class="mvr"><span>모두 옮기기</span>${tankBtns(`data-a="hubmove" data-k="${k}"`)}</div></div>` : '';
   const none = !out.dup.length && !out.old.length && !out.one.length;
   const G = guard();
   openSheet(head('💰 팔기 정리', 'fishes') + `<p class="note" style="margin:0 2px 8px">⏸ 보는 동안 시간이 멈춰요 · 임신 중 · 번식통 · 전시 어항 아이는 여기 없어요</p>
@@ -2179,7 +2183,9 @@ function showSellHub() {
     ${sec('one', '🐟', '모습별 한 마리씩', '같은 모습이 번식통·전시 어항에도 있어서 팔아도 모습은 남아요', out.one, '이것도')}
     ${sec('prot', '🛡', '지켜 둘 아이', '하나뿐인 모습 · 숨은 유전자 · 고정 혈통 · 의뢰감 · 즐겨찾기 · 팔려면 하나씩 눌러 팔아요', out.prot, '')}
     ${none ? '<p class="empty">지금은 팔 만한 아이가 없어요 · 모두 지켜 둘 아이예요</p>' : ''}
-    <button class="sfbtn" data-a="sellf">🔧 직접 조건 골라 팔기</button>`, 'sellhub', null, true);
+    <button class="sfbtn" data-a="sellf">🔧 직접 조건 골라 팔기</button>
+    ${(() => { const ids = hubPicked(); if (!ids.length) return '<p class="note" style="text-align:center">줄을 눌러 골라서 팔거나 다른 어항으로 옮길 수도 있어요</p>'; const L = ids.map(i => S.fish.find(f => f.id === i)).filter(Boolean);
+      return `<div class="row sfbar hsb"><div class="hsbt"><b>☑ ${L.length}마리 고름</b><button class="btn sm" data-a="hselclr">해제</button></div><button class="btn sell" data-a="hselsell">💰 팔기 · 🪙${fmt(est(L))}</button><div class="mvr"><span>옮기기</span>${tankBtns('data-a="hselmove"')}</div></div>`; })()}`, 'sellhub', null, true);
 }
 function showSellF() {
   UI.sf = UI.sf || { sex: 'all', color: '', tail: '', pat: '', star: 0, old: false, keep: true };
@@ -2234,10 +2240,10 @@ function askShow(ti, retry) {
   notice(`<h3 style="font-family:'Gowun Dodum'">🖼 전시 어항에 넣을까요?</h3><div class="recipe"><ul class="help"><li>❄️ 늙지도 죽지도 않아요</li><li>😊 손님 수입이 커요</li><li>🚫 다시 빼거나 교배할 수 없어요</li><li>🛒 교배용은 📖 사진첩에서 데려와요</li></ul></div><div class="row"><button class="btn" data-a="close">취소</button><button class="btn go" data-a="showok">넣을게요</button></div>`);
   return true;
 }
-function moveMany(ids, ti) {
-  if (askShow(ti, () => moveMany(ids, ti))) return;
+function moveMany(ids, ti, back) {
+  if (askShow(ti, () => moveMany(ids, ti, back))) return;
   let ok = 0, full = 0; ids.forEach(id => { const r = C.moveTo(S, id, 'tank' + ti); if (r) full++; else ok++; });
-  toast(`🐟 ${ok}마리를 ${C.SIZES[S.tanks[ti].size].n} 어항${S.tanks.length > 1 ? ti + 1 : ''}으로 옮겼어요${full ? ` · ${full}마리는 자리가 없어 못 옮겼어요` : ''}`); save(); render(); showFishes();
+  toast(`🐟 ${ok}마리를 ${C.SIZES[S.tanks[ti].size].n} 어항${S.tanks.length > 1 ? ti + 1 : ''}으로 옮겼어요${full ? ` · ${full}마리는 자리가 없어 못 옮겼어요` : ''}`); save(); render(); back ? back() : showFishes();
 }
 function showFish(id, keep) {
   const f = S.fish.find(x => x.id === id); if (!f) { if (keep) return showFishes(); return; }
@@ -2810,7 +2816,7 @@ async function cloudInit() {
 }
 
 /* ---------- 입력 ---------- */
-const ACT_LK = { fishes: 'fishes', boxes: 'boxes', album: 'album', orders: 'orders', boxgoal: 'goal', sell: 'sell', sellf: 'sell', sellhub: 'sell', hubsell: 'sell', guard: 'sell', surpask: 'sell', revsell: 'sell', selmode: 'sell', decomode: 'deco', autoset: 'auto', gacha: 'gacha', gachaad: 'gacha', gachatk: 'gacha', buyshow: 'show', newtank: 'shop', founder: 'shop' };
+const ACT_LK = { fishes: 'fishes', boxes: 'boxes', album: 'album', orders: 'orders', boxgoal: 'goal', sell: 'sell', sellf: 'sell', sellhub: 'sell', hubsell: 'sell', guard: 'sell', hselsell: 'sell', surpask: 'sell', revsell: 'sell', selmode: 'sell', decomode: 'deco', autoset: 'auto', gacha: 'gacha', gachaad: 'gacha', gachatk: 'gacha', buyshow: 'show', newtank: 'shop', founder: 'shop' };
 function act(a, el) {
   if (a === 'shop' && !U('shop') && !U('starter')) return lockMsg('shop');
   if (ACT_LK[a] && !U(ACT_LK[a])) return lockMsg(ACT_LK[a]);
@@ -2864,6 +2870,13 @@ function act(a, el) {
       if (bi < 0) { toast('빈 번식통이 없어요 · 번식통 하나를 비우거나 🛒 늘려요'); return showBoxes(); } const r = C.moveTo(S, f.id, 'box' + bi); if (r) return toast(r); save(); render(); return showPick(bi, f.sex === 'm' ? 'f' : 'm'); }
     case 'sellf': return showSellF();
     case 'sellhub': return UI.sheet === 'sellhub' ? closeSheet() : showSellHub();
+    case 'hsel': { UI.hsel = UI.hsel || new Set(); const k = decodeURIComponent(el.dataset.k); UI.hsel.has(k) ? UI.hsel.delete(k) : UI.hsel.add(k); return showSellHub(); }
+    case 'hselclr': UI.hsel = new Set(); return showSellHub();
+    case 'hubmove': { const { out } = sortSell(); return moveMany((out[el.dataset.k] || []).map(f => f.id), +el.dataset.t, showSellHub); }
+    case 'hselmove': { const ids = hubPicked(); UI.hsel = new Set(); return moveMany(ids, +el.dataset.t, showSellHub); }
+    case 'hselsell': { const ids = hubPicked(), pr = ids.filter(i => { const f = S.fish.find(x => x.id === i); return f && whyPrecious(f, S.fish.filter(x => !ids.includes(x.id) || x.id === i)).length; });
+      if (pr.length && !el.dataset.sure) { el.dataset.sure = 1; el.textContent = `⚠️ 지켜 둘 아이 ${pr.length}마리 포함 · 한 번 더 누르면 팔아요`; return; }
+      let tot = 0, n = 0; ids.forEach(i => { const p = C.sell(S, i); if (typeof p === 'number') { tot += p; n++; } }); UI.hsel = new Set(); if (n) { toast(`💰 ${n}마리를 🪙${fmt(tot)}에 팔았어요`); floatMoney(tot); } save(); render(); return showSellHub(); }
     case 'guard': { const G = guard(); G[el.dataset.k] = G[el.dataset.k] ? 0 : 1; S.guard = G; save(); return showSellHub(); }
     case 'hubsell': { const { out } = sortSell(), L = out[el.dataset.k] || []; let tot = 0, n = 0; L.forEach(f => { const p = C.sell(S, f.id); if (typeof p === 'number') { tot += p; n++; } }); if (n) { toast(`💰 ${n}마리를 🪙${fmt(tot)}에 팔았어요`); floatMoney(tot); } save(); render(); return showSellHub(); }
     case 'revsell': { const f = S.fish.find(x => x.id === id); if (!f) return; const R = whyPrecious(f);
