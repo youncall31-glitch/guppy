@@ -131,6 +131,10 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 .slot.full{border-style:solid;border-color:#cfe1df;background:#fff;color:var(--ink)}
 .slot svg{width:80px;height:42px}
 .fsel{display:flex;gap:6px;margin:0 0 10px}.fsel select{flex:1;min-width:0;padding:7px 6px;border-radius:10px;border:1px solid #d5e0e3;background:#fff;font-size:13px}
+.grp{background:#fff;border-radius:14px;margin:0 0 8px;box-shadow:0 1px 3px rgba(20,58,79,.08);border:2px solid transparent;overflow:hidden}.grp.tr.r{border-color:#7fb6e8}.grp.tr.e{border-color:#b892e6}.grp.tr.l{border-color:#e8b923}
+.gh{display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer}.gh .gp{width:78px;height:40px;flex:none;background:linear-gradient(#e6f3f6,#d4e9ee);border-radius:9px;display:flex;align-items:center;justify-content:center}.gh .gp svg{width:92%;height:36px}
+.gh .gt{flex:1;min-width:0}.gh .gt b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gh .gt small{color:#6b7f86;font-size:12px}.gh .gn{text-align:right;font-size:12.5px;color:#36515b;white-space:nowrap}.gh .gn b{font-size:15px;color:#143a4f}.gh .tbd{position:static;margin-left:4px;vertical-align:1px}
+.gb{padding:0 8px 8px}.gb .mv{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 8px}.gb .mv .btn{padding:5px 9px;font-size:12px}
 .kind{margin:0 0 12px}.kh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 2px}.kh b{font-size:14px}.kh small{color:#7a8b91}.kh .mv{margin-left:auto;display:flex;gap:4px}.kh .mv .btn{padding:5px 9px;font-size:12px}
 .mvrow{align-items:center;gap:6px;flex-wrap:wrap;position:sticky;bottom:52px;background:#f4f8f9;padding:6px 0}
 .res .ri{display:flex;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid #e6eef0}.res .ri i{width:72px;flex:none}.res .ri i svg{width:72px;height:40px;display:block}.res small{display:block;color:#5b6d74;font-size:12px}
@@ -1495,12 +1499,17 @@ function showFrontG(T) {
   return g;
 }
 let TOP_RES = 60;   // 화면 위에서 어항 테두리까지 비워 둘 높이(px): 돈·날짜 줄만 비우고, 어항 이름·목표 알약은 어항 위에 떠 있게
+// 일반 어항은 크기가 커져도 한 화면에 다 보이게(가로로 밀 필요 없음) · 대신 물고기를 조금 작게 그려 넓어진 느낌을 준다
+// 전시 어항만 넓은 풍경 그림이라 좌우로 밀어서 본다
+const viewW = t => t && t.show ? C.SIZES[t.size].w : 1;
+const FISH_K = [1, .9, .82, .7];
+const fishK = () => { const t = curTank(); return t && !t.show ? FISH_K[t.size] || 1 : 1; };
 function layout() {
   if (VIEWMODE) { VIEW_DIRTY = true; return fitViewer(); }   // 감상 중 화면이 돌아가도 어항은 그대로, 끝낼 때 다시 맞춘다
   const r = $('#tankwrap').getBoundingClientRect(); if (!r.width) return;
   VB.k = 360 / r.width; VB.h = Math.max(300, Math.round(r.height * VB.k)); VB.sand = VB.h - 34; VB.top = 96 * VB.k;
   if (typeof ART_BG !== 'undefined') {
-    const ih = 360 * ART_BG.h / ART_BG.w, W = ART_BG.water, TW = 360 * C.SIZES[curTank().size].w;
+    const ih = 360 * ART_BG.h / ART_BG.w, W = ART_BG.water, TW = 360 * viewW(curTank());
     // 세로로 긴 화면: 물 부분(그림의 20~70%)만 늘려서 어항이 HUD 아래부터 화면 아래까지 차게 한다
     Z0 = 1.12; const hw = VB.h / Z0, wpp = VB.k / Z0, Hn = hw - TOP_RES * wpp - 14 * wpp;
     const VS = Math.max(1, Math.min(2.4, (Hn / ih - .5) / .5)), H2 = ih * (.5 + .5 * VS), iy = VB.h - 14 * wpp - H2;
@@ -1568,7 +1577,7 @@ const DECO_H = { moss: 62, grass: 178, stem: 186, red: 176, anubias: 92, wood_a:
 let DECO_MODE = false;
 function slots() {
   const T = VB.tank; if (!T) return [];
-  const sz = C.SIZES[curTank().size], nb = Math.round(3 * sz.w), nf = Math.round(4 * sz.w), x0 = T.x0 + 12, span = T.x1 - T.x0 - 24, out = [];
+  const sz = { w: viewW(curTank()) }, nb = Math.round(3 * sz.w), nf = Math.round(4 * sz.w), x0 = T.x0 + 12, span = T.x1 - T.x0 - 24, out = [];
   for (let i = 0; i < nb; i++) out.push({ x: x0 + (i + .5) * span / nb, y: T.yf ? T.yf(.8) : T.y + T.h * .8, row: 'back', sc: .8 });
   for (let i = 0; i < nf; i++) out.push({ x: x0 + (i + .5) * span / nf, y: T.yf ? T.yf(.905) : T.y + T.h * .905, row: 'front', sc: 1 });
   return out;
@@ -1603,7 +1612,8 @@ const JUV = 2;                                               // 2일부터 회�
 const JUV_PH = { tail: 'round', color: 'gray', pat: 'plain', albino: false, plat: false };
 const stageOf = f => f.age >= C.MATURE ? 'a' : f.age >= JUV ? 'j' : 'f';
 const SIZE = { m: .75, f: .95, cap: 1.45 };   // 성어 크기 배율(수컷·암컷)과 꼬리 과장 상한
-function sizeOf(f) {   // 화면 배율: 나이에 따라 자라고, 개체마다 ±12%, 암컷이 조금 더 크다
+function sizeOf(f) { return sizeOf0(f) * fishK(); }
+function sizeOf0(f) {   // 화면 배율: 나이에 따라 자라고, 개체마다 ±12%, 암컷이 조금 더 크다
   const h = ((f.id * 2654435761) >>> 0) / 4294967296, ind = .88 + h * .24, a = f.age, M = C.MATURE;
   if (a < JUV) return (.065 + .05 * a / JUV) * (.94 + h * .12);   // 갓 태어난 치어는 어미의 5분의 1 남짓
   const sx = (f.sex === 'f' ? 1.08 : .95) * (SIZE[f.sex] || 1);
@@ -2246,7 +2256,19 @@ function showFishes() {
   if (UI.where === 'nursery' && fry) tools.push('<button class="btn ad" data-a="adgrow">📺 성장 촉진 +2일</button>');
   if (tools.length) h += `<div class="row" style="margin:0 0 10px">${tools.join('')}</div>`;
   const mvBtns = (attr) => S.tanks.map((t, i) => `<button class="btn go" ${attr} data-t="${i}">→ ${C.SIZES[t.size].n}${S.tanks.length > 1 ? i + 1 : ''}</button>`).join('');
-  if (UI.sort === 'kind' && L.length) {   // 품종별로 묶어서 보여 주고, 한 번에 어항을 옮긴다
+  const grouped = !UI.sel && L.length > 0 && (UI.view || (L.length > 12 ? 'group' : 'card')) === 'group';
+  if (L.length > 6 && !UI.sel) h += `<div class="chips" style="margin:-2px 0 8px">${['group', 'card'].map(v => `<button class="${(grouped ? 'group' : 'card') === v ? 'on' : ''}" data-a="set" data-k="view" data-v="${v}">${v === 'group' ? '📦 같은 모습끼리' : '🃏 한 마리씩'}</button>`).join('')}</div>`;
+  if (grouped) {   // 같은 모습끼리 한 줄로 묶는다 · 누르면 펼쳐서 한 마리씩
+    const G = []; L.forEach(f => { const k = C.isAdult(f) ? label(f) : '치어'; let g = G.find(x => x.k === k); if (!g) G.push(g = { k, L: [] }); g.L.push(f); });
+    G.forEach(g => { const ad = g.L.filter(C.isAdult); g.p = ad.map(f => C.sellPrice(S, f)); g.top = Math.max(0, ...g.p); g.t = Math.max(0, ...ad.map(f => C.tierOf(f).tier || 0)); g.rep = ad.find(f => f.sex === 'm') || g.L[0]; });
+    G.sort((a, b) => (a.k === '치어') - (b.k === '치어') || b.t - a.t || b.top - a.top);
+    UI.gopen = UI.gopen || {};
+    h += G.map(g => { const m = g.L.filter(f => f.sex === 'm' && C.isAdult(f)).length, fe = g.L.filter(f => f.sex === 'f' && C.isAdult(f)).length, op = UI.gopen[g.k], tb = g.t ? `<span class="tbd ${TIER_C[g.t]}">${C.TIER_N[g.t]}</span>` : '';
+      const ord = g.L.some(f => C.isAdult(f) && (S.orders || []).some(o => C.orderMatches(S, o).some(x => x.id === f.id))), pg = g.L.filter(f => f.preg).length;
+      const sub = g.k === '치어' ? '자라면 모습이 드러나요' : [m ? `♂${m}` : '', fe ? `♀${fe}` : '', pg ? `🤰${pg}` : '', ord ? '📋 의뢰감' : '', m && fe ? '' : '<span style="color:#b5651d">짝 없음</span>'].filter(Boolean).join(' · ');
+      return `<div class="grp ${g.t ? 'tr ' + TIER_C[g.t] : ''}"><div class="gh" data-a="gopen" data-k="${encodeURIComponent(g.k)}"><div class="gp">${fishSVG(g.rep)}</div><div class="gt"><b>${g.k}${tb}</b><small>${sub}</small></div><div class="gn"><b>${g.L.length}</b>마리<br>${g.top ? `🪙${fmt(Math.min(...g.p))}${Math.min(...g.p) !== g.top ? '~' + fmt(g.top) : ''}` : ''} ${op ? '▲' : '▼'}</div></div>
+        ${op ? `<div class="gb">${g.k === '치어' ? '' : `<div class="mv">${mvBtns(`data-a="movekind" data-k="${encodeURIComponent(g.k)}"`)}</div>`}<div class="grid2">${g.L.map(fcard).join('')}</div></div>` : ''}</div>`; }).join('');
+  } else if (UI.sort === 'kind' && L.length) {   // 품종별로 묶어서 보여 주고, 한 번에 어항을 옮긴다
     const G = []; L.forEach(f => { const k = C.isAdult(f) ? label(f) : '치어'; let g = G.find(x => x.k === k); if (!g) G.push(g = { k, L: [] }); g.L.push(f); });
     h += G.map(g => `<div class="kind"><div class="kh"><b>${g.k}</b><small>${g.L.filter(f => f.sex === 'm').length}♂ ${g.L.filter(f => f.sex === 'f').length}♀</small>${g.k === '치어' ? '' : `<span class="mv">${mvBtns(`data-a="movekind" data-k="${encodeURIComponent(g.k)}"`)}</span>`}</div><div class="grid2">${g.L.map(fcard).join('')}</div></div>`).join('');
   } else h += L.length ? `<div class="grid2">${L.map(fcard).join('')}</div>` : `<p class="empty">${UI.where === 'nursery' ? '어항에서 치어가 태어나면 건져서 여기서 안전하게 키워요.<br>치어는 6일이면 자라서 정체가 드러나요.' : '여기엔 구피가 없어요.'}</p>`;
@@ -2898,6 +2920,7 @@ function act(a, el) {
     case 'donate': { const r = C.donate(S, id); if (typeof r === 'string') err = r; else { toast(`🎁 동네 학교 어항에 기증했어요 · ⭐ 평판 +${r}`); closePop(); if (UI.sheet === 'fish') { save(); render(); return showFishes(); } } break; }
     case 'selall': fishList().filter(C.isAdult).forEach(f => UI.sel.add(f.id)); return showFishes();
     case 'movesel': { const ids = [...UI.sel]; UI.sel = null; return moveMany(ids, +el.dataset.t); }
+    case 'gopen': { const k = decodeURIComponent(el.dataset.k); UI.gopen = UI.gopen || {}; UI.gopen[k] = !UI.gopen[k]; return showFishes(); }
     case 'movekind': { const k = decodeURIComponent(el.dataset.k); return moveMany(fishList().filter(f => C.isAdult(f) && label(f) === k && !(f.loc || '').startsWith('box')).map(f => f.id), +el.dataset.t); }
     case 'donatesel': { let tot = 0, n = 0; [...UI.sel].forEach(i => { const r = C.donate(S, i); if (typeof r === 'number') { tot += r; n++; } }); UI.sel = null; toast(`🎁 ${n}마리를 기증했어요 · ⭐ 평판 +${tot}`); break; }
     case 'fav': { const f = S.fish.find(x => x.id === id); if (f) { f.fav = !f.fav; toast(f.fav ? '★ 보호해요 · 자동 관리가 건드리지 않아요' : '보호를 풀었어요'); } break; }
@@ -2952,7 +2975,7 @@ function act(a, el) {
     case 'decomode': DECO_MODE = !DECO_MODE; if (modalOpen) closeSheet(); if (DECO_MODE) { VIEW.z = 1; VIEW.follow = null; zoomUi(); toast('어항의 + 자리를 눌러 꾸며 보세요'); } drawDeco(); return;
     case 'slot': return showSlot(id);
     case 'place': err = C.placeItem(S, S.cur, id, el.dataset.k || null); if (!err) { closeSheet(); toast(el.dataset.k ? `${C.ITEMS[el.dataset.k].n}을(를) 놓았어요` : '치웠어요'); } break;
-    case 'switch': if (S.cur !== id) { S.cur = id; closePop(); VIEW.z = 1; VIEW.follow = null; VIEW.cx = 0; layout(); zoomUi(); if (C.SIZES[curTank().size].w > 1 && !(S.coach || {}).pan) { (S.coach = S.coach || {}).pan = 1; note('↔️ 큰 어항은 좌우로 밀어서 봐요'); } } break;
+    case 'switch': if (S.cur !== id) { S.cur = id; closePop(); VIEW.z = 1; VIEW.follow = null; VIEW.cx = 0; layout(); zoomUi(); if (viewW(curTank()) > 1 && !(S.coach || {}).pan) { (S.coach = S.coach || {}).pan = 1; note('↔️ 큰 어항은 좌우로 밀어서 봐요'); } } break;
     case 'showok': S.showOk = 1; closeSheet(); if (SHOW_RETRY) { const f = SHOW_RETRY; SHOW_RETRY = null; f(); } return;
     case 'buyshow': err = C.buy(S, 'show', el.dataset.id); if (!err) { closeSheet(); S.cur = S.tanks.length - 1; VIEW.z = 1; VIEW.cx = 0; layout(); render(); save(); return toast(`🖼 ${C.THEMES[el.dataset.id].n} 전시 어항이 놓였어요`); } break;
     case 'addon': err = C.buy(S, 'addon', el.dataset.id); if (!err) { layout(); render(); save(); toast(`${C.ADDONS[el.dataset.id].i} ${C.ADDONS[el.dataset.id].n}을 달았어요`); return showCare(); } break;
