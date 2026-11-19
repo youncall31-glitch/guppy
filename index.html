@@ -169,6 +169,10 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 .gh{margin:10px 2px 6px;font-size:12.5px;font-weight:700;color:#33525e}.gideas{display:flex;flex-direction:column;gap:6px}.gi{display:flex;align-items:center;gap:8px;background:#f1f6f7;border-radius:12px;padding:6px 8px}.gi>i{width:54px;flex:none}.gi>i svg{width:54px;height:auto}.gi>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}.gi b{font-size:13.5px}.gi small{font-size:11px;color:#5a707a}.gl{font-size:11px;font-weight:700}.gl.easy{color:#1f8a4c}.gl.mid{color:#b7791f}.gl.hard{color:#c2412d}.gi .btn{flex:none;padding:8px 12px}.gnone{text-align:center;margin:10px 0}.gcur{display:flex;align-items:center;gap:8px;background:#fff6dd;border-radius:10px;padding:7px 10px;font-size:12.5px}.gcur b{flex:1}.gman{margin-top:12px}.gman summary{font-size:12.5px;font-weight:700;color:#33525e;padding:6px 2px;cursor:pointer}
 .flash{animation:flash 0.9s ease-in-out 3;box-shadow:0 0 0 3px #ffcf4a,0 0 18px 4px rgba(255,207,74,.75)!important;border-radius:12px;position:relative;z-index:5}@keyframes flash{50%{box-shadow:0 0 0 6px #ffcf4a,0 0 26px 8px rgba(255,207,74,.9)}}
 .surp{display:flex;align-items:center;gap:10px;background:#fff6dd;border-radius:12px;padding:9px 11px;margin:0 0 10px}.surp>div{flex:1;display:flex;flex-direction:column}.surp small{font-size:11px;color:#6b5a2a}.surp .btn{flex:none;padding:8px 11px;font-size:12.5px}
+.sfbar{position:sticky;bottom:-14px;background:linear-gradient(transparent,#f4f8f9 30%);padding:14px 0 12px;margin-top:6px;z-index:2}
+.sfbtn{display:block;width:100%;text-align:left;background:#eef4f5;border:0;border-radius:12px;padding:9px 12px;margin:0 0 10px;font-weight:700;font-size:13px;color:#24434f}.sfbtn small{display:block;font-weight:500;font-size:11px;color:#5a707a}.sfr{margin:0 0 6px}.sfr label{display:block;font-size:11.5px;font-weight:700;color:#5a707a;margin:0 2px 3px}.sfl{max-height:24vh;overflow:auto}
+.rsell{display:block;margin:5px auto 0;border:0;border-radius:999px;background:#fff3cf;color:#7a5a12;font-size:11px;font-weight:700;padding:3px 9px}.rsell.warn{background:#fde6e2;color:#b3261e;white-space:normal}.ff.sold{opacity:.5}
+body.held #daybar{background:#b9c4c9!important}body.held .pill.day::after{content:'⏸';position:absolute;right:10px;top:4px;font-size:12px;opacity:.75}.pill.day{position:relative}
 .mkt{font-size:11px;font-weight:600}.mkt.dn{color:#c2412d}.mkt.up{color:#1f8a4c}
 .starter{background:linear-gradient(135deg,#fff4d6,#ffe3ef);border-radius:16px;padding:10px 12px;margin:0 0 12px}.starter>b{font-size:15px}.starter small{display:block;color:#7a5a00;font-size:12px;margin:3px 0}
 .sg{display:flex;flex-direction:column;gap:6px;margin:8px 0}.sc{display:flex;align-items:center;gap:8px;background:#fff;border-radius:12px;padding:6px 8px}.sc i{width:16px;height:16px;border-radius:50%}.sc b{flex:1;font-size:14px}.sc .btn{min-width:48px}.sc.off{opacity:.45}
@@ -712,10 +716,12 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
       const was = f.age, t = tankOfFish(S, f); f.age += 1 + (was < MATURE && t && t.brine > 0 ? 0.5 : 0);
       if (was < MATURE && f.age >= MATURE) { revealCheck(S, f, ev); ev.push({ t: 'mature', id: f.id, box: f.fromBox, name: nameOf(f.ph), sex: f.sex, star: tailStar(f), ph: f.ph }); }
       if (f.age >= f.life) gone.push(f);
+      else if (was < f.life * .75 && f.age >= f.life * .75 && isAdult(f)) ev.push({ t: 'old', id: f.id });
     });
     if (gone.length) {
       S.fish = S.fish.filter(f => !gone.includes(f)); S.memorial += gone.length;
-      gone.forEach(f => { if (isAdult(f)) log(S, `🌙 ${f.nick || '#' + f.id} (${nameOf(f.ph)})이(가) 편히 쉬러 떠났다 · 사진첩에 추억으로 남았다`); });
+      gone.forEach(f => { if (isAdult(f)) ev.push({ t: 'gone', f });
+        if (isAdult(f)) log(S, `🌙 ${f.nick || '#' + f.id} (${nameOf(f.ph)})이(가) 편히 쉬러 떠났다 · 사진첩에 추억으로 남았다`); });
       ev.push({ t: 'gone', n: gone.length });
     }
     // 2-1) 보육통에서 3일 자란 치어는 잡아먹히지 않을 만큼 커서 저절로 어항으로 나온다 (어른+어린 구피 기준으로 자리가 있는 어항)
@@ -1079,7 +1085,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     S.fish.forEach(f => { walk(f.id, 0); if (f.mate) walk(f.mate.id, 0); });
     for (const k in S.reg) if (!keep.has(+k)) delete S.reg[k];
   }
-  root.CORE = { mktPct, SHOW, showCap, MKT, UPKEEP, mktMul, ORD_K, ORD_GAP, buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
+  root.CORE = { GDEF, mktPct, SHOW, showCap, MKT, UPKEEP, mktMul, ORD_K, ORD_GAP, buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
     newState, express, score, basePrice, keyOf, nameOf, recipeLines, recipeCost, health, inbreed, makeChild, dayTick, sell, moveTo, rescue, buyFounder, buy, buyRecipe, boostBirth, growFry,
     sellPrice, dailyOf, tankIncome, comment, survival, at, isAdult, tankCap, tankUsed, inTank, roomTank, maxPlants, donate, donateRep, repMult, autoManage, AUTO_DEFAULT, nurseryCap, pagesDone, pruneReg, randomGenes };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2007,7 +2013,7 @@ function openSheet(html, kind, arg, tall) {
   sh.innerHTML = '<div class="grip" data-a="grip" aria-label="창 크기"></div>' + html; $('#modal').classList.add('show'); modalOpen = true;
   sh.scrollTop = same ? top : 0; renderHud(); if (kind) tutOn('sheet:' + kind);
 }
-function closeSheet() { if (TIP_NOW.size) { S.tips = S.tips || {}; TIP_NOW.forEach(k => S.tips[k] = 1); TIP_NOW.clear(); } $('#modal').classList.remove('show'); modalOpen = false; UI.sheet = null; UI.sel = null; renderHud(); if (Q.length) setTimeout(() => { if (!modalOpen && Q.length) Q.shift()(); }, 250); }
+function closeSheet() { UI.hold = 0; if (TIP_NOW.size) { S.tips = S.tips || {}; TIP_NOW.forEach(k => S.tips[k] = 1); TIP_NOW.clear(); } $('#modal').classList.remove('show'); modalOpen = false; UI.sheet = null; UI.sel = null; renderHud(); if (Q.length) setTimeout(() => { if (!modalOpen && Q.length) Q.shift()(); }, 250); }
 function queue(fn) { if (TUT.on || modalOpen) Q.push(fn); else fn(); }   // 튜토리얼 중에는 알림을 모아 두었다가 끝나고 보여 준다
 function refreshSheet() {
   if (!modalOpen) return;
@@ -2075,11 +2081,60 @@ function spawnCustomers(e) {
   }, i * 3100);
 }
 /* 남는 구피: 같은 모습(품종)마다 가장 좋은 ♂♀ 한 쌍만 남기고 나머지. 의뢰에 맞는 아이·즐겨찾기·이름 붙인 아이·부모·임신 중·번식통·전시 어항은 건드리지 않는다 */
+/* 소중한 아이: 팔거나 떠나보내면 되돌릴 수 없는 경우만 */
+const RARE_AL = [['alb', 'a', '알비노'], ['plat', 'P', '플래티넘'], ['met', 'T', '메탈'], ['dor', 'b', '빅도살'], ['color', 'y', '옐로'], ['color', 'u', '퍼플'], ['color', 'e', '에메랄드'], ['color', 'k', '모스코 블랙'], ['tail', 's', '더블소드'], ['tail', 'v', '베일테일'], ['pat', 'm', '모자이크'], ['pat', 'q', '그라스'], ['fin', 'w', '스왈로우'], ['fin', 'e', '덤보이어'], ['fin', 'r', '리본']];
+function whyPrecious(f, others) {
+  const O = (others || S.fish).filter(x => x.id !== f.id), R = [], gl = (x, l) => x.g[l] || C.GDEF[l] || [];
+  if (C.isAdult(f) && !O.some(x => C.isAdult(x) && C.keyOf(x.ph) === C.keyOf(f.ph))) R.push('이 모습은 이 아이뿐이에요');
+  const last = RARE_AL.filter(([l, a]) => gl(f, l).includes(a) && !O.some(x => gl(x, l).includes(a))).map(x => x[2]);
+  if (last.length) R.push(`숨은 ${last.slice(0, 3).join('·')} 유전자를 가진 마지막 아이예요`);
+  const od = (S.orders || []).find(o => C.orderMatches(S, o).some(x => x.id === f.id)); if (od) R.push(`📋 ${od.who} 의뢰에 맞아요 · 보내면 🪙${fmt(od.reward)}`);
+  if (f.fav) R.push('⭐ 즐겨찾기한 아이예요'); else if (f.nick) R.push(`이름(${f.nick})을 붙여 준 아이예요`);
+  return R;
+}
+/* 고르는 동안은 시간이 멈춘다 (팔기 · 번식통에 넣기 · 구피 보기 · 정체 공개) */
+const timeHeld = () => !!DRAG || !!UI.pop || (modalOpen && (['fishes', 'fish', 'box', 'pick', 'sellf'].includes(UI.sheet) || !!UI.hold));
+function sellOne(id, done) {
+  const f = S.fish.find(x => x.id === id); if (!f) return; const R = whyPrecious(f);
+  if (R.length && !UI.sellOk) { UI.hold = 1; return notice(`<h3 style="font-family:'Gowun Dodum'">잠깐, 이 아이를 팔까요?</h3><div class="big">${fishSVG(f)}</div><ul class="help">${R.map(r => `<li>${r}</li>`).join('')}</ul>
+    <div class="row"><button class="btn" data-a="close">남길게요</button><button class="btn sell" data-a="sellforce" data-id="${id}" data-back="${done || ''}">그래도 팔기 · 🪙${fmt(C.sellPrice(S, f))}</button></div>`); }
+  const p = C.sell(S, id); if (typeof p === 'string') return toast(p); toast(`🪙 ${fmt(p)}에 팔았어요`); floatMoney(p); closePop(); save(); render(); return p;
+}
+function showOld(id) {
+  const f = S.fish.find(x => x.id === id); if (!f) return; const R = whyPrecious(f).filter(r => !r.startsWith('📋')); if (C.isParent(f)) R.unshift('번식통에서 부모로 일하고 있어요'); UI.hold = 1;
+  notice(`<h3 style="font-family:'Gowun Dodum'">🌙 ${f.nick || label(f)}이(가) 나이가 들었어요</h3><div class="big">${fishSVG(f)}</div><p class="note" style="text-align:center">남은 시간은 약 ${Math.max(1, Math.round(f.life - f.age))}일 · 떠나기 전에 대를 이어 줄까요?</p><ul class="help">${R.map(r => `<li>${r}</li>`).join('')}</ul>
+    <div class="row"><button class="btn" data-a="close">괜찮아요</button>${C.isParent(f) ? '' : `<button class="btn go" data-a="oldpair" data-id="${f.id}">💞 짝 지어 주기</button>`}</div>`);
+}
+/* 조건 골라 한 번에 팔기 */
+function sellPool() { return S.fish.filter(f => C.isAdult(f) && f.loc && (f.loc === 'nursery' || (f.loc.startsWith('tank') && !(S.tanks[+f.loc.slice(4)] || {}).show)) && !f.preg && !C.isParent(f)); }
+function sellMatch() {
+  const q = UI.sf; let L = sellPool().filter(f => (q.sex === 'all' || f.sex === q.sex) && (!q.color || f.ph.color === q.color) && (!q.tail || f.ph.tail === q.tail) && (!q.pat || f.ph.pat === q.pat) && (!q.star || C.tailStar(f) <= q.star) && (!q.old || f.age > f.life * .75));
+  if (q.keep) { const G = {}; L.forEach(f => { const k = label(f) + f.sex; (G[k] = G[k] || []).push(f); }); const best = new Set(Object.entries(G).map(([k, A]) => { const keepers = S.fish.filter(x => !L.includes(x) && C.isAdult(x) && label(x) + x.sex === k); return keepers.length ? null : A.sort((a, b) => C.sellPrice(S, b) - C.sellPrice(S, a))[0].id; }).filter(Boolean)); L = L.filter(f => !best.has(f.id)); }
+  const ids = new Set(L.map(f => f.id)); let prot = 0; L = L.filter(f => { const ok = !whyPrecious(f, S.fish.filter(x => !ids.has(x.id) || x.id === f.id)).length; if (!ok) { ids.delete(f.id); prot++; } return ok; });
+  const keep = Object.assign({}, S.market); let coins = 0; L.forEach(f => { coins += C.sellPrice(S, f); const k = C.keyOf(f.ph); S.market[k] = (S.market[k] || 0) + 1; }); S.market = keep;
+  return { L, coins, prot };
+}
+function showSellF() {
+  UI.sf = UI.sf || { sex: 'all', color: '', tail: '', pat: '', star: 0, old: false, keep: true };
+  const P = sellPool(), q = UI.sf, has = (k, v) => P.some(f => f.ph[k] === v);
+  const ch = (k, v, t) => `<button class="${String(q[k]) === String(v) ? 'on' : ''}" data-a="sfset" data-k="${k}" data-v="${v}">${t}</button>`;
+  const row = (t, k, list) => `<div class="sfr"><label>${t}</label><div class="chips">${ch(k, '', '전부')}${list.filter(([v]) => has(k, v)).map(([v, n]) => ch(k, v, n)).join('')}</div></div>`;
+  const M = sellMatch(), G = {}; M.L.forEach(f => { const k = label(f) + ' ' + sexI(f); G[k] = (G[k] || 0) + 1; });
+  openSheet(head('💰 조건 골라 팔기', 'fishes') + `<p class="note" style="margin:0 2px 8px">⏸ 고르는 동안 시간이 멈춰요 · 임신 중 · 번식통 · 전시 어항 아이는 빼고 골라요</p>
+    <div class="sfr"><label>성별</label><div class="chips">${ch('sex', 'all', '전부')}${ch('sex', 'm', '♂ 수컷')}${ch('sex', 'f', '♀ 암컷')}</div></div>
+    ${row('색', 'color', Object.entries(C.COLORS).map(([k, v]) => [k, v.n]))}${row('꼬리', 'tail', Object.entries(C.TAILS).map(([k, v]) => [k, v.n]))}${row('무늬', 'pat', Object.entries(C.PATS).map(([k, v]) => [k, v.n]))}
+    <div class="sfr"><label>꼬리 크기</label><div class="chips">${ch('star', 0, '전부')}${ch('star', 1, '★ 이하')}${ch('star', 2, '★★ 이하')}${ch('star', 3, '★★★ 이하')}</div></div>
+    <div class="sfr"><label>그 밖에</label><div class="chips">${ch('old', !q.old, q.old ? '✓ 노년만' : '노년만')}${ch('keep', !q.keep, q.keep ? '✓ 모습마다 한 마리는 남기기' : '모습마다 한 마리는 남기기')}</div></div>
+    <ul class="help sfl">${Object.entries(G).map(([k, n]) => `<li>${k} <b>${n}마리</b></li>`).join('') || '<li>조건에 맞는 아이가 없어요</li>'}</ul>
+    ${M.prot ? `<p class="note">🛡 소중한 아이 ${M.prot}마리는 빼 두었어요 (마지막 모습 · 숨은 유전자 · 의뢰감 · 즐겨찾기)</p>` : ''}
+    <div class="row sfbar"><button class="btn" data-a="fishes">돌아가기</button><button class="btn sell" data-a="sfgo" ${M.L.length ? '' : 'disabled'}>${M.L.length}마리 팔기 · 🪙${fmt(M.coins)}</button></div>`, 'sellf', null, true);
+}
 function surplus() {
   const ordOK = new Set(); (S.orders || []).forEach(o => C.orderMatches(S, o).forEach(f => ordOK.add(f.id)));
   const pool = S.fish.filter(f => C.isAdult(f) && f.loc && (f.loc === 'nursery' || (f.loc.startsWith('tank') && !(S.tanks[+f.loc.slice(4)] || {}).show)) && !f.fav && !f.nick && !f.preg && !C.isParent(f) && !ordOK.has(f.id));
   const G = {}; pool.forEach(f => (G[label(f)] = G[label(f)] || []).push(f));
-  const out = []; Object.values(G).forEach(L => ['m', 'f'].forEach(sx => { const A = L.filter(f => f.sex === sx).sort((a, b) => C.sellPrice(S, b) - C.sellPrice(S, a)); out.push(...A.slice(1)); }));
+  let out = []; Object.values(G).forEach(L => ['m', 'f'].forEach(sx => { const A = L.filter(f => f.sex === sx).sort((a, b) => C.sellPrice(S, b) - C.sellPrice(S, a)); out.push(...A.slice(1)); }));
+  { const ids = new Set(out.map(f => f.id)); out = out.filter(f => { const ok = !whyPrecious(f, S.fish.filter(x => !ids.has(x.id) || x.id === f.id)).length; if (!ok) ids.delete(f.id); return ok; }); }
   const keep = Object.assign({}, S.market); let coins = 0; out.forEach(f => { coins += C.sellPrice(S, f); const k = C.keyOf(f.ph); S.market[k] = (S.market[k] || 0) + 1; }); S.market = keep;   // 팔수록 시세가 내려가는 것까지 계산
   return { list: out, coins, ord: ordOK };
 }
@@ -2092,6 +2147,7 @@ function showFishes() {
     <div class="chips">${chip('sex', 'all', '전체')}${chip('sex', 'm', '♂ 수컷')}${chip('sex', 'f', '♀ 암컷')}${chip('sex', 'fry', '치어')}<span class="sp"></span><button class="more ${UI.more ? 'on' : ''} ${UI.ft || UI.fc || UI.fp || (UI.sort && UI.sort !== 'price') ? 'act' : ''}" data-a="set" data-k="more" data-v="${UI.more ? '' : '1'}">🔍 정렬·찾기</button></div>
     ${UI.more ? `<div class="morebox"><div class="chips">${chip('sort', 'kind', '🧬 품종별')}${chip('sort', 'price', '💰 값')}${chip('sort', 'age', '⏳ 나이')}${chip('sort', 'hp', '❤️ 혈통')}</div><div class="fsel">${[['ft', '꼬리', C.TAILS], ['fc', '색', C.COLORS], ['fp', '무늬', C.PATS]].map(([k, n, T]) => `<select onchange="UI.${k}=this.value;showFishes()"><option value="">${n} 전체</option>${Object.entries(T).map(([v, o]) => `<option value="${v}" ${UI[k] === v ? 'selected' : ''}>${o.n}</option>`).join('')}</select>`).join('')}</div><div class="row" style="margin:8px 0 0">${MORE_TOOLS}</div></div>` : ''}`;
   const SP = surplus(); if (SP.list.length >= 2) h += `<div class="surp"><div><b>💰 남는 구피 ${SP.list.length}마리</b><small>같은 모습은 ♂♀ 한 쌍씩만 남겨도 돼요</small></div><button class="btn go" data-a="surpask">한 쌍만 남기고 팔기</button></div>`;
+  if (S.fish.some(C.isAdult)) h += `<button class="sfbtn" data-a="sellf">💰 조건 골라 한 번에 팔기 <small>⏸ 고르는 동안 시간이 멈춰요</small></button>`;
   const tools = [];
   if (UI.where !== 'tank' && nuAd.length) tools.push(`<button class="btn go" data-a="allTank">다 자란 ${nuAd.length}마리 어항으로</button>`);
   if (UI.where === 'nursery' && fry) tools.push('<button class="btn ad" data-a="adgrow">📺 성장 촉진 +2일</button>');
@@ -2187,8 +2243,8 @@ function showReq(g) {   // 💌 의뢰 카드: 누가, 무엇을, 지금 보낼 
   notice(`<h3 style="font-family:'Gowun Dodum'">💌 ${g.who}</h3><p style="font-size:16px;margin:6px 2px 4px">"${g.t}"</p><p class="note">💡 ${g.h}</p><p class="note">보상 🪙${g.r}</p><div class="row"><button class="btn" data-a="close">닫기</button>${g.send ? `<button class="btn go" data-a="reqsend" ${ok ? '' : 'disabled'}>${ok ? '보내기' : '아직 맞는 구피가 없어요'}</button>` : ''}</div>`);
 }
 function showRevealMany() {   // 🎉 치어가 자라 정체 공개: 카드를 눌러 하나씩 뒤집는다
-  const L = (UI.revealQ || []).splice(0, 8).map(x => ({ f: S.fish.find(y => y.id === x.id), nw: x.nw })).filter(x => x.f); if (!L.length) return;
-  notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🎉 치어 ${L.length}마리가 자랐어요!</h3><p class="note" style="text-align:center">카드를 눌러 정체를 확인해요</p><div class="flips">${L.map(({ f, nw }) => `<div class="flip" onclick="this.classList.add('on')"><div class="fb">🐣<small>?</small></div><div class="ff">${fishSVG(f)}<b>${label(f)} ${sexI(f)}</b><span class="st">${'★'.repeat(C.tailStar(f))}</span>${nw ? '<i class="nw">NEW</i>' : ''}</div></div>`).join('')}</div><div class="row"><button class="btn" onclick="document.querySelectorAll('.flip').forEach(x=>x.classList.add('on'))">모두 열기</button><button class="btn go" data-a="close">좋아요</button></div>`);
+  const L = (UI.revealQ || []).splice(0, 8).map(x => ({ f: S.fish.find(y => y.id === x.id), nw: x.nw })).filter(x => x.f); if (!L.length) return; setTimeout(() => { UI.hold = 1; }, 0);
+  notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🎉 치어 ${L.length}마리가 자랐어요!</h3><p class="note" style="text-align:center">카드를 눌러 정체를 확인해요</p><div class="flips">${L.map(({ f, nw }) => `<div class="flip" onclick="this.classList.add('on')"><div class="fb">🐣<small>?</small></div><div class="ff">${fishSVG(f)}<b>${label(f)} ${sexI(f)}</b><span class="st">${'★'.repeat(C.tailStar(f))}</span>${nw ? '<i class="nw">NEW</i>' : ''}<button class="rsell" data-a="revsell" data-id="${f.id}">💰 ${fmt(C.sellPrice(S, f))}</button></div></div>`).join('')}</div><p class="note" style="text-align:center;margin:4px 0 0">⏸ 보는 동안 시간이 멈춰요 · 💰를 누르면 그 아이를 바로 팔아요</p><div class="row"><button class="btn" onclick="document.querySelectorAll('.flip').forEach(x=>x.classList.add('on'))">모두 열기</button><button class="btn go" data-a="close">좋아요</button></div>`);
 }
 function showBox(i) {
   const P = boxPar(i), K = boxFry(i), m = P.find(x => x.sex === 'm'), f = P.find(x => x.sex === 'f'), gl = (S.boxGoal || {})[i], dest = (S.boxDest || {})[i] || 'tank';
@@ -2614,6 +2670,8 @@ function handle(ev, quiet) {
     if (e.t === 'birth' && e.where === 'box' && e.ask && e.ids && e.ids.length) queue(() => notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🐣 번식통 ${e.box + 1}에서 ${e.ids.length}마리!</h3><div class="big">${miniTank(e.box, true)}</div><p class="note" style="text-align:center">이 아이들을 어떻게 할까요?</p><div class="row"><button class="btn" data-a="birthdest" data-v="stay" data-ids="${e.ids.join(',')}">번식통에 그대로</button><button class="btn go" data-a="birthdest" data-v="tank" data-ids="${e.ids.join(',')}">자라면 어항으로</button></div>`));
     if (e.t === 'album') { UI.newAlbum++; const gf = S.fish.find(x => x.id === e.id); if (!quiet && !(gf && gf.gacha && ev.some(x => x.t === 'mature' && x.id === e.id))) { if (modalOpen) note(`📸 새 형질 발견! ${C.ALBUM_BY[e.key].name}`); queue(() => showDiscovery(e.key)); } }
     if (e.t === 'firstPay' && !quiet) queue(() => notice(`<h3 style="font-family:'Gowun Dodum'">🎉 첫 손님이 돈을 냈어요!</h3><p>"이제 좀 볼 만하네요!" 손님이 입장료 🪙 ${e.amt}을 내고 갔어요. 어항이 예쁠수록, 품종이 다양할수록, 수초가 많을수록 손님 수입이 늘어요.</p><div class="row"><button class="btn go" data-a="close">신난다</button></div>`));
+    if (e.t === 'old' && !quiet) { const f = S.fish.find(x => x.id === e.id); if (f && !f.oldTold && (C.isParent(f) || whyPrecious(f).filter(r => !r.startsWith('📋')).length)) { f.oldTold = 1; queue(() => showOld(f.id)); } }
+    if (e.t === 'gone' && !quiet) { const f = e.f, R = whyPrecious(f, S.fish).filter(r => !r.startsWith('📋')); if (R.length || f.fav || f.nick) note(`🌙 ${f.nick || C.nameOf(f.ph)}이(가) 편히 쉬러 떠났어요 · 📖 사진첩에 추억으로`); }
     if (e.t === 'upkeep1' && !quiet) note('🍤 구피가 15마리를 넘어 관리비가 나가요 · 남는 아이는 팔거나 의뢰로 보내요');
     if (e.t === 'order' && !quiet) note(`📋 새 의뢰 ${e.n}개가 왔어요 · ☰ → 📋 의뢰`);
     if (e.t === 'gift' && !quiet) note('🤝 이웃 가게 사장님이 구피 한 쌍을 나눠 줬어요');
@@ -2626,6 +2684,7 @@ function handle(ev, quiet) {
 }
 function step(dtMs) {
   if (TUT.pause) return;
+  { const hold = timeHeld(); document.body.classList.toggle('held', hold); if (hold) return; }
   S.clock += dtMs; let n = 0;
   while (S.clock >= C.DAY_MS && n < 40) { S.clock -= C.DAY_MS; n++; handle(C.dayTick(S, Math.random)); }
   if (n) { save(); render(); }
@@ -2725,15 +2784,24 @@ function act(a, el) {
     case 'viewexit': return exitView();
     case 'zin': { const r = $('#tankwrap').getBoundingClientRect(); return zoomAt(r.width / 2, r.height / 2, 1.6); }
     case 'zout': { const r = $('#tankwrap').getBoundingClientRect(); return zoomAt(r.width / 2, r.height / 2, 1 / 1.6); }
-    case 'surpask': { const SP = surplus(); if (!SP.list.length) return toast('남는 구피가 없어요');
+    case 'oldpair': { const f = S.fish.find(x => x.id === id); if (!f) return closeSheet(); let bi = -1; for (let i = 0; i < S.boxes; i++) if (!C.at(S, 'box' + i).filter(x => !x.sep).length) { bi = i; break; }
+      if (bi < 0) { toast('빈 번식통이 없어요 · 번식통 하나를 비우거나 🛒 늘려요'); return showBoxes(); } const r = C.moveTo(S, f.id, 'box' + bi); if (r) return toast(r); save(); render(); return showPick(bi, f.sex === 'm' ? 'f' : 'm'); }
+    case 'sellf': return showSellF();
+    case 'revsell': { const f = S.fish.find(x => x.id === id); if (!f) return; const R = whyPrecious(f);
+      if (R.length && !el.dataset.sure) { el.dataset.sure = 1; el.classList.add('warn'); el.textContent = '⚠️ ' + R[0].replace(/ · .*/, '') + ' · 한 번 더 누르면 팔아요'; return; }
+      const p = C.sell(S, id); if (typeof p === 'string') return toast(p); floatMoney(p); el.textContent = `팔았어요 🪙${fmt(p)}`; el.disabled = true; el.closest('.ff').classList.add('sold'); save(); renderHud(); return; }
+    case 'sfset': { const k = el.dataset.k, v = el.dataset.v; UI.sf[k] = k === 'star' ? +v : k === 'old' || k === 'keep' ? v === 'true' : v; return showSellF(); }
+    case 'sfgo': { const M = sellMatch(); let tot = 0, n = 0; M.L.forEach(f => { const p = C.sell(S, f.id); if (typeof p === 'number') { tot += p; n++; } }); toast(`💰 ${n}마리를 🪙${fmt(tot)}에 팔았어요`); floatMoney(tot); save(); render(); return showSellF(); }
+    case 'surpask': { const SP = surplus(); if (!SP.list.length) return toast('남는 구피가 없어요'); UI.hold = 1;
       const G = {}; SP.list.forEach(f => { G[label(f)] = (G[label(f)] || 0) + 1; });
       return notice(`<h3 style="font-family:'Gowun Dodum'">💰 한 쌍만 남기고 팔기</h3><p class="note" style="margin:6px 0 10px">같은 모습마다 가장 값진 ♂♀ 한 마리씩은 남겨요.<br>📋 의뢰에 맞는 아이 · ⭐ 즐겨찾기 · 이름 붙인 아이 · 부모 · 임신 중 · 번식통 · 전시 어항은 건드리지 않아요.</p>
         <ul class="help" style="max-height:34vh;overflow:auto">${Object.entries(G).map(([k, n]) => `<li>${k} <b>${n}마리</b></li>`).join('')}</ul>
         <div class="row"><button class="btn" data-a="close">그만두기</button><button class="btn go" data-a="surpgo">${SP.list.length}마리 팔기 · 🪙${fmt(SP.coins)}</button></div>`); }
     case 'surpgo': { const SP = surplus(); let tot = 0, n = 0; SP.list.forEach(f => { const p = C.sell(S, f.id); if (typeof p === 'number') { tot += p; n++; } }); closeSheet(); toast(`💰 ${n}마리를 🪙${fmt(tot)}에 팔았어요`); floatMoney(tot); save(); render(); return; }
-    case 'sellsel': { let tot = 0, n = 0; [...UI.sel].forEach(i => { const p = C.sell(S, i); if (typeof p === 'number') { tot += p; n++; } }); UI.sel = null; toast(`${n}마리를 🪙${fmt(tot)}에 팔았어요`); floatMoney(tot); break; }
+    case 'sellsel': { let tot = 0, n = 0, kept = 0; [...UI.sel].forEach(i => { const f = S.fish.find(x => x.id === i); if (f && whyPrecious(f, S.fish.filter(x => !UI.sel.has(x.id) || x.id === i)).length) { kept++; return; } const p = C.sell(S, i); if (typeof p === 'number') { tot += p; n++; } }); UI.sel = null; toast(`${n}마리를 🪙${fmt(tot)}에 팔았어요${kept ? ` · 소중한 아이 ${kept}마리는 남겼어요` : ''}`); floatMoney(tot); break; }
     case 'rescue': { const r = C.rescue(S); if (r.n) tutOn('rescue'); toast(r.n ? `🫙 치어 ${r.n}마리를 보육통으로 건졌어요${r.left ? ` · 보육통이 가득 차 ${r.left}마리는 남았어요` : ''}` : '보육통이 가득 찼어요! 상점에서 넓히거나 다 자란 구피를 어항으로 옮기세요'); break; }
-    case 'sell': { const p = C.sell(S, id); if (typeof p === 'string') err = p; else { toast(`🪙 ${fmt(p)}에 팔았어요`); floatMoney(p); closePop(); if (UI.sheet === 'fish') { save(); render(); return showFishes(); } } break; }
+    case 'sell': { const was = UI.sheet; const p = sellOne(id, was === 'fish' ? 'fishes' : ''); if (typeof p === 'number' && was === 'fish') return showFishes(); return; }
+    case 'sellforce': { const p = C.sell(S, id); if (typeof p === 'string') return toast(p); toast(`🪙 ${fmt(p)}에 팔았어요`); floatMoney(p); closePop(); save(); render(); if (el.dataset.back === 'fishes') return showFishes(); return closeSheet(); }
     case 'totank': err = C.moveTo(S, id, 'tank'); break;
     case 'tot': if (askShow(+el.dataset.t, () => act('tot', el))) return; err = C.moveTo(S, id, 'tank' + el.dataset.t); if (!err) toast(`${C.SIZES[S.tanks[+el.dataset.t].size].n} 어항으로 옮겼어요`); break;
     case 'care': return showCare();
