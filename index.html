@@ -229,6 +229,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
 @keyframes bub{from{transform:translateY(0);opacity:.7}to{transform:translateY(-480px);opacity:0}}
 .fishg{cursor:pointer}
 #tank{touch-action:none}
+#tankwrap,#tankwrap *,#viewer,#viewer *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}#tankwrap image,#viewer image{-webkit-user-drag:none}
 #viewBtn{position:absolute;right:10px;bottom:16px;z-index:3;height:40px;padding:0 12px;border-radius:12px;background:rgba(6,26,38,.5);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);color:#fff;font-size:14px;font-weight:700}
 #viewer{position:fixed;inset:0;z-index:200;background:#0b1418;display:none;overflow:hidden}#viewer.on{display:block}#vin{position:absolute;left:0;top:0;transform-origin:0 0}#vin svg{pointer-events:none}#vhint{position:absolute;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);background:rgba(0,0,0,.45);color:#fff;font-size:12.5px;padding:6px 12px;border-radius:99px;transition:opacity .6s;pointer-events:none;white-space:nowrap}#vhint.off{opacity:0}
 #vx{position:absolute;right:12px;top:calc(12px + env(safe-area-inset-top));width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.18);color:#fff;font-size:18px;z-index:2}
@@ -1382,6 +1383,8 @@ function zoomUi() {
   placeCrowd(); const l = $('#zlab'); l.style.display = VIEW.z > 1 ? 'block' : 'none'; l.textContent = VIEW.z.toFixed(1) + '배'; $('#follow').classList.toggle('show', !!VIEW.follow); }
 const toScreen = (x, y) => { const r = $('#tankwrap').getBoundingClientRect(); return [(x - VIEW.x) / VIEW.w * r.width, (y - VIEW.y) / VIEW.h * r.height]; };
 const PT = new Map(); let pinch = null, dragged = 0, lastTap = 0;
+/* 어항을 꾹 누르면 휴대폰이 '이미지 저장·복사' 메뉴를 띄우지 않게 (꾹 누르기는 게임 조작에 쓴다) */
+['tankwrap', 'viewer'].forEach(k => { const el = document.getElementById(k); if (el) { el.addEventListener('contextmenu', e => e.preventDefault()); el.addEventListener('dragstart', e => e.preventDefault()); el.addEventListener('selectstart', e => e.preventDefault()); } });
 function bindZoom() {
   const sv = $('#tank'), rel = e => { const r = sv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
   let holdT = 0, hold0 = null, down0 = null;
@@ -1449,6 +1452,7 @@ function showFrontG(T) {
   if (A.bubble) { for (let i = 0; i < 14; i++) { const bx = x + w * (.12 + .76 * ((i * 37) % 14) / 14), r = 1.5 + (i % 3), d = 3 + (i % 5) * .7; g += `<circle pointer-events="none" cx="${bx}" cy="${y + h}" r="${r}" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".8"><animate attributeName="cy" from="${y + h}" to="${y}" dur="${d}s" begin="${(i * .37) % d}s" repeatCount="indefinite"/><animate attributeName="cx" values="${bx};${bx + 4};${bx - 3};${bx}" dur="${d}s" repeatCount="indefinite"/></circle>`; } }
   return g;
 }
+let TOP_RES = 60;   // 화면 위에서 어항 테두리까지 비워 둘 높이(px): 돈·날짜 줄만 비우고, 어항 이름·목표 알약은 어항 위에 떠 있게
 function layout() {
   if (VIEWMODE) { VIEW_DIRTY = true; return fitViewer(); }   // 감상 중 화면이 돌아가도 어항은 그대로, 끝낼 때 다시 맞춘다
   const r = $('#tankwrap').getBoundingClientRect(); if (!r.width) return;
@@ -1456,8 +1460,8 @@ function layout() {
   if (typeof ART_BG !== 'undefined') {
     const ih = 360 * ART_BG.h / ART_BG.w, W = ART_BG.water, TW = 360 * C.SIZES[curTank().size].w;
     // 세로로 긴 화면: 물 부분(그림의 20~70%)만 늘려서 어항이 HUD 아래부터 화면 아래까지 차게 한다
-    Z0 = 1.12; const hw = VB.h / Z0, wpp = VB.k / Z0, Hn = hw - 150 * wpp - 14 * wpp;
-    const VS = Math.max(1, Math.min(1.9, (Hn / ih - .5) / .5)), H2 = ih * (.5 + .5 * VS), iy = VB.h - 14 * wpp - H2;
+    Z0 = 1.12; const hw = VB.h / Z0, wpp = VB.k / Z0, Hn = hw - TOP_RES * wpp - 14 * wpp;
+    const VS = Math.max(1, Math.min(2.4, (Hn / ih - .5) / .5)), H2 = ih * (.5 + .5 * VS), iy = VB.h - 14 * wpp - H2;
     const yf = f => iy + (f <= .2 ? f * ih : f <= .7 ? .2 * ih + (f - .2) * ih * VS : .2 * ih + .5 * ih * VS + (f - .7) * ih);
     VB.W = TW; VB.cy0 = VB.h - hw / 2;
     VB.tank = { y: iy, h: H2, ih, VS, yf, w: TW, x0: 360 * W.x0, x1: TW - 360 * (1 - W.x1), a0: yf(W.y0), a1: yf(W.y1), f0: yf(W.fy0), f1: yf(W.fy1) };
