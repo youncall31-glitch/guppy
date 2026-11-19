@@ -165,6 +165,14 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 .tsw .tn{border:0;background:rgba(255,255,255,.72);border-radius:14px;padding:5px 14px;min-width:150px;text-align:center;color:#24343c;font:inherit;line-height:1.25}.tsw .tn b{display:block;font-size:14px}.tsw .tn span{font-size:11.5px;opacity:.85}.tsw .tn span.warn{color:#c2620a;font-weight:700}
 .tdots{display:flex;gap:4px;justify-content:center;margin-top:3px}.tdots i{width:5px;height:5px;border-radius:50%;background:rgba(36,52,60,.25)}.tdots i.on{background:#24343c}
 .chips span.sp{background:none;padding:0;flex:1}
+.starter{background:linear-gradient(135deg,#fff4d6,#ffe3ef);border-radius:16px;padding:10px 12px;margin:0 0 12px}.starter>b{font-size:15px}.starter small{display:block;color:#7a5a00;font-size:12px;margin:3px 0}
+.sg{display:flex;flex-direction:column;gap:6px;margin:8px 0}.sc{display:flex;align-items:center;gap:8px;background:#fff;border-radius:12px;padding:6px 8px}.sc i{width:16px;height:16px;border-radius:50%}.sc b{flex:1;font-size:14px}.sc .btn{min-width:48px}.sc.off{opacity:.45}
+.req{display:flex;gap:8px;align-items:center;background:#fff;border-radius:14px;padding:8px;margin-bottom:8px;border:2px solid transparent}.req.ok{border-color:#2fa58a}.req>i{width:70px;flex:none}.req>i svg{width:100%}.req .rq{flex:1;min-width:0}.req .rq b{font-size:13px}.req q{display:block;font-size:11.5px;color:#7a8b91;quotes:'“' '”'}.req .want{display:block;font-size:14px;font-weight:700;margin:2px 0}.req small{font-size:11.5px;color:#4a5d64}.req .rb .btn{padding:8px 10px}
+.psteps{background:#fff;border-radius:14px;padding:10px}.ps{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.ps.no{color:#a2332f;font-size:13.5px}.pn{font-size:11px;background:#24343c;color:#fff;border-radius:99px;padding:2px 8px}.pd{text-align:center;color:#9aaab0;margin:4px 0}
+.pf{display:inline-flex;flex-direction:column;align-items:center;width:74px;font-size:10.5px;line-height:1.15;text-align:center}.pf svg{width:70px}.pf.hid{opacity:.55}.pf.hid b::after{content:' ?'}.pf.sib{width:auto;font-size:12.5px;background:#fff4d6;border-radius:10px;padding:6px 8px}
+.ps .x{font-size:16px;color:#9aaab0}.ps .ar{color:#9aaab0}.po{display:flex;flex-direction:column;background:#eef8f3;border-radius:10px;padding:5px 8px}.po b{font-size:12px}.po small{color:#1e6b4f;font-weight:700}
+.pi{background:#fff;border-radius:12px;padding:8px 10px;margin-bottom:6px}.pi.no{background:#f4f4f4;opacity:.7}.pi>b{font-size:13.5px}.pi.ok>b{color:#1e6b4f}.pi.no>b{color:#a2332f}.pi small{display:block;font-size:11px;color:#7a8b91}.pl{display:flex;flex-wrap:wrap;gap:2px;margin-top:4px}.nohave{font-size:12px;color:#7a8b91}
+.tg label.off{opacity:.45}
 .flips{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:8px 0}.flip{position:relative;height:118px;perspective:600px;cursor:pointer}.flip .fb,.flip .ff{position:absolute;inset:0;border-radius:14px;backface-visibility:hidden;transition:transform .5s;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .flip .fb{background:linear-gradient(135deg,#ffe9a8,#ffc9de);font-size:34px}.flip .fb small{font-size:14px;color:#7a5a00}.flip .ff{background:#fff;transform:rotateY(180deg);padding:6px;text-align:center}.flip .ff svg{width:92%}.flip .ff b{font-size:11.5px;line-height:1.2}.flip .ff .st{font-size:11px;color:#f0a500}.flip .nw{position:absolute;top:6px;right:6px;background:#ff6b5a;color:#fff;font-size:10px;font-style:normal;border-radius:99px;padding:1px 6px}
 .flip.on .fb{transform:rotateY(180deg)}.flip.on .ff{transform:rotateY(0)}
@@ -455,7 +463,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
   const recipeCost = entry => Math.max(30, Math.round(basePrice(entry.ph) * 0.5));
 
   function newState() {
-    const S = { v: 1, money: 100, day: 1, clock: 0, speed: 1, nextId: 1, fish: [], reg: {}, tanks: [{ size: 0, deco: [] }], cur: 0, boxes: 1, nurseryLv: 0, food: false,
+    const S = { v: 1, money: 200, day: 1, clock: 0, speed: 1, nextId: 1, fish: [], reg: {}, tanks: [{ size: 0, deco: [] }], cur: 0, boxes: 1, nurseryLv: 0, food: false,
       market: {}, album: {}, recipes: {}, log: [], firstPaid: false, rep: 0, auto: Object.assign({}, AUTO_DEFAULT), memorial: 0, stats: { sold: 0, earned: 0, born: 0 }, intro: false, savedAt: Date.now(), lastInc: 0 };
     const rng = Math.random;
     const m = founderFrom(S, 'm', { tail: ['r', 's'], color: ['g', 'y'], pat: ['n', 'm'], alb: ['A', 'A'], plat: ['p', 'p'] }, rng, 9);
@@ -569,17 +577,16 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
   const GOALS = [
     { t: '먹이를 줘 보세요', h: '🍤 먹이 버튼을 끌어다 어항 위에서 손을 떼요', r: 20, ok: S => (S.stats.fed || 0) >= 1 },
     { t: '치어를 건져 보세요', h: '새끼가 태어나면 뜨는 🐣 버튼을 눌러요', r: 30, ok: S => (S.stats.rescued || 0) >= 1 },
+    { t: '초보 사장님 특혜로 색깔 구피 들이기', h: '🛒 상점 맨 위 🎁 특혜 · 두 가지 색을 싸게', r: 40, ok: S => !!(S.starter && Object.keys(S.starter.got || {}).length) },
     { t: '번식통에 짝을 넣어 보세요', h: '아래 💞 번식 → ✨ 추천 짝', r: 50, ok: S => { for (let i = 0; i < S.boxes; i++) { const b = at(S, 'box' + i).filter(f => !f.sep); if (b.some(f => f.sex === 'm') && b.some(f => f.sex === 'f')) return true; } return false; } },
-    { t: '치어가 자라 정체를 드러내요', h: '태어난 지 6일이면 어른이 돼요 · 기다리는 동안 꾸미기도 해 봐요', r: 60, ok: S => S.fish.some(f => isAdult(f) && bornHere(S, f)) || (S.stats.sold || 0) > 2 },
-    { who: '🧒 옆집 민지', t: '여기서 태어난 아기 구피 한 마리만 키워 보고 싶어요!', h: '가게에서 태어나 다 자란 구피 · 부모는 보내지 않아요', r: 90, send: (S, f) => bornHere(S, f) },
-    { t: '구피 사진을 찍어 보세요', h: '구피를 눌러 ⋯ → 📸 사진', r: 30, ok: S => (S.stats.photos || 0) >= 1 || !!S.photoTaken },
-    { who: '👩‍🏫 학교 선생님', t: '꼬리가 큰 구피를 아이들에게 보여 주고 싶어요', h: '꼬리 ★3 이상 · 꼬리 큰 부모끼리 짝지으면 잘 나와요', r: 120, send: (S, f) => tailStar(f) >= 3 },
-    { t: '사진첩에 모습 6가지 모으기', h: '📖 새로 태어난 모습이 실려요 · 🛒 새 혈통을 들여도 좋아요', r: 120, ok: S => Object.keys(S.album).length >= 6 },
-    { who: '🧒 옆집 민지', t: '이번엔 회색 말고 색이 있는 구피요!', h: '그레이가 아닌 구피 · 🛒 상점의 새 혈통이나 교배로', r: 150, send: (S, f) => f.ph.color !== 'gray' },
-    { who: '📷 사진작가', t: '같은 품종 수컷·암컷 한 쌍을 찍고 싶어요', h: '모습이 똑같은 ♂♀ 한 쌍이 있으면 돼요(보내지 않아요)', r: 180, ok: S => { const c = {}; S.fish.filter(isAdult).forEach(f => { const k = keyOf(f.ph); c[k] = c[k] || {}; c[k][f.sex] = 1; }); return Object.values(c).some(x => x.m && x.f); } },
+    { t: '📋 의뢰를 하나 해결해 보세요', h: '☰ → 📋 의뢰 · 맞는 구피를 보내요', r: 60, ok: S => (S.stats.orders || 0) >= 1 },
+    { t: '치어가 자라 정체를 드러내요', h: '태어난 지 6일이면 어른이 돼요', r: 60, ok: S => S.fish.some(f => isAdult(f) && bornHere(S, f)) },
+    { t: '🎯 번식통 목표를 정해 보세요', h: '번식통 → 🎯 목표 → 🧭 길 찾기', r: 60, ok: S => Object.keys(S.boxGoal || {}).length > 0 },
+    { t: '의뢰 5개 해결하기', h: '☰ → 📋 의뢰', r: 150, ok: S => (S.stats.orders || 0) >= 5 },
+    { t: '사진첩에 모습 10가지 모으기', h: '다양한 짝을 지어 봐요', r: 150, ok: S => Object.keys(S.album).length >= 10 },
     { t: '전시 어항을 들여 보세요', h: '🛒 상점 → 전시 어항 · 손님은 전시 어항을 보러 와요', r: 200, ok: S => S.tanks.some(t => t.show) },
-    { who: '🏪 수족관 사장님', t: '꼬리 ★4 이상, 색 있는 구피를 비싸게 사겠네', h: '꼬리 ★4 이상 · 그레이 말고 · 🎯 번식통 목표로 노려 봐요', r: 400, send: (S, f) => tailStar(f) >= 4 && f.ph.color !== 'gray' },
-    { t: '사진첩에 모습 15가지 모으기', h: '다양한 짝을 지어 봐요', r: 300, ok: S => Object.keys(S.album).length >= 15 }];
+    { t: '의뢰 20개 해결하기', h: '어려운 의뢰일수록 보상이 커요', r: 400, ok: S => (S.stats.orders || 0) >= 20 },
+    { t: '사진첩에 모습 30가지 모으기', h: '새 색은 사진첩을 채우면 열려요', r: 500, ok: S => Object.keys(S.album).length >= 30 }];
   GOALS.forEach(g => { if (g.send) g.ok = S => S.fish.some(f => sendable(S, f) && g.send(S, f)); });
   const goalNow = S => GOALS[S.goal || 0] || null;
   function claimGoal(S) { const g = goalNow(S); if (!g || !g.ok(S)) return 0;
@@ -844,30 +851,42 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
   /* 손님 주문: 동시에 3개까지. 게임 6~10일(2~3분)마다 하나씩 들어오고 30일 동안 기다려 준다 */
   const tailStar = f => { const t = f.tsz || 1; return t >= 1.2 ? 5 : t >= 1.08 ? 4 : t >= 0.98 ? 3 : t >= 0.88 ? 2 : 1; };
   const WHO = ['🧒 민지 학생', '👵 동네 할머니', '🧑‍💼 김 사장님', '👨‍🔬 어항 동호회', '👩‍🍳 카페 사장님', '🧑‍🎨 그림 그리는 손님', '👴 낚시 할아버지', '👩‍🏫 유치원 선생님'];
+  /* 📋 의뢰: 한 번에 3~5개, 시간 제한 없음. 1개만 남으면 다음 날 새 의뢰가 몰려온다. 가진 구피로 할 수 있는 것부터 조금 어려운 것까지 */
+  const REQ_WHO = [['🧒 민지', '어항에 처음 넣을 친구가 필요해요!'], ['👵 동네 할머니', '손주 방에 둘 예쁜 아이로 부탁해요'], ['🧑‍💼 김 사장님', '가게 카운터에 둘 거라네'], ['👨‍🔬 어항 동호회', '품평회에 낼 아이를 찾고 있어요'], ['👩‍🍳 카페 사장님', '카페 손님들이 좋아할 아이요'], ['🧑‍🎨 그림 작가', '그림 모델로 삼고 싶어요'], ['👴 낚시 할아버지', '허허, 이런 녀석은 처음이야'], ['👩‍🏫 유치원 선생님', '아이들 관찰 수업에 쓸게요'], ['🏪 수족관 사장님', '우리 가게에 들일 물건이야'], ['📷 사진작가', '빛 받으면 예쁜 아이로요'], ['👨‍👩‍👧 이웃 가족', '아이 생일 선물이에요'], ['🧑‍🚀 수집가', '도감에 없는 아이를 모으는 중이에요']];
+  const REQ_KEYS = ['sex', 'color', 'tail', 'pat', 'star', 'metal', 'bigd', 'albino', 'fin', 'born'];
   function makeOrder(S, rng) {
-    const keys = Object.keys(S.album).filter(k => ALBUM_BY[k] && ALBUM_BY[k].page !== 'special' && ALBUM_BY[k].page !== 'trait');
-    const easy = keys.length >= 2 && rng() < 0.7, base = easy ? S.album[keys[Math.floor(rng() * keys.length)]].ph : (L => L[Math.floor(rng() * L.length)])(ALBUM.filter(a => a.page !== 'special' && a.page !== 'trait')).ph;
-    const r = rng(), o = { who: WHO[Math.floor(rng() * WHO.length)], color: base.color, sex: 'm', until: S.day + 30, id: (S.orderSeq = (S.orderSeq || 0) + 1) };
-    if (r < 0.5) o.tail = base.tail; else if (r >= 0.8) { o.tail = base.tail; o.pat = base.pat; }
-    const q = rng(); o.star = q < 0.4 ? 0 : q < 0.75 ? 3 : q < 0.95 ? 4 : 5;
-    const ph = { tail: o.tail || 'round', color: o.color, pat: o.pat || 'plain', albino: false, plat: false };
-    o.reward = Math.round(basePrice(ph) * 2.2 * (1 + 0.35 * Math.max(0, o.star - 2)) * (easy ? 1 : 1.4)) + 30; o.rep = 3 + (o.star >= 4 ? 2 : 0);
-    return o;
+    const own = S.fish.filter(isAdult), alb = Object.values(S.album).map(a => a.ph), pool = own.map(f => f.ph).concat(alb);
+    const lv = Math.min(4, Math.floor(((S.stats.orders || 0) + Object.keys(S.album).length / 3) / 4));   // 할수록 어려운 의뢰가 섞인다
+    const pick = L => L[Math.floor(rng() * L.length)], base = pool.length ? pick(pool) : { color: 'gray', tail: 'round', pat: 'plain' };
+    const o = { id: (S.orderSeq = (S.orderSeq || 0) + 1) }, [who, say] = pick(REQ_WHO); o.who = who; o.say = say;
+    const kinds = [['born'], ['sex'], ['color'], ['tail'], ['color', 'sex'], ['color', 'tail'], ['star'], ['color', 'star'], ['color', 'pat'], ['color', 'tail', 'star'], ['color', 'pat', 'tail'], ['metal'], ['bigd'], ['albino'], ['fin'], ['color', 'pat', 'tail', 'star']];
+    const k = kinds[Math.min(kinds.length - 1, Math.floor(rng() * (4 + lv * 3)))];
+    k.forEach(x => {
+      if (x === 'born') o.born = 1; if (x === 'sex') o.sex = rng() < .5 ? 'm' : 'f';
+      if (x === 'color') o.color = rng() < .8 ? base.color : pick(Object.keys(COLORS).filter(c => colOpen(S, c) && c !== 'gray'));
+      if (x === 'tail') o.tail = rng() < .8 ? base.tail : pick(Object.keys(TAILS)); if (x === 'pat') o.pat = rng() < .75 ? base.pat : pick(Object.keys(PATS));
+      if (x === 'star') o.star = 3 + (rng() < .25 + lv * .1 ? 1 : 0) + (lv >= 3 && rng() < .2 ? 1 : 0);
+      if (x === 'metal') o.metal = 1; if (x === 'bigd') o.bigd = 1; if (x === 'albino') o.albino = 1; if (x === 'fin') { o.fin = pick(['ribbon', 'swallow', 'dumbo']); o.sex = 'm'; o.tail = o.fin === 'ribbon' ? 'delta' : o.fin === 'dumbo' ? 'delta' : o.tail; }
+    });
+    const ph = { tail: o.tail || 'round', color: o.color || 'gray', pat: o.pat || 'plain', albino: !!o.albino, plat: false, metal: !!o.metal, bigd: !!o.bigd, fin: o.fin || null };
+    o.reward = Math.round((basePrice(ph) * 2 + 20) * (1 + 0.35 * Math.max(0, (o.star || 0) - 2)) * (1 + 0.15 * k.length) / 5) * 5; o.rep = 2 + k.length;
+    o.ph = ph; return o;
   }
-  const orderText = o => `${COLORS[o.color].n}${o.pat && o.pat !== 'plain' ? ' ' + PATS[o.pat].n : ''}${o.tail ? ' ' + TAILS[o.tail].n : ''}${o.pat === 'plain' ? ' (무지)' : ''} 수컷${o.star ? ` · 꼬리 ${'★'.repeat(o.star)} 이상` : ''}`;
-  const orderMatches = (S, o) => S.fish.filter(f => isAdult(f) && !f.sick && f.sex === o.sex && f.ph.color === o.color && (!o.tail || f.ph.tail === o.tail) && (!o.pat || f.ph.pat === o.pat) && tailStar(f) >= o.star && !(f.loc || '').startsWith('box'));
+  const orderText = o => [o.born && '가게에서 태어난', o.metal && '메탈', o.albino && '알비노', o.color && COLORS[o.color].n, o.pat && PATS[o.pat].n, o.bigd && '빅도살', o.fin && FINS[o.fin].n, o.tail && TAILS[o.tail].n, o.sex ? (o.sex === 'm' ? '수컷' : '암컷') : '구피', o.star && `· 꼬리 ${'★'.repeat(o.star)} 이상`].filter(Boolean).join(' ');
+  const orderMatches = (S, o) => S.fish.filter(f => isAdult(f) && !f.sick && !f.fav && !f.preg && !frozen(S, f) && !isParent(f) && (!o.sex || f.sex === o.sex) && (!o.color || f.ph.color === o.color) && (!o.tail || f.ph.tail === o.tail) && (!o.pat || f.ph.pat === o.pat) && tailStar(f) >= (o.star || 0)
+    && (!o.metal || f.ph.metal) && (!o.bigd || f.ph.bigd) && (!o.albino || f.ph.albino) && (!o.fin || f.ph.fin === o.fin) && (!o.born || bornHere(S, f)));
   function fulfil(S, oid) {
     const i = (S.orders || []).findIndex(o => o.id === oid); if (i < 0) return { err: '없는 주문이에요' };
-    const o = S.orders[i], m = orderMatches(S, o).filter(f => !f.fav); if (!m.length) return { err: '조건에 맞는 구피가 없어요' };
+    const o = S.orders[i], m = orderMatches(S, o); if (!m.length) return { err: '조건에 맞는 구피가 없어요' };
     const f = m.reduce((a, b) => sellPrice(S, b) < sellPrice(S, a) ? b : a);   // 맞는 구피 중 가장 싼 아이를 보낸다
     S.fish = S.fish.filter(x => x !== f); S.money += o.reward; S.rep = (S.rep || 0) + o.rep; S.stats.earned += o.reward; S.stats.orders = (S.stats.orders || 0) + 1;
     S.orders.splice(i, 1); log(S, `📋 ${o.who}에게 ${nameOf(f.ph)}을(를) 보냈다 · 🪙+${o.reward} ⭐+${o.rep}`);
     return { f, o };
   }
   function orderTick(S, rng, ev) {
-    const before = (S.orders || []).length; S.orders = (S.orders || []).filter(o => o.until > S.day);
-    if (S.orders.length < before) log(S, `📋 기다리던 손님 ${before - S.orders.length}명이 그냥 돌아갔다`);
-    if (S.orders.length < 3 && S.day >= (S.nextOrder || 4)) { const o = makeOrder(S, rng); S.orders.push(o); S.nextOrder = S.day + 6 + Math.floor(rng() * 5); ev.push({ t: 'order', id: o.id }); }
+    S.orders = (S.orders || []).filter(o => o.ph);   // 예전 형식 주문은 정리
+    if (S.orders.length <= 1 && S.day >= (S.nextOrder || 2)) { const n = 3 + Math.floor(rng() * 3); let add = 0; while (S.orders.length < n) { S.orders.push(makeOrder(S, rng)); add++; } S.nextOrder = S.day + 1; if (add) ev.push({ t: 'order', n: add }); }
+    else if (S.orders.length > 1) S.nextOrder = S.day + 1;
   }
   const ATTEND = [{ c: 50 }, { c: 80 }, { t: 1 }, { c: 120 }, { c: 150 }, { c: 200 }, { c: 300, t: 1 }];
   function attend(S, today, yesterday) {   // 하루 한 번. 어제도 왔으면 이어지고, 7일째가 지나면 처음부터
@@ -926,6 +945,40 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     return { tail: two({ round: 'r', delta: 'd', sword: 's', veil: 'v' }[ph.tail]), color: ph.color === 'bluered' ? ['b', 'r'] : two(C2[ph.color]), pat: two({ plain: 'n', cobra: 'k', halfblack: 'h', mosaic: 'm', grass: 'q' }[ph.pat]),
       alb: two(ph.albino ? 'a' : 'A'), plat: two(ph.plat ? 'P' : 'p'), met: two(ph.metal ? 'T' : 't'), dor: two(ph.bigd ? 'b' : 'B'), fin: two({ ribbon: 'r', swallow: 'w', dumbo: 'e' }[ph.fin] || 'n') };
   }
+  /* 🎁 초보 사장님 특혜: 색 두 가지를 골라 그 색 ♂·♀를 한 번씩 싸게 (꼬리·무늬는 운) */
+  const STARTER_COLS = ['blue', 'red', 'yellow'], STARTER_COST = 30;
+  function buyStarter(S, color, sex, rng) {
+    const st = S.starter = S.starter || { got: {} }, cols = [...new Set(Object.keys(st.got).map(k => k.split(':')[0]))];
+    if (!STARTER_COLS.includes(color)) return { err: '고를 수 없는 색이다' }; if (st.got[color + ':' + sex]) return { err: '이미 데려왔다' };
+    if (!cols.includes(color) && cols.length >= 2) return { err: '특혜는 두 가지 색까지' }; if (S.money < STARTER_COST) return { err: '돈이 모자라다' };
+    const rt = roomTank(S), loc = rt >= 0 ? 'tank' + rt : at(S, 'nursery').length < nurseryCap(S) ? 'nursery' : null; if (!loc) return { err: '넣을 자리가 없다' };
+    const g = randomGenes(false, rng), a = { blue: 'b', red: 'r', yellow: 'y' }[color]; g.color = [a, a];
+    S.money -= STARTER_COST; const f = founderFrom(S, sex, g, rng); if (color === 'yellow') { f.ph.color = 'yellow'; f.line.yellow = 1; } f.loc = loc; S.fish.push(f); st.got[color + ':' + sex] = 1;
+    const ev = []; revealCheck(S, f, ev); log(S, `🎁 초보 사장님 특혜로 ${COLORS[color].n} ${sex === 'm' ? '수컷' : '암컷'}을 들였다 (-${STARTER_COST})`); return { f, ev };
+  }
+  /* 가진 구피(숨은 유전자 포함)로 고를 수 있는 조건인가 */
+  function canHave(S, g) { const L = S.fish.filter(f => !frozen(S, f)); return goalNeeds(g).every(([l, a]) => L.some(f => (f.g[l] || GDEF[l]).includes(a))); }
+  /* 🧭 길 찾기: 목표까지 1~2세대 계획과 재료 구피 */
+  function pathFor(S, g, rng) {
+    rng = rng || Math.random; const L = S.fish.filter(f => !frozen(S, f) && !f.sick), need = goalNeeds(g);
+    const items = need.map(([l, a, rec, n]) => { const has = L.filter(f => (f.g[l] || GDEF[l]).includes(a)); return { n, rec, show: has.filter(f => C_shows(f, l, a)), hide: has.filter(f => !C_shows(f, l, a)) }; });
+    const missing = items.filter(x => !x.show.length && !x.hide.length).map(x => x.n);
+    const ad = L.filter(f => isAdult(f) && (!isParent(f) || true)), M = ad.filter(f => f.sex === 'm'), F = ad.filter(f => f.sex === 'f' && f.age < f.life * .85);
+    if (missing.length || !M.length || !F.length) return { items, missing, steps: [] };
+    // 1세대에 바로 나오나
+    let best = null; M.slice(0, 30).forEach(m => F.slice(0, 30).forEach(f => { const p = goalChance(m, f, g, 40, rng); if (!best || p > best.p) best = { m, f, p }; }));
+    if (best && best.p >= .04) { best.p = goalChance(best.m, best.f, g, 300, rng); return { items, missing, steps: [{ m: best.m, f: best.f, p: best.p, out: '목표 구피' }] }; }
+    // 2세대: 먼저 필요한 유전자를 한 마리에 모은다(보인자) → 그 새끼끼리
+    const carries = gg => need.every(([l, a]) => gg[l].includes(a));
+    const kid = (m, f) => { const gg = {}; GLOC.forEach(l => { gg[l] = [inherit(f.g[l] || GDEF[l], l, rng), inherit(m.g[l] || GDEF[l], l, rng)]; }); return gg; };
+    let b1 = null; M.slice(0, 30).forEach(m => F.slice(0, 30).forEach(f => { let h = 0; for (let i = 0; i < 40; i++) if (carries(kid(m, f))) h++; if (!b1 || h > b1.h) b1 = { m, f, h }; }));
+    if (!b1 || !b1.h) return { items, missing, steps: [], far: true };
+    const kids = []; for (let i = 0; i < 400 && kids.length < 24; i++) { const gg = kid(b1.m, b1.f); if (carries(gg)) kids.push(gg); }
+    let p2 = 0, n2 = 0; for (let i = 0; i + 1 < kids.length; i += 2) { const mm = { g: kids[i], tsz: (b1.m.tsz + b1.f.tsz) / 2, line: {} }, ff = { g: kids[i + 1], tsz: (b1.m.tsz + b1.f.tsz) / 2, line: {} }; p2 += goalChance(mm, ff, g, 60, rng); n2++; }
+    return { items, missing, steps: [{ m: b1.m, f: b1.f, p: b1.h / 40, out: '필요한 형질을 모두 품은 새끼' }, { sib: true, p: n2 ? p2 / n2 : 0, out: '목표 구피' }] };
+  }
+  const C_shows = (f, l, a) => { const ph = f.ph, m = { color: { b: ['blue', 'bluered'], r: ['red', 'bluered'], y: ['yellow'], g: ['gray'], o: ['orange'], u: ['purple'], e: ['green'], k: ['black'] }[a], tail: { r: ['round'], d: ['delta'], s: ['sword'], v: ['veil'] }[a], pat: { k: ['cobra'], h: ['halfblack'], m: ['mosaic'], q: ['grass'], n: ['plain'] }[a] }[l];
+    if (m) return isAdult(f) && m.includes(ph[l]); if (l === 'met') return isAdult(f) && ph.metal; if (l === 'dor') return isAdult(f) && ph.bigd; if (l === 'alb') return isAdult(f) && ph.albino; if (l === 'fin') return isAdult(f) && ph.fin === { r: 'ribbon', w: 'swallow', e: 'dumbo' }[a]; return false; };
   function buyKnown(S, key, sex, rng) {
     const a = ALBUM_BY[key]; if (!a || !S.album[key]) return { err: '사진첩에서 만난 품종만 데려올 수 있다' };
     const cost = knownCost(a.ph); if (S.money < cost) return { err: '돈이 모자라다' };
@@ -1006,7 +1059,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     S.fish.forEach(f => { walk(f.id, 0); if (f.mate) walk(f.mate.id, 0); });
     for (const k in S.reg) if (!keep.has(+k)) delete S.reg[k];
   }
-  root.CORE = { bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
+  root.CORE = { buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
     newState, express, score, basePrice, keyOf, nameOf, recipeLines, recipeCost, health, inbreed, makeChild, dayTick, sell, moveTo, rescue, buyFounder, buy, buyRecipe, boostBirth, growFry,
     sellPrice, dailyOf, tankIncome, comment, survival, at, isAdult, tankCap, tankUsed, inTank, roomTank, maxPlants, donate, donateRep, repMult, autoManage, AUTO_DEFAULT, nurseryCap, pagesDone, pruneReg, randomGenes };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1774,7 +1827,7 @@ function menuHtml() {
   const t = curTank(), sp = (SPEEDS.find(x => x.v === S.speed) || SPEEDS[2]), on = (S.orders || []).length, ready = on && S.orders.some(o => C.orderMatches(S, o).length), w = C.careOf(t).water;
   const it = (a, i, n, r = '', x = '') => `<button data-a="${a}" ${x}><i>${i}</i>${n}${r}</button>`;
   $('#menu').innerHTML = it('speed', '⏱', '시간 빠르기', `<span>${sp.i} ${sp.n}</span>`)
-    + (on ? it('orders', '📋', '손님 주문', `<span class="${ready ? 'hot' : ''}">${ready ? '보낼 수 있어요' : on + '건'}</span>`) : '')
+    + it('orders', '📋', '의뢰', `<span class="${ready ? 'hot' : ''}">${ready ? '보낼 수 있어요' : on + '개'}</span>`)
     + (t.show ? it('care', '🖼', '전시 어항 장치') + it('viewmode', '🎬', '감상 모드') : it('care', '💧', '물과 먹이', `<span class="${w < 50 ? 'warn' : ''}">${Math.round(t.water)}%</span>`))
     + (t.show ? '' : it('divt', '🚧', '암수 칸막이', `<span>${t.divOwn ? (t.div ? '세움' : '걷음') : '🪙' + C.DIV_COST}</span>`))
     + it('decomode', '🪴', '꾸미기', `<span>${C.decoStats(t).n}/${C.slotCount(t.size)}</span>`)
@@ -2032,7 +2085,10 @@ function shopIt(icon, name, desc, cost, act, extra = '') {
   return `<div class="it"><i>${icon}</i><div><b>${name}</b><small>${desc}</small></div>${cost == null ? '<button class="btn" disabled>완료</button>' : `<button class="btn go" data-a="${act}" ${extra} ${S.money < cost ? 'disabled' : ''}>🪙${fmt(cost)}</button>`}</div>`;
 }
 function showShop() {
-  openSheet(head('🛒 물생활 상점') + `<div class="shop"><h5><span>어항 꾸미기</span><span>가진 돈 🪙 ${fmt(S.money)}</span></h5>
+  const st = S.starter || { got: {} }, sc = [...new Set(Object.keys(st.got).map(k => k.split(':')[0]))], stDone = C.STARTER_COLS.every(c => !sc.includes(c) && sc.length >= 2 || ['m', 'f'].every(x => st.got[c + ':' + x]));
+  const starterH = stDone ? '' : `<div class="starter"><b>🎁 초보 사장님 특혜</b><small>색 <b>두 가지</b>를 골라 수컷·암컷을 한 번씩 🪙${C.STARTER_COST}에 · 꼬리·무늬는 운이에요 (${sc.length}/2색)</small>
+    <div class="sg">${C.STARTER_COLS.map(c => { const lock = !sc.includes(c) && sc.length >= 2; return `<div class="sc ${lock ? 'off' : ''}"><i style="background:${C.COLORS[c].c}"></i><b>${C.COLORS[c].n}</b>${['m', 'f'].map(x => `<button class="btn ${st.got[c + ':' + x] ? '' : 'go'}" data-a="starter" data-c="${c}" data-sex="${x}" ${st.got[c + ':' + x] || lock || S.money < C.STARTER_COST ? 'disabled' : ''}>${st.got[c + ':' + x] ? '✓' : x === 'm' ? '♂' : '♀'}</button>`).join('')}</div>`; }).join('')}</div><small>이후 색깔 구피는 📖 사진첩에서 만난 품종을 제값에 데려와요</small></div>`;
+  openSheet(head('🛒 물생활 상점') + starterH + `<div class="shop"><h5><span>어항 꾸미기</span><span>가진 돈 🪙 ${fmt(S.money)}</span></h5>
     <div class="it"><i>🪴</i><div><b>수초·유목·돌</b><small>어항의 🪴 꾸미기에서 놓아요</small></div><button class="btn go" data-a="decomode">꾸미기</button></div>
     <h5><span>💞 교배 어항 · 1자 ${C.breedCount(S)}/${C.BREED_MAX}</span></h5>
     ${shopIt('🫧', '1자 교배 어항 추가', '8마리 · 새끼를 낳아요', C.BREED_PRICE[C.breedCount(S)], 'newtank', 'data-id="0"')}
@@ -2113,12 +2169,27 @@ function showCare() {
     <div class="foods">${Object.entries(C.FOODS).map(([k, F]) => `<button class="${(S.feedKind || 'flake') === k ? 'on' : ''}" data-a="feedkind" data-id="${k}">${F.i} <b>${F.n}</b> · 🪙${F.price}${k === 'color' && !S.food ? ' · 🔒 상점에서 들이기' : ''}<small>${F.d}</small></button>`).join('')}</div>
     <div class="row"><button class="btn" data-a="close">닫기</button></div>`);
 }
+const ordGoal = o => { const g = {}; ['color', 'tail', 'pat', 'star', 'metal', 'bigd', 'albino', 'fin'].forEach(k => { if (o[k]) g[k] = o[k]; }); return g; };
 function showOrders() {
   const L = S.orders || [];
-  openSheet(head('📋 손님 주문') + `${tip('orders', '맞는 구피를 보내면 판매가보다 훨씬 많이 받아요.')}
-    ${L.length ? L.map(o => { const m = C.orderMatches(S, o).filter(f => !f.fav), ph = { tail: o.tail || 'round', color: o.color, pat: o.pat || 'plain', albino: false, plat: false };
-      return `<div class="it order"><i>${phSVG(ph, 'm')}</i><div><b>${o.who}</b><small>"${C.orderText(o)} 구해요"<br>🪙 ${fmt(o.reward)} · ⭐+${o.rep} · ${o.until - S.day}일 남음 · 맞는 구피 ${m.length}마리</small></div>
-        <button class="btn go" data-a="fulfil" data-id="${o.id}" ${m.length ? '' : 'disabled'}>보내기</button></div>`; }).join('') : '<p class="note" style="text-align:center;margin:20px 0">지금은 주문이 없어요. 곧 손님이 찾아올 거예요.</p>'}`, 'orders');
+  openSheet(head(`📋 의뢰 ${L.length}`) + `${tip('orders', '맞는 구피를 보내면 보상을 받아요. 기한은 없어요 · 하나만 남으면 곧 새 의뢰가 와요.')}
+    ${L.length ? L.map(o => { const m = C.orderMatches(S, o), gl = ordGoal(o), hard = Object.keys(gl).length && !C.canHave(S, gl);
+      return `<div class="req ${m.length ? 'ok' : ''}"><i>${phSVG(o.ph || { tail: 'round', color: o.color || 'gray', pat: 'plain' }, o.sex || 'm')}</i><div class="rq"><b>${o.who}</b><q>${o.say || ''}</q><span class="want">${C.orderText(o)}</span><small>🪙 ${fmt(o.reward)} · ⭐+${o.rep}${m.length ? ` · 맞는 구피 ${m.length}마리` : hard ? ' · 🔒 필요한 형질이 아직 없어요' : ''}</small></div>
+        <div class="rb">${m.length ? `<button class="btn go" data-a="fulfil" data-id="${o.id}">보내기</button>` : Object.keys(gl).length ? `<button class="btn" data-a="pathord" data-id="${o.id}">🧭 만드는 법</button>` : ''}</div></div>`; }).join('') : '<p class="note" style="text-align:center;margin:20px 0">의뢰를 다 끝냈어요! 내일 새 의뢰가 와요.</p>'}`, 'orders');
+}
+/* 🧭 길 찾기: 목표 구피까지 어떻게 가는지, 재료 구피는 누구인지 */
+function showPath(g, back) {
+  const r = C.pathFor(S, g), mini = f => `<span class="pf ${C.isAdult(f) ? '' : 'fy'}">${fishSVG(f)}<b>${C.isAdult(f) ? label(f) : '치어'} ${sexI(f)}</b></span>`;
+  const items = r.items.map(x => `<div class="pi ${x.show.length || x.hide.length ? 'ok' : 'no'}"><b>${x.show.length || x.hide.length ? '✓' : '✗'} ${x.n}</b><small>${x.rec ? '숨은 형질 · 부모 둘 다 가져야 나와요' : '강한 형질 · 한쪽 부모만 있어도 나와요'}</small>
+    <div class="pl">${x.show.slice(0, 4).map(mini).join('')}${x.hide.slice(0, 4).map(f => mini(f).replace('class="pf', 'class="pf hid" title="숨기고 있어요')).join('')}${x.show.length + x.hide.length ? '' : '<span class="nohave">가진 구피가 없어요 · 🛒 새 혈통이나 📖 사진첩에서</span>'}</div></div>`).join('');
+  let steps = '';
+  if (r.missing.length) steps = `<div class="ps no">🔒 <b>${r.missing.join(', ')}</b> 형질을 가진 구피가 있어야 해요</div>`;
+  else if (!r.steps.length) steps = `<div class="ps no">${r.far ? '지금 구피로는 두 세대 안에 닿기 어려워요 · 형질을 가진 구피를 더 들여 보세요' : '짝지을 다 자란 수컷·암컷이 필요해요'}</div>`;
+  else steps = r.steps.map((st, k) => `<div class="ps"><span class="pn">${k + 1}세대</span>${st.sib ? '<span class="pf sib">🐣 1세대 새끼끼리</span>' : `${mini(st.m)}<b class="x">×</b>${mini(st.f)}`}<span class="ar">→</span><span class="po"><b>${st.out}</b><small>${Math.round(st.p * 100)}%</small></span></div>`).join('<div class="pd">↓</div>');
+  notice(`<h3 style="font-family:'Gowun Dodum'">🧭 ${C.goalText(g)}</h3>
+    <p class="note" style="margin:0 2px 8px">가진 구피로 가는 길이에요 · 재료 구피가 떠나면 다시 계산돼요</p>
+    <div class="psteps">${steps}</div><h5 class="bh"><span>🔍 재료 스캔</span></h5>${items || '<p class="note">조건이 없어요</p>'}
+    <div class="row">${back != null ? `<button class="btn" data-a="boxgoal" data-id="${back}">◀ 목표</button>` : ''}${r.steps.length && !r.steps[0].sib && back != null ? `<button class="btn go" data-a="pathput" data-id="${back}" data-m="${r.steps[0].m.id}" data-f="${r.steps[0].f.id}">1세대 짝 넣기</button>` : '<button class="btn go" data-a="close">닫기</button>'}</div>`);
 }
 /* 튜토리얼: 눌러야 할 곳만 밝게, 나머지는 어둡게. 출산까지 빠르게 보여 준다 */
 const TUT = { on: false, i: 0, pause: false, mom: null };
@@ -2223,15 +2294,15 @@ function checkAttend() {
     <p class="note" style="text-align:center">${a.r.c ? `🪙 ${a.r.c} ` : ''}${a.r.t ? '🎟 뽑기권 1장 ' : ''}받았어요 · 내일 또 오면 이어져요</p><div class="row"><button class="btn go" data-a="close">좋아요</button></div>`));
 }
 function showGoal(i) {
-  const g = (S.boxGoal || {})[i] || {}, opt = (id, list, cur, any) => `<select id="g_${id}"><option value="">${any}</option>${list.map(([k, n]) => `<option value="${k}" ${cur === k ? 'selected' : ''}>${n}</option>`).join('')}</select>`;
-  notice(`<h3 style="font-family:'Gowun Dodum'">🎯 번식통 ${i + 1} 목표</h3>${tip('goal', '목표에 맞는 아이만 남고, 나머지는 자라면 자동으로 팔려요.')}
+  const g = (S.boxGoal || {})[i] || {}, ok = (id, k) => id === 'star' || C.canHave(S, { [id]: k }), opt = (id, list, cur, any) => `<select id="g_${id}"><option value="">${any}</option>${list.map(([k, n]) => { const can = ok(id, k); return `<option value="${k}" ${cur === k ? 'selected' : ''} ${can || cur === k ? '' : 'disabled'}>${n}${can ? '' : ' · 없음'}</option>`; }).join('')}</select>`, cb = (id, n) => { const can = C.canHave(S, { [id]: 1 }); return `<label class="${can ? '' : 'off'}"><input type="checkbox" id="g_${id}" ${g[id] ? 'checked' : ''} ${can || g[id] ? '' : 'disabled'}> ${n}${can ? '' : ' · 없음'}</label>`; };
+  notice(`<h3 style="font-family:'Gowun Dodum'">🎯 번식통 ${i + 1} 목표</h3>${tip('goal', '원하는 구피를 정하면 맞는 짝과 길을 찾아 줘요. 안 맞는 아이는 "목표 미달" 표시만 해요.')}
     <div class="gpick"><label>색</label>${opt('color', Object.entries(C.COLORS).filter(([k]) => C.colOpen(S, k)).map(([k, v]) => [k, v.n]), g.color, '아무 색')}
     <label>무늬</label>${opt('pat', Object.entries(C.PATS).map(([k, v]) => [k, v.n]), g.pat, '아무 무늬')}
     <label>꼬리</label>${opt('tail', Object.entries(C.TAILS).map(([k, v]) => [k, v.n]), g.tail, '아무 꼬리')}
     <label>지느러미 (수컷 델타)</label>${opt('fin', Object.entries(C.FINS).map(([k, v]) => [k, v.n]), g.fin, '상관없음')}
-    <label>꼬리 크기</label>${opt('star', [['3', '★★★ 이상'], ['4', '★★★★ 이상'], ['5', '★★★★★']], String(g.star || ''), '상관없음')}
-    <div class="tg"><label><input type="checkbox" id="g_metal" ${g.metal ? 'checked' : ''}> 메탈</label><label><input type="checkbox" id="g_bigd" ${g.bigd ? 'checked' : ''}> 빅도살</label><label><input type="checkbox" id="g_albino" ${g.albino ? 'checked' : ''}> 알비노</label></div></div>
-    <div class="row"><button class="btn" data-a="cleargoal" data-id="${i}">목표 없애기</button><button class="btn go" data-a="savegoal" data-id="${i}">정하기</button></div><div class="row"><button class="btn ad" data-a="savegoal" data-id="${i}" data-pair="1">✨ 정하고 맞는 짝 넣기</button></div>`);
+    <label>꼬리 크기</label>${opt('star', [['1', '★ 이상'], ['2', '★★ 이상'], ['3', '★★★ 이상'], ['4', '★★★★ 이상'], ['5', '★★★★★']], String(g.star || ''), '상관없음')}
+    <div class="tg">${cb('metal', '메탈')}${cb('bigd', '빅도살')}${cb('albino', '알비노')}</div><p class="note" style="margin:6px 2px 0">회색은 그 형질을 가진 구피가 없어서 고를 수 없어요</p></div>
+    <div class="row"><button class="btn" data-a="cleargoal" data-id="${i}">목표 없애기</button><button class="btn go" data-a="savegoal" data-id="${i}">정하기</button></div><div class="row"><button class="btn ad" data-a="savegoal" data-id="${i}" data-pair="1">✨ 정하고 맞는 짝 넣기</button><button class="btn" data-a="savegoal" data-id="${i}" data-path="1">🧭 길 찾기</button></div>`);
 }
 /* 📸 사진: 구피 한 마리를 액자처럼 담은 세로 카드(1080×1350)를 만든다 */
 function photoCard(f) {
@@ -2357,7 +2428,7 @@ function handle(ev, quiet) {
     if (e.t === 'birth' && e.where === 'box' && e.ask && e.ids && e.ids.length) queue(() => notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🐣 번식통 ${e.box + 1}에서 ${e.ids.length}마리!</h3><div class="big">${miniTank(e.box, true)}</div><p class="note" style="text-align:center">이 아이들을 어떻게 할까요?</p><div class="row"><button class="btn" data-a="birthdest" data-v="stay" data-ids="${e.ids.join(',')}">번식통에 그대로</button><button class="btn go" data-a="birthdest" data-v="tank" data-ids="${e.ids.join(',')}">자라면 어항으로</button></div>`));
     if (e.t === 'album') { UI.newAlbum++; const gf = S.fish.find(x => x.id === e.id); if (!quiet && !(gf && gf.gacha && ev.some(x => x.t === 'mature' && x.id === e.id))) { if (modalOpen) toast(`📸 새 형질 발견! ${C.ALBUM_BY[e.key].name}`); queue(() => showDiscovery(e.key)); } }
     if (e.t === 'firstPay' && !quiet) queue(() => notice(`<h3 style="font-family:'Gowun Dodum'">🎉 첫 손님이 돈을 냈어요!</h3><p>"이제 좀 볼 만하네요!" 손님이 입장료 🪙 ${e.amt}을 내고 갔어요. 어항이 예쁠수록, 품종이 다양할수록, 수초가 많을수록 손님 수입이 늘어요.</p><div class="row"><button class="btn go" data-a="close">신난다</button></div>`));
-    if (e.t === 'order' && !quiet) { const o = (S.orders || []).find(x => x.id === e.id); if (o) toast(`📋 새 주문: ${o.who} · ${C.orderText(o)}`); }
+    if (e.t === 'order' && !quiet) toast(`📋 새 의뢰 ${e.n}개가 왔어요 · ☰ → 📋 의뢰`);
     if (e.t === 'gift' && !quiet) toast('🤝 이웃 가게 사장님이 구피 한 쌍을 나눠 줬어요');
     if (e.t === 'auto' && !quiet) { toast(`🤖 자동 ${e.action === 'donate' ? `기증 ${e.n}마리 · ⭐+${e.rep}` : `판매 ${e.n}마리 · 🪙+${fmt(e.coins)}`}`); if (e.coins) inc += e.coins; }
   });
@@ -2529,8 +2600,11 @@ function act(a, el) {
     case 'boxres': return showBoxRes(+el.dataset.id);
     case 'boxgoal': return showGoal(+el.dataset.id);
     case 'savegoal': { const i = +el.dataset.id, v = k => document.getElementById('g_' + k).value || null, c = k => document.getElementById('g_' + k).checked;
-      C.setBoxGoal(S, i, { color: v('color'), tail: v('tail'), pat: v('pat'), star: +v('star') || 0, fin: v('fin'), metal: c('metal'), bigd: c('bigd'), albino: c('albino') }); save(); toast('🎯 목표를 정했어요 · 다음에 태어나는 아이부터 적용돼요'); if (el.dataset.pair) return act('autopair', { dataset: { id: String(i) } }); return showBoxes(); }
-    case 'cleargoal': C.setBoxGoal(S, +el.dataset.id, null); save(); return showBoxes();
+      C.setBoxGoal(S, i, { color: v('color'), tail: v('tail'), pat: v('pat'), star: +v('star') || 0, fin: v('fin'), metal: c('metal'), bigd: c('bigd'), albino: c('albino') }); save(); toast('🎯 목표를 정했어요 · 다음에 태어나는 아이부터 적용돼요'); if (el.dataset.pair) return act('autopair', { dataset: { id: String(i) } }); if (el.dataset.path) { const gg = (S.boxGoal || {})[i]; if (gg) return showPath(gg, i); } return showBox(i); }
+    case 'cleargoal': C.setBoxGoal(S, +el.dataset.id, null); save(); return showBox(+el.dataset.id);
+    case 'pathord': { const o = (S.orders || []).find(x => x.id === id); if (o) return showPath(ordGoal(o)); return; }
+    case 'pathput': { const i = id; C.moveTo(S, +el.dataset.m, 'box' + i); C.moveTo(S, +el.dataset.f, 'box' + i); save(); render(); toast('💞 1세대 짝을 넣었어요'); return showBox(i); }
+    case 'starter': { const r = C.buyStarter(S, el.dataset.c, el.dataset.sex, Math.random); if (r.err) { err = r.err; break; } handle(r.ev); save(); render(); toast(`🎁 ${C.COLORS[el.dataset.c].n} ${el.dataset.sex === 'm' ? '수컷' : '암컷'}이 왔어요`); return showShop(); }
     case 'photo': { closePop(); const f = S.fish.find(x => x.id === id); if (f) showPhoto(f); return; }
     case 'photosave': { (async () => {
         let dl = null; try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { }
