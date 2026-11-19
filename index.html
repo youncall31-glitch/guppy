@@ -165,6 +165,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 .tsw .tn{border:0;background:rgba(255,255,255,.72);border-radius:14px;padding:5px 14px;min-width:150px;text-align:center;color:#24343c;font:inherit;line-height:1.25}.tsw .tn b{display:block;font-size:14px}.tsw .tn span{font-size:11.5px;opacity:.85}.tsw .tn span.warn{color:#c2620a;font-weight:700}
 .tdots{display:flex;gap:4px;justify-content:center;margin-top:3px}.tdots i{width:5px;height:5px;border-radius:50%;background:rgba(36,52,60,.25)}.tdots i.on{background:#24343c}
 .chips span.sp{background:none;padding:0;flex:1}
+.mkt{font-size:11px;font-weight:600}.mkt.dn{color:#c2412d}.mkt.up{color:#1f8a4c}
 .starter{background:linear-gradient(135deg,#fff4d6,#ffe3ef);border-radius:16px;padding:10px 12px;margin:0 0 12px}.starter>b{font-size:15px}.starter small{display:block;color:#7a5a00;font-size:12px;margin:3px 0}
 .sg{display:flex;flex-direction:column;gap:6px;margin:8px 0}.sc{display:flex;align-items:center;gap:8px;background:#fff;border-radius:12px;padding:6px 8px}.sc i{width:16px;height:16px;border-radius:50%}.sc b{flex:1;font-size:14px}.sc .btn{min-width:48px}.sc.off{opacity:.45}
 .req{display:flex;gap:8px;align-items:center;background:#fff;border-radius:14px;padding:8px;margin-bottom:8px;border:2px solid transparent}.req.ok{border-color:#2fa58a}.req>i{width:70px;flex:none}.req>i svg{width:100%}.req .rq{flex:1;min-width:0}.req .rq b{font-size:13px}.req q{display:block;font-size:11.5px;color:#7a8b91;quotes:'“' '”'}.req .want{display:block;font-size:14px;font-weight:700;margin:2px 0}.req small{font-size:11.5px;color:#4a5d64}.req .rb .btn{padding:8px 10px}
@@ -594,10 +595,14 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     S.money += g.r; S.goal = (S.goal || 0) + 1; log(S, `${g.who ? '💌 ' + g.who + ' 의뢰' : '🎯 목표'} 완료: ${g.t} (+${g.r})`); return g.r; }
   const maxPlants = S => Math.max(...S.tanks.map(t => decoStats(t).n));
   function roomTank(S, pref) { const order = [curT(S, pref)].concat(S.tanks.map((_, i) => i)); for (const i of order) if (S.tanks[i] && !S.tanks[i].show && tankUsed(S, i) < tankCap(S, i)) return i; return -1; }
+  /* 시세: 같은 품종을 팔수록 내려가고(하루 3마리째엔 경쟁업체 대량 납품) 며칠에 걸쳐 회복. 오늘의 인기 품종은 웃돈 */
+  const MKT = { drop: 0.15, rec: 0.85, flood: 0, hot: 0 }, UPKEEP = { per: 1, free: 15 };   // 관리비: 15마리 넘는 만큼 하루 1씩 (사료·전기)
+  const mktMul = (S, k) => 1 / (1 + MKT.drop * (S.market[k] || 0)) * (MKT.hot && S.hot === k ? 1 + MKT.hot : 1);
+  const mktPct = (S, f) => Math.round((mktMul(S, keyOf(f.ph)) - 1) * 100);
   function sellPrice(S, f) {
     if (!isAdult(f)) return 0;
     const old = f.age > f.life * 0.75 ? 0.6 : 1, sexF = f.sex === 'm' ? 1 : 0.6, food = colorOn(S, f) ? 1.25 : 1;
-    const mk = 1 / (1 + 0.15 * (S.market[keyOf(f.ph)] || 0));
+    const mk = mktMul(S, keyOf(f.ph));
     return Math.max(1, Math.round(basePrice(f.ph) * sexF * (0.5 + 0.5 * health(f.F)) * old * food * mk * (f.sick ? 0.5 : 1) * tailK(f)));
   }
   const pagesDone = S => PAGES.filter(([p]) => ALBUM.filter(a => a.page === p).every(a => S.album[a.key])).length;
@@ -606,15 +611,17 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     const sexF = f.sex === 'm' ? 1 : 0.6, food = colorOn(S, f) ? 1.2 : 1;
     return basePrice(f.ph) * 0.02 * sexF * (0.5 + 0.5 * health(f.F)) * food * tailK(f);
   }
+  const SHOW = { mul: 2, cap: 2 }, showCap = t => Math.max(10, (THEMES[t.theme] || { price: 1500 }).price * SHOW.cap / 100 * (1 + addonBonus(t)));
   function tankIncome(S) {   // 손님 수입은 가게 전체로 한 번에
-    let raw = 0, over = false; const ad = [];
+    let raw = 0, over = false; const ad = [], per = [];
     S.tanks.forEach((t, i) => {
       if (t.lock) return;   // (예전) 시간 멈춤 어항은 손님에게 보이지 않는다
       const L = at(S, 'tank' + i).filter(isAdult), o = L.length > tankCap(S, i); if (o) over = true; ad.push(...L);
-      raw += L.reduce((s, f) => s + dailyOf(S, f), 0) * (1 + decoStats(t).charm) * (o ? 0.7 : 1) * (t.show ? 2 * (1 + addonBonus(t)) : 0);
+      const tr = L.reduce((s, f) => s + dailyOf(S, f), 0) * (1 + decoStats(t).charm) * (o ? 0.7 : 1) * (t.show ? SHOW.mul * (1 + addonBonus(t)) : 0); raw += tr; if (tr) per.push([tr, t]);
     });
     const distinct = new Set(ad.map(f => keyOf(f.ph))).size;
-    raw *= (1 + 0.05 * distinct) * (1 + 0.1 * pagesDone(S)) * repMult(S) * (1 + 0.05 * (S.tanks.length - 1));
+    const gm = (1 + 0.05 * distinct) * (1 + 0.1 * pagesDone(S)) * repMult(S) * (1 + 0.05 * (S.tanks.length - 1)); raw *= gm;
+    if (SHOW.cap) raw = per.reduce((s, [tr, t]) => { const c = showCap(t); return s + c * Math.tanh(tr * gm / c); }, 0);   // 전시 어항마다 하루 손님 수입에 한도(테마가 좋을수록 높다)
     raw += 2 * S.tanks.filter((t, i) => t.show && at(S, 'tank' + i).filter(isAdult).length >= 2).length;   // 지나가다 구경하는 손님의 기본 입장료(어항마다 2)
     const avgH = ad.length ? ad.reduce((s, f) => s + health(f.F), 0) / ad.length : 1;
     const pays = raw >= PAY_MIN;
@@ -741,7 +748,9 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     // 4-2) 자동 관리 규칙
     autoManage(S, ev);
     // 5) 시장: 같은 품종을 많이 팔면 값이 떨어졌다가 천천히 회복
-    for (const k in S.market) { S.market[k] *= 0.85; if (S.market[k] < 0.05) delete S.market[k]; }
+    for (const k in S.market) { S.market[k] *= MKT.rec; if (S.market[k] < 0.05) delete S.market[k]; }
+    if (MKT.hot) { const own = S.fish.filter(isAdult).map(f => keyOf(f.ph)), al = Object.keys(S.album), pool = rng() < 0.5 && own.length ? own : al; S.hot = pool.length ? pool[Math.floor(rng() * pool.length)] : null; }
+    if (UPKEEP.per) { const n = S.fish.length - UPKEEP.free; if (n > 0) { const c = Math.min(S.money, Math.round(n * UPKEEP.per * (offline ? 0.3 : 1))); S.money -= c; S.lastUpkeep = c; S.stats.upkeep = (S.stats.upkeep || 0) + c; if (c && !S.upTold) { S.upTold = 1; log(S, `🍤 구피가 ${UPKEEP.free}마리를 넘어서 사료값·전기세가 나가기 시작했다 (넘는 만큼 하루 1씩)`); ev.push({ t: 'upkeep1' }); } } else S.lastUpkeep = 0; }
     S.rep = (S.rep || 0) * 0.99;
     // 6) 손님
     const inc = tankIncome(S);
@@ -770,7 +779,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     const f = S.fish.find(x => x.id === id); if (!f) return '없는 구피다';
     if (!isAdult(f)) return '아직 어려서 팔 수 없다';
     const p = sellPrice(S, f); const k = keyOf(f.ph);
-    S.market[k] = (S.market[k] || 0) + 1; S.money += p; S.stats.sold++; S.stats.earned += p;
+    S.market[k] = (S.market[k] || 0) + 1; if (MKT.flood) { const sd = S.soldDay || (S.soldDay = {}); if (sd.d !== S.day) { S.soldDay = { d: S.day }; } S.soldDay[k] = (S.soldDay[k] || 0) + 1; if (S.soldDay[k] === 3) { S.market[k] += MKT.flood; log(S, `📉 경쟁업체가 ${nameOf(f.ph)}을(를) 대량으로 납품해 시세가 떨어졌다`); } } S.money += p; S.stats.sold++; S.stats.earned += p;
     S.fish = S.fish.filter(x => x !== f); log(S, `💰 ${nameOf(f.ph)} ${f.sex === 'm' ? '♂' : '♀'}을(를) ${p}에 팔았다`);
     return p;
   }
@@ -1062,7 +1071,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     S.fish.forEach(f => { walk(f.id, 0); if (f.mate) walk(f.mate.id, 0); });
     for (const k in S.reg) if (!keep.has(+k)) delete S.reg[k];
   }
-  root.CORE = { ORD_K, ORD_GAP, buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
+  root.CORE = { mktPct, SHOW, showCap, MKT, UPKEEP, mktMul, ORD_K, ORD_GAP, buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
     newState, express, score, basePrice, keyOf, nameOf, recipeLines, recipeCost, health, inbreed, makeChild, dayTick, sell, moveTo, rescue, buyFounder, buy, buyRecipe, boostBirth, growFry,
     sellPrice, dailyOf, tankIncome, comment, survival, at, isAdult, tankCap, tankUsed, inTank, roomTank, maxPlants, donate, donateRep, repMult, autoManage, AUTO_DEFAULT, nurseryCap, pagesDone, pruneReg, randomGenes };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -1841,7 +1850,7 @@ function renderHud() {
   $('#money').textContent = fmt(S.money); $('#day').textContent = `${S.day}일째`; $('#spd').textContent = (SPEEDS.find(x => x.v === S.speed) || SPEEDS[2]).i;
   const used = C.tankUsed(S), fryN = C.at(S, tankLoc()).filter(f => !C.isAdult(f)).length, inc = C.tankIncome(S), cap = C.tankCap(S);
   $('#stats').innerHTML = `<span class="${used > cap ? 'warn' : ''}" data-tx="🐟 이 어항의 구피 / 정원">🐟 ${used}/${cap}${fryN ? ` · 치어 ${fryN}` : ''}</span><span data-tx="🪴 꾸민 자리 / 전체 자리">🪴 ${C.decoStats(curTank()).n}/${C.slotCount(curTank().size)}</span>${(S.orders || []).length ? `<span class="tap ${S.orders.some(o => C.orderMatches(S, o).length) ? 'ok' : ''}" data-a="orders" data-tx="📋 손님 주문">📋 ${S.orders.length}</span>` : ''}<span class="tap ${C.careOf(curTank()).water < 50 ? 'warn' : ''}" data-a="care" data-tx="${curTank().show ? '🖼 전시 어항 꾸미기' : '💧 물 상태 · 누르면 물갈이·먹이'}">${curTank().show ? '🖼 꾸미기 장치' : `💧${Math.round(curTank().water)}%${curTank().full > 0 ? ' · 🍤' : ''}`}</span><span class="${inc.pays ? '' : 'warn'}" data-tx="하루 손님 수입 · 예쁜 구피·수초가 많을수록 ↑">${inc.pays ? `손님 🪙${fmt(inc.total)}/일` : '손님 없음'}</span>${S.rep >= 1 ? `<span data-tx="⭐ 기증하면 올라요 · 하루 1%씩 식어요">⭐ 평판 ${Math.round(S.rep)} · 손님 +${Math.round((C.repMult(S) - 1) * 100)}%</span>` : ''}${S.auto && S.auto.on ? '<span data-tx="🤖 자동 관리가 켜져 있어요">🤖 자동</span>' : ''}`;
-  { const ie = $('#inc'); ie.textContent = inc.pays ? `+${fmt(inc.total)}/일${S.auto && S.auto.on ? ' · 🤖' : ''}` : S.tanks.some(t => t.show) ? '손님 없음' : (S.auto && S.auto.on ? '🤖' : ''); ie.classList.toggle('warn', !inc.pays && S.tanks.some(t => t.show));
+  { const ie = $('#inc'), up = S.lastUpkeep ? ` · 🍤−${fmt(S.lastUpkeep)}` : ''; ie.textContent = (inc.pays ? `+${fmt(inc.total)}/일${up}${S.auto && S.auto.on ? ' · 🤖' : ''}` : S.tanks.some(t => t.show) ? '손님 없음' + up : (up ? up.slice(3) + '/일' : '') + (S.auto && S.auto.on ? ' 🤖' : '')); ie.classList.toggle('warn', !inc.pays && S.tanks.some(t => t.show));
     const ob = $('#ordBtn'), on = (S.orders || []).length; ob.style.display = on ? '' : 'none'; ob.classList.toggle('ok', on && S.orders.some(o => C.orderMatches(S, o).length)); ob.innerHTML = `📋${on > 1 ? `<b>${on}</b>` : ''}`; }
   { const t = curTank(), n = S.tanks.length, w = C.careOf(t).water, nm = t.show ? '🖼 ' + C.THEMES[t.theme].n : C.SIZES[t.size].n + (S.tanks.filter(x => !x.show).length > 1 ? ' ' + S.tanks.slice(0, S.cur + 1).filter(x => !x.show).length : '');
     const st = `🐟 ${C.tankUsed(S)}/${C.tankCap(S)}${t.show ? ' · 시간 멈춤' : ` · 💧${Math.round(t.water)}%${t.full > 0 ? ' · 🍤' : ''}`}${S.fish.some(f => f.atRisk && f.loc === tankLoc()) ? ' · 🐣' : ''}`;
@@ -1980,7 +1989,7 @@ function showFish(id, keep) {
   openSheet(head(`${f.nick ? f.nick + ' · ' : ''}${adult ? C.nameOf(f.ph) : '치어'} ${sexI(f)}`, 'fishes') + `<div class="big">${fishSVG(f)}</div>
     <div class="kv"><span>사는 곳</span><b>${where}</b><span>나이</span><b>${Math.floor(f.age)}일 / 수명 ${f.life}일${adult && f.age > f.life * .75 ? ' · 노년' : ''}</b>
     <span>혈통 건강도</span><b>${Math.round(C.health(f.F) * 100)}% ${f.F > 0 ? `(근교 ${Math.round(f.F * 100)}%)` : ''}</b>
-    ${adult ? `<span>지금 팔면</span><b>🪙 ${fmt(C.sellPrice(S, f))}</b><span>전시하면</span><b>하루 약 🪙 ${C.dailyOf(S, f).toFixed(1)} (손님 보너스 전)</b>` : `<span>정체</span><b>${C.MATURE - Math.floor(f.age)}일 뒤에 드러나요</b>`}
+    ${adult ? `<span>지금 팔면</span><b>🪙 ${fmt(C.sellPrice(S, f))}${mk(f)}</b><span>전시하면</span><b>하루 약 🪙 ${C.dailyOf(S, f).toFixed(1)} (손님 보너스 전)</b>` : `<span>정체</span><b>${C.MATURE - Math.floor(f.age)}일 뒤에 드러나요</b>`}
     ${fix ? `<span>형질 고정</span><b>${fix}</b>` : ''}${f.preg ? `<span>임신</span><b>${f.preg}일 뒤 출산</b>` : ''}
     <span>부모</span><b>${f.sire ? `#${f.sire} × #${f.dam}` : '새로 들여온 혈통'}</b></div>
     <p class="note">겉모습만 보인다. 숨은 유전자는 교배 결과로 짐작해야 한다. ★ 보호한 구피는 자동 관리가 팔거나 기증하지 않는다.</p>
@@ -2096,7 +2105,7 @@ function showShop() {
     <h5><span>💞 교배 어항 · 1자 ${C.breedCount(S)}/${C.BREED_MAX}</span></h5>
     ${shopIt('🫧', '1자 교배 어항 추가', '8마리 · 새끼를 낳아요', C.BREED_PRICE[C.breedCount(S)], 'newtank', 'data-id="0"')}
     <h5><span>🖼 전시 어항 · 3자 ${C.showCount(S)}/${C.SHOW_MAX}</span></h5>
-    ${Object.entries(C.THEMES).map(([k, th]) => `<div class="it theme"><i style="background:${th.art ? `url(${THEME_ART[th.art]}) center/cover` : th.bg ? `linear-gradient(${th.bg[1]},${th.bg[0]})` : '#dfe7ea'}">${th.art ? '' : th.i}</i><div><b>${th.n}</b><small>${th.d}${th.soon ? ' · 곧 나와요' : ''}</small></div>${th.soon ? '<button class="btn" disabled>준비 중</button>' : `<button class="btn go" data-a="buyshow" data-id="${k}" ${S.money < th.price || C.showCount(S) >= C.SHOW_MAX ? 'disabled' : ''}>🪙${fmt(th.price)}</button>`}</div>`).join('')}
+    ${Object.entries(C.THEMES).map(([k, th]) => `<div class="it theme"><i style="background:${th.art ? `url(${THEME_ART[th.art]}) center/cover` : th.bg ? `linear-gradient(${th.bg[1]},${th.bg[0]})` : '#dfe7ea'}">${th.art ? '' : th.i}</i><div><b>${th.n}</b><small>${th.d}${th.soon ? '' : ` · 손님 하루 최대 🪙${fmt(C.showCap({ theme: k }))}`}${th.soon ? ' · 곧 나와요' : ''}</small></div>${th.soon ? '<button class="btn" disabled>준비 중</button>' : `<button class="btn go" data-a="buyshow" data-id="${k}" ${S.money < th.price || C.showCount(S) >= C.SHOW_MAX ? 'disabled' : ''}>🪙${fmt(th.price)}</button>`}</div>`).join('')}
     ${shopIt('🌈', '발색 사료 들이기', '3일간 색이 진해져요 · 💰+25%', S.food ? null : C.FOOD_COST, 'buy', 'data-id="food"')}
     <h5><span>🎲 치어 뽑기</span><span class="note" data-a="gachaodds" style="pointer-events:auto;text-decoration:underline">확률 보기</span></h5>
     <div class="it"><i>🎲</i><div><b>희귀 혈통 치어 뽑기</b><small>★ = 꼬리 크기 · ${C.GACHA_PITY - (S.pity || 0)}번 안에 ★4 보장</small></div>
@@ -2173,6 +2182,7 @@ function showCare() {
     <div class="row"><button class="btn" data-a="close">닫기</button></div>`);
 }
 const ordGoal = o => { const g = {}; ['color', 'tail', 'pat', 'star', 'metal', 'bigd', 'albino', 'fin'].forEach(k => { if (o[k]) g[k] = o[k]; }); return g; };
+function mk(f) { const p = C.mktPct(S, f); if (!p) return ''; const base = Math.round(C.sellPrice(S, f) / (1 + p / 100)); return ` <small class="mkt ${p < 0 ? 'dn' : 'up'}" data-tx="같은 품종을 많이 팔면 값이 내려가고, 며칠 지나면 돌아와요">(정가 ${fmt(base)} · 시세 ${p > 0 ? '+' : ''}${p}%)</small>`; }
 function showOrders() {
   const L = S.orders || [];
   openSheet(head(`📋 의뢰 ${L.length}`) + `${tip('orders', '맞는 구피를 보내면 보상을 받아요. 기한은 없어요 · 하나만 남으면 3~5일 뒤 새 의뢰가 몰려와요.')}
@@ -2431,6 +2441,7 @@ function handle(ev, quiet) {
     if (e.t === 'birth' && e.where === 'box' && e.ask && e.ids && e.ids.length) queue(() => notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🐣 번식통 ${e.box + 1}에서 ${e.ids.length}마리!</h3><div class="big">${miniTank(e.box, true)}</div><p class="note" style="text-align:center">이 아이들을 어떻게 할까요?</p><div class="row"><button class="btn" data-a="birthdest" data-v="stay" data-ids="${e.ids.join(',')}">번식통에 그대로</button><button class="btn go" data-a="birthdest" data-v="tank" data-ids="${e.ids.join(',')}">자라면 어항으로</button></div>`));
     if (e.t === 'album') { UI.newAlbum++; const gf = S.fish.find(x => x.id === e.id); if (!quiet && !(gf && gf.gacha && ev.some(x => x.t === 'mature' && x.id === e.id))) { if (modalOpen) toast(`📸 새 형질 발견! ${C.ALBUM_BY[e.key].name}`); queue(() => showDiscovery(e.key)); } }
     if (e.t === 'firstPay' && !quiet) queue(() => notice(`<h3 style="font-family:'Gowun Dodum'">🎉 첫 손님이 돈을 냈어요!</h3><p>"이제 좀 볼 만하네요!" 손님이 입장료 🪙 ${e.amt}을 내고 갔어요. 어항이 예쁠수록, 품종이 다양할수록, 수초가 많을수록 손님 수입이 늘어요.</p><div class="row"><button class="btn go" data-a="close">신난다</button></div>`));
+    if (e.t === 'upkeep1' && !quiet) toast('🍤 구피가 15마리를 넘어 관리비가 나가요 · 남는 아이는 팔거나 의뢰로 보내요');
     if (e.t === 'order' && !quiet) toast(`📋 새 의뢰 ${e.n}개가 왔어요 · ☰ → 📋 의뢰`);
     if (e.t === 'gift' && !quiet) toast('🤝 이웃 가게 사장님이 구피 한 쌍을 나눠 줬어요');
     if (e.t === 'auto' && !quiet) { toast(`🤖 자동 ${e.action === 'donate' ? `기증 ${e.n}마리 · ⭐+${e.rep}` : `판매 ${e.n}마리 · 🪙+${fmt(e.coins)}`}`); if (e.coins) inc += e.coins; }
