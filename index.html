@@ -877,8 +877,8 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     }
     if (res.n) { log(S, `🤖 자동 ${A.action === 'donate' ? '기증' : '판매'} ${res.n}마리 · ${A.action === 'donate' ? '평판 +' + res.rep : '🪙+' + res.coins}`); ev.push(Object.assign({ t: 'auto', action: A.action }, res)); }
   }
-  function rescue(S) {
-    const risk = S.fish.filter(f => f.atRisk), room = nurseryCap(S) - at(S, 'nursery').length;
+  function rescue(S, force) {
+    const risk = S.fish.filter(f => f.atRisk), room = force ? 999 : nurseryCap(S) - at(S, 'nursery').length;   // 튜토리얼에선 보육통이 차 있어도 건진다
     let n = 0; risk.forEach(f => { if (n < room) { f.atRisk = false; f.loc = 'nursery'; n++; } });
     if (n) { log(S, `🫙 치어 ${n}마리를 보육통으로 건졌다`); S.stats.rescued = (S.stats.rescued || 0) + n; }
     return { n, left: risk.length - n };
@@ -1721,7 +1721,7 @@ function startle(x, y) {   // 물을 톡 치면 근처 구피가 깜짝 놀라 �
     if (!inside(p)) return;
     const k = S.feedKind || 'flake', r = C.feed(S, S.cur, k);
     if (r && r !== 'over') { toast(r + (k !== 'flake' ? ' · 💧 표시에서 먹이를 바꿀 수 있어요' : '')); return; }
-    dropFood(k, p.x); tutOn('feed'); if (r === 'over') toast('이미 배불러요 · 남은 먹이가 물을 탁하게 해요 💧-8'); else if (k === 'brine') toast('🦐 이틀 동안 치어가 쑥쑥 자라고 짝짓기가 늘어요'); else if (k === 'color') toast('🌈 3일 동안 색이 진해져요');
+    dropFood(k, p.x); tutOn('feed'); if (r === 'over') toast('이미 배불러요 · 남은 먹이가 물을 탁하게 해요 💧-3'); else if (k === 'brine') toast('🦐 이틀 동안 치어가 쑥쑥 자라고 짝짓기가 늘어요'); else if (k === 'color') toast('🌈 3일 동안 색이 진해져요');
     save(); renderHud();
   };
   b.addEventListener('pointerup', end); b.addEventListener('pointercancel', e => { on = false; pin.style.display = 'none'; LURE = null; });
@@ -2516,7 +2516,9 @@ function showPath(g, back) {
 }
 /* 튜토리얼: 눌러야 할 곳만 밝게, 나머지는 어둡게. 출산까지 빠르게 보여 준다 */
 const TUT = { on: false, i: 0, pause: false, mom: null };
-const momOf = () => { const m = S.fish.find(f => f.sex === 'f' && C.isAdult(f) && (f.loc || '').startsWith('tank')); return m; };
+const momOf = () => {   // 튜토리얼 엄마: 전시 어항(시간이 멈춘 곳)이 아닌 교배용 어항의 다 자란 암컷, 지금 보는 어항부터
+  const ok = f => f.sex === 'f' && C.isAdult(f) && (f.loc || '').startsWith('tank') && S.tanks[+f.loc.slice(4)] && !S.tanks[+f.loc.slice(4)].show && !S.tanks[+f.loc.slice(4)].lock;
+  const m = S.fish.find(f => ok(f) && f.loc === 'tank' + S.cur) || S.fish.find(ok); if (m && m.loc !== 'tank' + S.cur) { S.cur = +m.loc.slice(4); layout(); render(); } return m; };
 const TS = () => TUT.list || TUT_STEPS;
 /* 짧은 길잡이: 새 기능을 처음 만날 때 한 번만, 그 자리를 비춰 한 줄로 알려준다 */
 function coach(id, steps) {
@@ -2536,7 +2538,7 @@ const TUT_STEPS = [
   { el: () => $('#menuBtn'), t: '☰ 메뉴', x: '<b>☰</b>를 눌러 봐요.<br><small>물 갈기 · 속도 · 도움말 · 새 기능도 여기 생겨요</small>', wait: 'menu' },
   { el: () => $('#goal'), t: '🎓 수습 과정', x: '<b>목표</b>를 눌러 봐요. 9단계 수습을 끝내면 🪙500!<br><small>단계마다 새 기능이 열려요 · 막히면 목표를 누르면 할 곳으로 데려가 줘요</small>', wait: 'goal', start: () => { renderHud(); } }
 ];
-function startTut() { TUT.on = true; TUT.i = 0; TUT.pause = true; S.clock = 0; $('#tut').classList.add('on'); tutShow(); requestAnimationFrame(tutLoop); }
+function startTut() { if (curTank().show || curTank().lock) { const i = S.tanks.findIndex(t => !t.show && !t.lock); if (i >= 0) { S.cur = i; VIEW.z = 1; VIEW.follow = null; layout(); render(); } } momOf(); TUT.on = true; TUT.i = 0; TUT.pause = true; S.clock = 0; $('#tut').classList.add('on'); tutShow(); requestAnimationFrame(tutLoop); }
 function tutShow() {
   const st = TS()[TUT.i]; if (!st) return tutEnd(); if (st.start) st.start();
   const b = $('#tut .tbox'), last = TUT.i === TS().length - 1;
@@ -2559,7 +2561,7 @@ function tutNext() { TUT.i++; if (TUT.i >= TS().length) return tutEnd(); tutShow
 function tutOn(ev) { if (!TUT.on) return; const st = TS()[TUT.i]; if (!st || st.wait !== ev) return;
   if (/^sheet:|^menu$/.test(ev)) { TUT.peek = true; $('#tut').classList.remove('on'); setTimeout(() => { if (ev === 'menu') menuToggle(false); else closeSheet(); TUT.peek = false; if (TUT.on) { $('#tut').classList.add('on'); tutNext(); } }, 1700); return; }
   if (ev === 'born') setTimeout(tutNext, 6500); else setTimeout(tutNext, ev === 'pop' ? 250 : ev === 'tx' ? 1600 : 400); }
-function offerDiv() {   // 튜토리얼 출산 뒤: 어항에서 저절로 새끼가 생기지 않게 칸막이를 권한다 (처음 한 번은 공짜)
+function offerDiv() { if (TUT.on && !TUT.coach) return;   // 튜토리얼 출산 뒤: 어항에서 저절로 새끼가 생기지 않게 칸막이를 권한다 (처음 한 번은 공짜)
   if (S.divOffered) return; const t = S.tanks.findIndex(x => !x.show && !x.div); if (t < 0) return; S.divOffered = 1; save();
   queue(() => notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🚧 칸막이를 세울까요?</h3><div class="recipe"><ul class="help"><li>🐟 수컷은 왼쪽, 암컷은 오른쪽</li><li>🙅 어항에서 저절로 새끼가 안 생겨요<br><small>치어 건지기 · 자리 정리가 줄어요</small></li><li>💞 새끼는 번식통에서 골라서 받아요</li><li>☰ 메뉴에서 언제든 걷을 수 있어요</li></ul></div><div class="row"><button class="btn" data-a="close">나중에</button><button class="btn go" data-a="divfree">무료로 세우기</button></div>`));
 }
@@ -2606,7 +2608,7 @@ function showSpeed() {
     <p class="note">🌙 앱을 닫으면 하루 = 10분 (최대 30일)</p>
     <div class="row"><button class="btn go" data-a="close">닫기</button></div>`);
 }
-function checkAttend() {
+function checkAttend() { if (TUT.on && !TUT.coach) return;   // 튜토리얼이 끝나면 다시 부른다
   if (TUT.on || !S.intro) return; const d = new Date(), y = new Date(Date.now() - 864e5), k = x => `${x.getFullYear()}-${x.getMonth() + 1}-${x.getDate()}`;
   const a = C.attend(S, k(d), k(y)); if (!a) return; save(); render();
   queue(() => notice(`<h3 style="text-align:center;font-family:'Gowun Dodum'">📅 출석 ${a.n}일째</h3>
@@ -2923,7 +2925,7 @@ function act(a, el) {
         <div class="row"><button class="btn" data-a="close">그만두기</button><button class="btn go" data-a="surpgo">${SP.list.length}마리 팔기 · 🪙${fmt(SP.coins)}</button></div>`); }
     case 'surpgo': { const SP = surplus(); let tot = 0, n = 0; SP.list.forEach(f => { const p = C.sell(S, f.id); if (typeof p === 'number') { tot += p; n++; } }); closeSheet(); toast(`💰 ${n}마리를 🪙${fmt(tot)}에 팔았어요`); floatMoney(tot); save(); render(); return; }
     case 'sellsel': { let tot = 0, n = 0, kept = 0; [...UI.sel].forEach(i => { const f = S.fish.find(x => x.id === i); if (f && whyPrecious(f, S.fish.filter(x => !UI.sel.has(x.id) || x.id === i)).length) { kept++; return; } const p = C.sell(S, i); if (typeof p === 'number') { tot += p; n++; } }); UI.sel = null; toast(`${n}마리를 🪙${fmt(tot)}에 팔았어요${kept ? ` · 소중한 아이 ${kept}마리는 남겼어요` : ''}`); floatMoney(tot); break; }
-    case 'rescue': { const r = C.rescue(S); if (r.n) tutOn('rescue'); toast(r.n ? `🫙 치어 ${r.n}마리를 보육통으로 건졌어요${r.left ? ` · 보육통이 가득 차 ${r.left}마리는 남았어요` : ''}` : '보육통이 가득 찼어요! 상점에서 넓히거나 다 자란 구피를 어항으로 옮기세요'); break; }
+    case 'rescue': { const r = C.rescue(S, TUT.on && !TUT.coach); if (r.n) tutOn('rescue'); toast(r.n ? `🫙 치어 ${r.n}마리를 보육통으로 건졌어요${r.left ? ` · 보육통이 가득 차 ${r.left}마리는 남았어요` : ''}` : '보육통이 가득 찼어요! 상점에서 넓히거나 다 자란 구피를 어항으로 옮기세요'); break; }
     case 'sell': { const was = UI.sheet; const p = sellOne(id, was === 'fish' ? 'fishes' : ''); if (typeof p === 'number' && was === 'fish') return showFishes(); return; }
     case 'sellforce': { const p = C.sell(S, id); if (typeof p === 'string') return toast(p); toast(`🪙 ${fmt(p)}에 팔았어요`); floatMoney(p); closePop(); save(); render(); if (el.dataset.back === 'fishes') return showFishes(); return closeSheet(); }
     case 'totank': err = C.moveTo(S, id, 'tank'); break;
