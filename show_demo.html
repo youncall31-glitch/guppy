@@ -189,7 +189,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 .srs{display:flex;flex-direction:column;gap:3px;max-height:30vh;overflow:auto;margin-bottom:8px}.sr{display:flex;align-items:center;gap:8px;font-size:12.5px}.sr i{width:40px;flex:none}.sr i svg{width:40px;height:auto;display:block}.sr b{flex:1;font-weight:600}.sr em{font-style:normal;font-weight:800;color:#1f8a4c}.sr small{font-size:10.5px;color:#8a6a1e}.sgp .btn{width:100%}
 .sfbtn{display:block;width:100%;text-align:left;background:#eef4f5;border:0;border-radius:12px;padding:9px 12px;margin:0 0 10px;font-weight:700;font-size:13px;color:#24434f}.sfbtn small{display:block;font-weight:500;font-size:11px;color:#5a707a}.sfr{margin:0 0 6px}.sfr label{display:block;font-size:11.5px;font-weight:700;color:#5a707a;margin:0 2px 3px}.sfl{max-height:24vh;overflow:auto}
 .rsell{display:block;margin:5px auto 0;border:0;border-radius:999px;background:#fff3cf;color:#7a5a12;font-size:11px;font-weight:700;padding:3px 9px}.rsell.warn{background:#fde6e2;color:#b3261e;white-space:normal}.ff.sold{opacity:.5}
-body.held #daybar{background:#b9c4c9!important}body.held .pill.day::after{content:'⏸';position:absolute;right:10px;top:4px;font-size:12px;opacity:.75}.pill.day{position:relative}
+body.held #daybar{stroke:#b9c4c9!important}body.held .dring::after{content:'⏸';position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;font-size:9px;line-height:1}.pill.day{position:relative}
 .mkt{font-size:11px;font-weight:600}.mkt.dn{color:#c2412d}.mkt.up{color:#1f8a4c}
 .starter{background:linear-gradient(135deg,#fff4d6,#ffe3ef);border-radius:16px;padding:10px 12px;margin:0 0 12px}.starter>b{font-size:15px}.starter small{display:block;color:#7a5a00;font-size:12px;margin:3px 0}
 .sg{display:flex;flex-direction:column;gap:6px;margin:8px 0}.sc{display:flex;align-items:center;gap:8px;background:#fff;border-radius:12px;padding:6px 8px}.sc i{width:16px;height:16px;border-radius:50%}.sc b{flex:1;font-size:14px}.sc .btn{min-width:48px}.sc.off{opacity:.45}
@@ -325,6 +325,14 @@ body.hasdream #shelf{right:66px;left:66px}
 #note{top:calc(96px + env(safe-area-inset-top))!important;z-index:5!important;font-size:12.5px!important;padding:8px 13px!important;background:rgba(10,30,42,.82)!important;max-width:calc(100% - 16px)!important}
 #float{top:calc(44px + env(safe-area-inset-top))!important;left:20px;right:auto!important}
 #crowd{display:none!important}
+/* 날짜: 긴 막대 대신 작은 동그라미(한 바퀴 = 하루) · 목표 글자가 줄 전체를 쓴다 */
+#hud .pill.day{justify-content:center;padding:6px 8px 6px 7px!important}#hud .pill.day .dl{gap:5px}
+.dring{position:relative;width:22px;height:22px;flex:none;display:block}.dring svg{width:22px;height:22px;transform:rotate(-90deg);display:block}
+.dring .rb{fill:none;stroke:rgba(255,255,255,.22);stroke-width:3.2}.dring .rf{fill:none;stroke:var(--accent,#3cc4a8);stroke-width:3.2;stroke-linecap:round;stroke-dasharray:0 100;transition:stroke-dasharray .25s linear}
+#hud .pill.day #day{font-size:13px;font-weight:700}
+#lane #goal{width:100%;height:34px;padding:0 12px!important;border-radius:12px!important;background:rgba(255,255,255,.6)!important;color:#24343c!important;font-size:13px!important;font-weight:700;text-align:left}
+#lane #goal.ready{background:var(--accent2)!important;color:#fff!important}#lane #goal.req{background:rgba(255,244,214,.95)!important;color:#5a4300!important}
+#hud .pill.day{flex:none!important;margin-left:auto}#hud .pill.money{flex:none}
 </style>
 </head>
 <body>
@@ -333,7 +341,7 @@ body.hasdream #shelf{right:66px;left:66px}
     <svg id="tank" role="img" aria-label="전시 어항"></svg>
     <div id="hud">
       <div class="pill money" data-a="sellhub" data-tx="🪙 가진 돈 · 누르면 💰 팔기 정리"><span class="mv">🪙 <span id="money">0</span></span><small id="inc"></small></div>
-      <div class="pill day" data-tx="게임 날짜 · 막대가 차면 하루가 지나요"><div class="dl"><span id="day">1일째</span><button id="goal" data-a="goal" data-tx="🎯 지금 목표 · 끝내면 보상" style="display:none"></button></div><span class="bar"><i id="daybar"></i></span></div>
+      <div class="pill day" data-tx="게임 날짜 · 동그라미가 한 바퀴 차면 하루가 지나요"><div class="dl"><span class="dring"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" class="rb"/><circle cx="12" cy="12" r="10" class="rf" id="daybar" pathLength="100"/></svg></span><span id="day">1일째</span></div></div>
       <button class="pill" data-a="speed" id="spd" aria-label="속도" data-tx="⏱ 시간 빠르기 바꾸기">×1</button>
       <button class="pill" id="ordBtn" data-a="orders" aria-label="주문" data-tx="📋 손님 주문" style="display:none">📋</button>
       <button class="pill" data-a="log" aria-label="기록" data-tx="📜 가게 기록">📜</button>
@@ -345,7 +353,7 @@ body.hasdream #shelf{right:66px;left:66px}
     <div id="stats" style="display:none"></div>
     <div id="bar2"><div id="shelf"></div>
     <div id="tools"><button id="feedBtn" data-tx="🍤 누르면 먹이 · 끌어서 원하는 곳에 뿌려도 돼요">🍤 먹이</button><button id="viewBtn" data-a="viewmode" data-tx="🖼 감상 모드 · 가로로 어항 전체를 봐요" style="display:none">🖼</button><button id="dream" data-a="dreampath" aria-label="목표 구피" style="display:none"></button></div></div>
-    <div id="lane"><button id="nextAct" data-a="nextact" style="display:none"></button>
+    <div id="lane"><button id="goal" data-a="goal" data-tx="🎯 지금 목표 · 끝내면 보상" style="display:none"></button><button id="nextAct" data-a="nextact" style="display:none"></button>
     <div id="rescue"><button data-a="rescue"><span id="rtxt"></span><small id="rsub"></small><i id="rbar"></i></button></div></div>
     <div id="crowd"></div>
     <div id="scroll"><i></i></div>
@@ -2156,7 +2164,7 @@ function menuHtml() {
 }
 function menuToggle(on) { const m = $('#menu'); on = on == null ? !m.classList.contains('on') : on; if (on) menuHtml(); m.classList.toggle('on', on); if (on) tutOn('menu'); }
 function renderHud() {
-  $('#money').textContent = fmt(S.money); $("#day").textContent = `${S.day}일`; $('#spd').innerHTML = `${(SPEEDS.find(x => x.v === S.speed) || SPEEDS[2]).i}<b>×${S.speed}</b>`;
+  $('#money').textContent = fmt(S.money); $("#day").textContent = `${S.day}일`; $('#spd').innerHTML = `⏳<b>×${S.speed}</b>`;
   const used = C.tankUsed(S), fryN = C.at(S, tankLoc()).filter(f => !C.isAdult(f)).length, inc = C.tankIncome(S), cap = C.tankCap(S);
   $('#stats').innerHTML = `<span class="${used > cap ? 'warn' : ''}" data-tx="🐟 이 어항의 구피 / 정원">🐟 ${used}/${cap}${fryN ? ` · 치어 ${fryN}` : ''}</span><span data-tx="🪴 꾸민 자리 / 전체 자리">🪴 ${C.decoStats(curTank()).n}/${C.slotCount(curTank().size)}</span>${(S.orders || []).length ? `<span class="tap ${S.orders.some(o => C.orderMatches(S, o).length) ? 'ok' : ''}" data-a="orders" data-tx="📋 손님 주문">📋 ${S.orders.length}</span>` : ''}<span class="tap ${C.careOf(curTank()).water < 50 ? 'warn' : ''}" data-a="${curTank().show ? 'care' : 'wcq'}" data-tx="${curTank().show ? '🖼 전시 어항 꾸미기' : '💧 누르면 바로 물갈이'}">${curTank().show ? '🖼 꾸미기 장치' : `💧${Math.round(curTank().water)}%${curTank().full > 0 ? ' · 🍤' : ''}`}</span><span class="${inc.pays ? '' : 'warn'}" data-tx="하루 손님 수입 · 예쁜 구피·수초가 많을수록 ↑">${inc.pays ? `손님 🪙${fmt(inc.total)}/일` : '손님 없음'}</span>${S.rep >= 1 ? `<span data-tx="⭐ 기증하면 올라요 · 하루 1%씩 식어요">⭐ 평판 ${Math.round(S.rep)} · 손님 +${Math.round((C.repMult(S) - 1) * 100)}%</span>` : ''}${S.auto && S.auto.on ? '<span data-tx="🤖 자동 관리가 켜져 있어요">🤖 자동</span>' : ''}`;
   { const ie = $('#inc'), up = S.lastUpkeep ? ` · 🍤−${fmt(S.lastUpkeep)}` : ''; ie.textContent = (inc.pays ? `+${fmt(inc.total)}/일${up}${S.auto && S.auto.on ? ' · 🤖' : ''}` : S.tanks.some(t => t.show) ? '손님 없음' + up : (up ? up.slice(3) + '/일' : '') + (S.auto && S.auto.on ? ' 🤖' : '')); ie.classList.toggle('warn', !inc.pays && S.tanks.some(t => t.show));
@@ -2921,6 +2929,8 @@ function nextAction() {
 }
 function renderNext() {
   const b = $('#nextAct'); if (!b) return; let n = VB.tank ? nextAction() : null;
+  if (n && !n.hot && (S.goal || 0) < C.AP_N && C.goalNow(S)) n = null;   // 수습 중에는 목표(수습 단계)가 먼저 · 급한 일만 앞선다
+  const gb = $('#goal'); if (gb && (n || $('#rescue').classList.contains('show'))) gb.style.display = 'none';   // 알림 띠: 치어 > 할 일 > 목표 순으로 하나만
   if (!n) { b.style.display = 'none'; b.dataset.k = ''; return; }
   const k = n.t + n.a + (n.id ?? ''); b.style.display = ''; b.classList.toggle('hot', !!n.hot);
   if (b.dataset.k !== k) { b.dataset.k = k; b.innerHTML = `${n.t}<small>${n.s}</small>${n.hot ? '' : `<span class="nax" data-a="nasnooze" aria-label="오늘은 그만">✕</span>`}`; b.dataset.t = n.t; b.dataset.go = n.a; b.dataset.id = n.id ?? ''; b.style.animation = 'none'; void b.offsetWidth; b.style.animation = ''; }
@@ -3025,7 +3035,7 @@ function step(dtMs) {
   S.clock += dtMs; let n = 0;
   while (S.clock >= C.DAY_MS && n < 40 && !TUT.pause) { S.clock -= C.DAY_MS; n++; handle(C.dayTick(S, Math.random)); }
   if (n) { save(); render(); }
-  const p = S.clock / C.DAY_MS; $('#daybar').style.width = (p * 100).toFixed(1) + '%';
+  const p = S.clock / C.DAY_MS; $('#daybar').style.strokeDasharray = `${(p * 100).toFixed(1)} 100`;
   const rb = $('#rbar'); if (rb) rb.style.width = ((1 - p) * 100).toFixed(1) + '%';
 }
 let last = performance.now();
@@ -3088,7 +3098,7 @@ function act(a, el) {
   let err = null;
   switch (a) {
     case 'close': return closeSheet();
-    case 'speed': { const L = [.5, 1, 2, 4].filter(v => SPEEDS.some(x => x.v === v)), i = L.indexOf(S.speed); S.speed = L[(i + 1) % L.length] || 1; const sp = SPEEDS.find(x => x.v === S.speed); toast(`${sp.i} 시간 ${sp.n} · 하루 ${sp.d}`); save(); return renderHud(); }
+    case 'speed': { const L = [.5, 1, 2, 4].filter(v => SPEEDS.some(x => x.v === v)), i = L.indexOf(S.speed); S.speed = L[(i + 1) % L.length] || 1; const sp = SPEEDS.find(x => x.v === S.speed); toast(`⏳ 시간 ×${S.speed} · ${sp.n} · 하루 ${sp.d}`); save(); return renderHud(); }
     case 'setspeed': { S.speed = +el.dataset.id; renderHud(); save(); const o = SPEEDS.find(x => x.v === S.speed); toast(`${o.i} ${o.n} · 게임 하루 = ${o.d}`); return showSpeed(); }
     case 'fishes': return UI.sheet === 'fishes' ? closeSheet() : showFishes();
     case 'boxes': return UI.sheet === 'boxes' ? closeSheet() : showBoxes();
