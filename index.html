@@ -2190,7 +2190,7 @@ function showOld(id) {
     <div class="row"><button class="btn" data-a="close">괜찮아요</button>${C.isParent(f) ? '' : `<button class="btn go" data-a="oldpair" data-id="${f.id}">💞 짝 지어 주기</button>`}</div>`);
 }
 /* 조건 골라 한 번에 팔기 */
-function sellPool() { return S.fish.filter(f => C.isAdult(f) && f.loc && (f.loc === 'nursery' || (f.loc.startsWith('tank') && !(S.tanks[+f.loc.slice(4)] || {}).show)) && !f.preg && !C.isParent(f)); }
+function sellPool() { return S.fish.filter(f => C.isAdult(f) && f.loc && (f.loc === 'nursery' || (f.loc.startsWith('box') && f.sep) || (f.loc.startsWith('tank') && !(S.tanks[+f.loc.slice(4)] || {}).show)) && !f.preg && !C.isParent(f)); }
 function sellMatch() {
   const q = UI.sf; let L = sellPool().filter(f => (q.sex === 'all' || f.sex === q.sex) && (!q.color || f.ph.color === q.color) && (!q.tail || f.ph.tail === q.tail) && (!q.pat || f.ph.pat === q.pat) && (!q.star || C.tailStar(f) <= q.star) && (!q.old || f.age > f.life * .75));
   if (q.keep) { const G = {}; L.forEach(f => { const k = label(f) + f.sex; (G[k] = G[k] || []).push(f); }); const best = new Set(Object.entries(G).map(([k, A]) => { const keepers = S.fish.filter(x => !L.includes(x) && C.isAdult(x) && label(x) + x.sex === k); return keepers.length ? null : A.sort((a, b) => C.sellPrice(S, b) - C.sellPrice(S, a))[0].id; }).filter(Boolean)); L = L.filter(f => !best.has(f.id)); }
@@ -2226,7 +2226,7 @@ function showSellHub() {
   UI.hsel = UI.hsel || new Set(); const { out, why, est } = sortSell(), sec = (k, ic, t, d, L, btn) => L.length ? `<div class="sgp ${k}"><div class="shh"><b>${ic} ${t} <span>${L.length}마리</span></b><small>${d}</small></div><div class="srs">${sellRows(L, k === 'prot' ? why : null, k)}</div>${btn ? `<button class="btn ${k === 'dup' ? 'go' : 'sell'}" data-a="hubsell" data-k="${k}">${btn} ${L.length}마리 팔기 · 🪙${fmt(est(L))}</button>` : ''}<div class="mvr"><span>모두 옮기기</span>${tankBtns(`data-a="hubmove" data-k="${k}"`)}</div></div>` : '';
   const none = !out.dup.length && !out.old.length && !out.one.length;
   const G = guard();
-  openSheet(head('💰 팔기 정리', 'fishes') + `<p class="note" style="margin:0 2px 8px">⏸ 보는 동안 시간이 멈춰요 · 임신 중 · 번식통 · 전시 어항 아이는 여기 없어요</p>
+  openSheet(head('💰 팔기 정리', 'fishes') + `<p class="note" style="margin:0 2px 8px">⏸ 보는 동안 시간이 멈춰요 · 임신 중 · 번식통 엄마아빠 · 전시 어항 아이는 여기 없어요</p>
     <div class="gdr"><b>🛡 팔지 않고 지킬 아이</b><div class="chips">${GUARDS.map(([k, n]) => `<button class="${G[k] ? 'on' : ''}" data-a="guard" data-k="${k}">${G[k] ? '☑' : '☐'} ${n}</button>`).join('')}</div></div>
     ${sec('dup', '🔁', '같은 모습이 여러 마리', '모습마다 가장 값진 한 마리는 남기고 나머지', out.dup, '남는')}
     ${sec('old', '🌙', '나이 든 아이', '곧 떠날 아이들 · 하나뿐인 모습은 아래 🛡에 있어요', out.old, '나이 든')}
@@ -2254,7 +2254,7 @@ function showSellF() {
 }
 function surplus() {
   const ordOK = new Set(); (S.orders || []).forEach(o => C.orderMatches(S, o).forEach(f => ordOK.add(f.id)));
-  const pool = S.fish.filter(f => C.isAdult(f) && f.loc && (f.loc === 'nursery' || (f.loc.startsWith('tank') && !(S.tanks[+f.loc.slice(4)] || {}).show)) && !f.fav && !f.nick && !f.preg && !C.isParent(f) && !ordOK.has(f.id));
+  const pool = S.fish.filter(f => C.isAdult(f) && f.loc && (f.loc === 'nursery' || (f.loc.startsWith('box') && f.sep) || (f.loc.startsWith('tank') && !(S.tanks[+f.loc.slice(4)] || {}).show)) && !f.fav && !f.nick && !f.preg && !C.isParent(f) && !ordOK.has(f.id));
   const G = {}; pool.forEach(f => (G[label(f)] = G[label(f)] || []).push(f));
   let out = []; Object.values(G).forEach(L => ['m', 'f'].forEach(sx => { const A = L.filter(f => f.sex === sx).sort((a, b) => C.sellPrice(S, b) - C.sellPrice(S, a)); out.push(...A.slice(1)); }));
   { const ids = new Set(out.map(f => f.id)); out = out.filter(f => { const ok = !whyPrecious(f, S.fish.filter(x => !ids.has(x.id) || x.id === f.id)).length; if (!ok) ids.delete(f.id); return ok; }); }
