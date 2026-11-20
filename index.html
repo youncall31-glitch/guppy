@@ -299,6 +299,12 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
 .fc .fav{position:absolute;top:30px;left:12px;font-size:12px;color:#e0a100}
 .ring{animation:ring 1s ease-in-out infinite}
 @keyframes ring{50%{opacity:.25}}
+/* 화면 정리: 목표는 날짜 알약 안으로 · 어항 이름 줄은 어항 위 빈 띠에 · 손님은 어항 앞(아래쪽)을 지나간다 */
+#hud .pill.day .dl{display:flex;align-items:center;gap:6px;min-width:0}#hud .pill.day #day{flex:none}
+#goal{position:static!important;margin:0!important;max-width:none!important;width:auto!important;flex:1;min-width:0;font-size:11.5px!important;padding:3px 8px!important;border-radius:8px!important;box-shadow:none!important;background:rgba(255,255,255,.16);color:#fff;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:0;font-weight:600}
+body.hasdream #shelf{right:66px;left:66px}
+#crowd{top:auto!important;bottom:0;height:0!important;overflow:visible!important}
+.cust{bottom:-40px}.cust .face img{height:92px}.cust .say{bottom:106px;z-index:2}.cust .pay{bottom:104px;z-index:2}.cust .face{position:relative;z-index:1}
 </style>
 </head>
 <body>
@@ -307,7 +313,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     <svg id="tank" role="img" aria-label="전시 어항"></svg>
     <div id="hud">
       <div class="pill money" data-a="sellhub" data-tx="🪙 가진 돈 · 누르면 💰 팔기 정리"><span class="mv">🪙 <span id="money">0</span></span><small id="inc"></small></div>
-      <div class="pill day" data-tx="게임 날짜 · 막대가 차면 하루가 지나요"><span id="day">1일째</span><span class="bar"><i id="daybar"></i></span></div>
+      <div class="pill day" data-tx="게임 날짜 · 막대가 차면 하루가 지나요"><div class="dl"><span id="day">1일째</span><button id="goal" data-a="goal" data-tx="🎯 지금 목표 · 끝내면 보상" style="display:none"></button></div><span class="bar"><i id="daybar"></i></span></div>
       <button class="pill" data-a="speed" id="spd" aria-label="속도" data-tx="⏱ 시간 빠르기 바꾸기">×1</button>
       <button class="pill" id="ordBtn" data-a="orders" aria-label="주문" data-tx="📋 손님 주문" style="display:none">📋</button>
       <button class="pill" data-a="log" aria-label="기록" data-tx="📜 가게 기록">📜</button>
@@ -322,7 +328,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     <div id="scroll"><i></i></div>
     <div id="bubble"></div>
     <div id="float"></div>
-    <div id="lockTag" style="display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(192px + env(safe-area-inset-top));z-index:3;background:rgba(40,80,130,.75);color:#fff;font-weight:700;font-size:13px;padding:6px 14px;border-radius:999px;pointer-events:none">❄️ 시간이 멈춘 어항</div><div id="tut"><div class="tp"></div><div class="tp"></div><div class="tp"></div><div class="tp"></div><div class="tring"></div><div class="tbox"></div></div><button id="goal" data-a="goal" data-tx="🎯 지금 목표 · 끝내면 보상" style="display:none"></button><button id="feedBtn" data-tx="🍤 끌어서 어항 위에 놓으면 먹이를 줘요">🍤 먹이</button><div id="pinch"></div>
+    <div id="lockTag" style="display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(192px + env(safe-area-inset-top));z-index:3;background:rgba(40,80,130,.75);color:#fff;font-weight:700;font-size:13px;padding:6px 14px;border-radius:999px;pointer-events:none">❄️ 시간이 멈춘 어항</div><div id="tut"><div class="tp"></div><div class="tp"></div><div class="tp"></div><div class="tp"></div><div class="tring"></div><div class="tbox"></div></div><button id="feedBtn" data-tx="🍤 끌어서 어항 위에 놓으면 먹이를 줘요">🍤 먹이</button><div id="pinch"></div>
     <div id="rescue"><button data-a="rescue"><span id="rtxt"></span><small id="rsub"></small><i id="rbar"></i></button></div>
     <div id="pop"></div>
     <div id="zoom"><button data-a="zin" aria-label="확대" data-tx="크게 보기 · 두 손가락으로도 돼요">＋</button><button data-a="zout" aria-label="축소" data-tx="작게 보기">－</button></div>
@@ -1511,7 +1517,7 @@ function placeCrowd() {
   const c = $('#crowd'); if (!c) return;
   // 손님은 어항 뒤쪽을 지나간다: 어항 윗면에서 잘려 허리 위만 보인다
   const bottom = VB.tank ? (VB.tank.y - VIEW.y) / VIEW.h * $('#tankwrap').clientHeight + 4 : $('#tankwrap').clientHeight * .45, sh = $('#shelf').getBoundingClientRect(), wr = $('#tankwrap').getBoundingClientRect();
-  const top = sh.bottom - wr.top + 4; c.style.top = top + 'px'; c.style.height = Math.max(0, bottom - top) + 'px'; c.style.opacity = VIEW.z > 1.05 ? 0 : 1;
+  c.style.opacity = VIEW.z > 1.05 || DECO_MODE ? 0 : 1;   // 손님은 어항 앞 아래쪽을 지나간다(어깨 위만 보임)
 }
 function zoomUi() {
   placeCrowd(); const l = $('#zlab'); l.style.display = VIEW.z > 1 ? 'block' : 'none'; l.textContent = VIEW.z.toFixed(1) + '배'; $('#follow').classList.toggle('show', !!VIEW.follow); }
@@ -1586,7 +1592,7 @@ function showFrontG(T) {
   if (A.bubble) { for (let i = 0; i < 14; i++) { const bx = x + w * (.12 + .76 * ((i * 37) % 14) / 14), r = 1.5 + (i % 3), d = 3 + (i % 5) * .7; g += `<circle pointer-events="none" cx="${bx}" cy="${y + h}" r="${r}" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".8"><animate attributeName="cy" from="${y + h}" to="${y}" dur="${d}s" begin="${(i * .37) % d}s" repeatCount="indefinite"/><animate attributeName="cx" values="${bx};${bx + 4};${bx - 3};${bx}" dur="${d}s" repeatCount="indefinite"/></circle>`; } }
   return g;
 }
-let TOP_RES = 60;   // 화면 위에서 어항 테두리까지 비워 둘 높이(px): 돈·날짜 줄만 비우고, 어항 이름·목표 알약은 어항 위에 떠 있게
+let TOP_RES = 112;   // 화면 위에서 어항 테두리까지 비워 둘 높이(px): 돈·날짜 줄만 비우고, 어항 이름·목표 알약은 어항 위에 떠 있게
 // 일반 어항은 크기가 커져도 한 화면에 다 보이게(가로로 밀 필요 없음) · 대신 물고기를 조금 작게 그려 넓어진 느낌을 준다
 // 전시 어항만 넓은 풍경 그림이라 좌우로 밀어서 본다
 const viewW = t => t && t.show ? C.SIZES[t.size].w : 1;
@@ -2580,7 +2586,7 @@ function showEntry(key) {
 /* 🌟 목표 구피: 사진첩에서 하나 골라 거기까지 가는 길을 늘 띄워 둔다 */
 function dreamGoal(a) { const p = a.ph; if (p.plat) return null; const g = { color: p.color }; if (p.albino) g.albino = true; else if (a.page === 'trait') { if (p.metal) g.metal = true; if (p.bigd) g.bigd = true; if (p.fin) { g.fin = p.fin; g.tail = 'delta'; } } else { g.tail = p.tail; g.pat = p.pat; } return g; }
 function dreamBox() { const d = S.dream; if (!d) return 0; for (let i = 0; i < S.boxes; i++) if (JSON.stringify((S.boxGoal || {})[i]) === JSON.stringify(d.g)) return i; for (let i = 0; i < S.boxes; i++) if (!C.at(S, 'box' + i).filter(x => !x.sep).length) return i; return 0; }
-function dreamChip() { const c = $('#dream'); if (!c) return; const d = S.dream; c.style.display = d && !DECO_MODE && !(TUT.on && !TUT.coach) ? '' : 'none'; if (!d) return; const a = C.ALBUM_BY[d.key]; if (c.dataset.k !== d.key) { c.dataset.k = d.key; c.innerHTML = `${phSVG(a.ph, 'm')}<b>🌟</b>`; } }
+function dreamChip() { const c = $('#dream'); if (!c) return; const d = S.dream; c.style.display = d && !DECO_MODE && !(TUT.on && !TUT.coach) ? '' : 'none'; document.body.classList.toggle('hasdream', c.style.display !== 'none'); if (!d) return; const a = C.ALBUM_BY[d.key]; if (c.dataset.k !== d.key) { c.dataset.k = d.key; c.innerHTML = `${phSVG(a.ph, 'm')}<b>🌟</b>`; } }
 function showAuto() {
   const A = S.auto, sw = (k, t, d) => `<div class="opt" data-a="autok" data-k="${k}"><div><b>${t}</b><small>${d}</small></div><span class="sw ${A[k] ? 'on' : ''}"></span></div>`;
   openSheet(head('🤖 자동 관리', 'fishes') + `${tip('auto', '매일 규칙대로 처리해요. ★보호·임신·번식통 구피는 빼요.')}
