@@ -390,6 +390,17 @@ body.hasdream #shelf{right:66px;left:66px}
 .tnode.here{border-color:var(--accent,#2a9d8f);box-shadow:0 0 0 3px rgba(42,157,143,.18)}
 .tnode em{position:absolute;top:-9px;left:50%;transform:translateX(-50%);font-style:normal;font-size:9.5px;font-weight:800;background:#2a7a8c;color:#fff;padding:1px 6px;border-radius:99px;white-space:nowrap}.tnode.kid em{background:#8a9aa0}
 .tnode .tp{display:block;height:24px}.tnode .tp svg{height:24px;width:46px}
+/* 🌳 족보(목록형 트리) */
+.ttree{background:#fff;border-radius:14px;padding:8px 8px 4px;box-shadow:0 1px 3px rgba(20,58,79,.08)}
+.trow{display:flex;align-items:stretch;min-height:44px}.trow{position:relative}.trow .tpre{position:absolute;margin-left:-15px;top:8px;font-size:14px;color:#9fb6be;font-weight:900}
+.trow .tbody{flex:1;min-width:0;display:flex;gap:7px;padding:6px 4px;border-bottom:1px solid #eef3f5}.trow.root .tbody{background:#fffbea;border-radius:10px;border:2px solid #e8b923;margin-bottom:4px}
+.trow.ready .tbody{background:#eefaf3;border-radius:10px}
+.tst{flex:none;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#fff;margin-top:1px}.tst.ok{background:#2a9d8f}.tst.half{background:#e8a33a}.tst.no{background:#c9d3d7}
+.tmain{flex:1;min-width:0}.tmain b{display:block;font-size:13.5px}.tmain small{display:block;font-size:11.5px;color:#5b7480}.tmain .rd{display:inline;color:#1f8a5a;font-size:11.5px}
+.tpics{display:flex;gap:3px;margin-top:3px}.tpic svg{width:40px;height:22px;display:block;background:#e6f3f6;border-radius:6px}
+.tbx{display:flex;align-items:center;gap:4px;margin-top:5px;flex-wrap:wrap}.tbx span{font-size:11.5px;font-weight:700;color:#40606b}.tbx .btn{min-width:32px;padding:4px 8px}
+.tmain .tbox{display:inline-block;margin-top:4px;font-size:11.5px;font-weight:800;color:#2a7a8c;background:#e6f3f6;padding:2px 8px;border-radius:99px}
+.tmain>.btn{margin-top:5px}
 </style>
 </head>
 <body>
@@ -2592,7 +2603,7 @@ function planBanner(i) {
   const st = A.length ? `새끼 ${A.length}마리가 자랐어요 · 다음 짝을 넣을 수 있어요` : K.length ? `새끼 ${K.length}마리가 자라는 중이에요` : '지금 짝이 새끼를 낳기를 기다려요';
   const gen = pl.gen || 2, stage = gen - (pl.left || 1);
   const pm = S.fish.find(f => f.id === pl.m), pf = S.fish.find(f => f.id === pl.f), left = pl.left || 1;
-  const tr = pm && pf ? `<details class="tdet" style="width:100%"><summary>🌳 남은 길 족보</summary>${routeTree({ gen: left + 1, m: pm, f: pf, mate: 'sib', c: pl.c, p: null }, pl.g, { here: 1 })}</details>` : '';
+  const tr = '';
   return `<div class="surp" style="background:#eef6ff;margin:8px 0;flex-wrap:wrap"><div><b>🧭 ${gen}세대 길 · ${stage}/${gen}단계 · 목표 ${C.goalText(pl.g)}</b><small>${st}</small></div><div style="display:flex;flex-direction:column;gap:4px">${A.length ? `<button class="btn go" data-a="plan2" data-id="${i}">${(pl.left || 1) >= 2 ? '다음 단계 짝 넣기' : '마지막 단계 짝 넣기'}</button>` : ''}<button class="btn sm" data-a="planoff" data-id="${i}">그만두기</button></div>${tr}</div>`;
 }
 function showBox(i) {
@@ -2765,6 +2776,40 @@ function showOrders() {
         <div class="rb">${m.length ? `<button class="btn go" data-a="fulfil" data-id="${o.id}">보내기</button>` : Object.keys(gl).length ? `<button class="btn" data-a="pathord" data-id="${o.id}">🧭 만드는 법</button>` : ''}</div></div>`; }).join('') : `<p class="note" style="text-align:center;margin:20px 0">의뢰를 다 끝냈어요! ${S.nextOrder > S.day ? `새 의뢰는 ${S.nextOrder - S.day}일 뒤에 와요.` : '곧 새 의뢰가 와요.'}</p>`}`, 'orders');
 }
 /* 🧭 길 찾기: 목표 구피까지 어떻게 가는지, 재료 구피는 누구인지 */
+/* 🌳 족보: 최종 목표(사진첩에서 고른 것)를 형질 묶음으로 쪼갠 트리 · 줄마다 보유 ✓/✗ · 중간 단계를 번식통 목표로 */
+const TRAIT_KEYS = ['metal', 'albino', 'color', 'pat', 'bigd', 'fin', 'tail', 'star'];
+function treeOf(g) {
+  const T = TRAIT_KEYS.filter(k => g[k] != null && g[k] !== false).map(k => [k, g[k]]), sub = L => Object.fromEntries(L);
+  const A = S.fish.filter(f => C.isAdult(f) && !f.sick), own = L => A.filter(f => C.goalMatch(f, sub(L)));
+  const hid = L => { const q = sub(L); return A.filter(f => !C.goalMatch(f, q) && (() => { const u = C.goalUse(f, q); return u && u.tot && u.n === u.tot; })()); };
+  const build = L => {
+    const n = { L, g: sub(L), own: own(L), hid: L.length === 1 ? hid(L) : [] };
+    if (L.length > 1) {
+      let best = null; for (let m = 1; m < (1 << L.length) - 1; m++) { const S1 = L.filter((_, i) => m >> i & 1); if (S1.length >= L.length) continue; const o = own(S1).length; if (!o) continue; if (!best || S1.length > best.s.length || (S1.length === best.s.length && o > best.o)) best = { s: S1, o }; }
+      const a = best && best.s.length > 1 ? best.s : [L.find(t => own([t]).length) || L[0]], b = L.filter(t => !a.includes(t));
+      n.kids = [build(a), build(b)];
+    }
+    return n;
+  };
+  return build(T);
+}
+function showTree(g) {
+  const root = treeOf(g), rows = [], boxOf = q => { for (let i = 0; i < S.boxes; i++) if (JSON.stringify((S.boxGoal || {})[i]) === JSON.stringify(q)) return i; return -1; };
+  UI.treeG = [];
+  const mini = f => `<span class="tpic" title="${C.nameOf(f.ph)}">${fishSVG(f)}</span>`;
+  const walk = (n, pre, last, depth) => {
+    const ok = n.own.length > 0, half = !ok && n.hid.length > 0, ready = !ok && n.kids && n.kids.every(k => k.own.length || k.hid.length), bi = boxOf(n.g), gi = UI.treeG.push(n.g) - 1;
+    const st = ok ? `<span class="tst ok">✓</span>` : half ? `<span class="tst half">◐</span>` : `<span class="tst no">✗</span>`;
+    const info = ok ? `보유 ${n.own.length}마리` : half ? `숨긴 아이 ${n.hid.length}마리 (겉으론 안 보여요)` : n.kids ? (ready ? '<b class="rd">재료가 다 있어요 · 번식통에 목표로 정해 보세요</b>' : '아래 단계부터 모아요') : '가진 구피가 없어요';
+    const act = ok ? '' : n.kids ? (bi >= 0 ? `<span class="tbox">🎯 번식통 ${bi + 1}에서 진행 중</span>` : U('boxes') ? `<div class="tbx"><span>🎯 번식통에 목표로</span>${Array.from({ length: S.boxes }, (_, i) => `<button class="btn ${ready ? 'go' : ''} sm" data-a="treegoal" data-id="${i}" data-v="${gi}">${i + 1}</button>`).join('')}</div>` : '') : half ? '' : `<button class="btn sm" data-a="treebuy" data-v="${gi}">🛒 구하기</button>`;
+    rows.push(`<div class="trow ${depth ? '' : 'root'} ${ready ? 'ready' : ''}" style="padding-left:${Math.max(0, depth - 1) * 16 + (depth ? 14 : 0)}px">${depth ? '<span class="tpre">↳</span>' : ''}<div class="tbody">${st}<div class="tmain"><b>${depth ? '' : '🌟 '}${C.goalText(n.g)}</b><small>${info}</small>${ok ? `<div class="tpics">${n.own.slice(0, 4).map(mini).join('')}</div>` : ''}${act}</div></div></div>`);
+    (n.kids || []).forEach((k, i) => walk(k, depth ? pre + (last ? '\u3000' : '│') : '', i === n.kids.length - 1, depth + 1));
+  };
+  walk(root, '', true, 0);
+  openSheet(head('🌳 족보') + `<p class="note">맨 위가 최종 목표, 아래로 갈수록 그 재료예요. <b>✓ 있음 · ◐ 숨긴 아이만 · ✗ 없음</b><br>중간 단계를 번식통 목표로 정해서 원하는 길로 가요. 아래 칸이 다 ✓면 <b>재료가 다 있어요</b> · 번호를 누르면 그 번식통 목표가 되고 짝 고르기로 이어져요.</p>
+    <div class="ttree">${rows.join('')}</div>
+    <div class="row" style="margin-top:10px"><button class="btn" data-a="album">📖 목표 바꾸기</button><button class="btn" data-a="dreamoff">목표 그만두기</button></div>`, 'tree', null, true);
+}
 function showPath(g, back) {
   const r = C.pathFor(S, g), mini = f => `<span class="pf ${C.isAdult(f) ? '' : 'fy'}">${fishSVG(f)}<b>${C.isAdult(f) ? label(f) : '치어'} ${sexI(f)}</b></span>`;
   const items = r.items.map(x => `<div class="pi ${x.show.length || x.hide.length ? 'ok' : 'no'}"><b>${x.show.length || x.hide.length ? '✓' : '✗'} ${x.n}</b><small>${x.rec ? '숨은 형질 · 부모 둘 다 가져야 나와요' : '강한 형질 · 한쪽 부모만 있어도 나와요'}</small>
@@ -2999,7 +3044,7 @@ function showPairPick(i, g) {
     const card = (c, k) => { const st = c.gen === 1 ? [`<b>${nm(c.m, '♂')} × ${nm(c.f, '♀')}</b><small style="display:block">이번 배 새끼 중 목표 ${pc(c.p)}${hh(c.h)}</small>`]
       : c.gen === 2 ? [`<b>1) ${nm(c.m, '♂')} × ${nm(c.f, '♀')}</b><small style="display:block">필요한 유전자를 새끼 한 마리에 모아요</small>`, `<b>2) 그 새끼를 ${mateN(c)} 짝지어요</b><small style="display:block">새끼 중 목표 ${pc(c.p)}${c.mate === 'sib' ? ' · 형제끼리라 혈통 건강이 조금 떨어져요' : ''}</small>`]
       : [`<b>1) ${nm(c.m, '♂')} × ${nm(c.f, '♀')}</b><small style="display:block">유전자 일부를 새끼에게 모아요</small>`, `<b>2) 그 새끼 × ${nmI(c.c)}</b><small style="display:block">나머지 유전자까지 한 줄로 모아요</small>`, `<b>3) 그 새끼들끼리 짝지어요</b><small style="display:block">새끼 중 목표 ${pc(c.p)}</small>`];
-      return `<div class="pcard ${c === best ? 'best' : ''}"><div style="flex:1;min-width:0">${c === best ? '<span class="tbd l" style="position:static;display:inline-block;margin-bottom:4px">⭐ 추천</span> ' : ''}<span style="font-size:12px;color:#5b7480">${c.gen}세대 · 목표 ${pc(c.p)}</span>${st.map(x => `<div style="margin-top:4px">${x}</div>`).join('')}<div class="why">💡 ${c === best ? `<b>추천 이유:</b> ${bestWhy}<br>` : ''}${why(c)}</div></div><button class="btn go" data-a="planpick" data-v="${k}">${c.gen === 1 ? '넣기' : '이 길로'}</button><details class="tdet" style="flex-basis:100%"><summary>🌳 족보로 보기</summary>${routeTree(c, g)}</details></div>`; };
+      return `<div class="pcard ${c === best ? 'best' : ''}"><div style="flex:1;min-width:0">${c === best ? '<span class="tbd l" style="position:static;display:inline-block;margin-bottom:4px">⭐ 추천</span> ' : ''}<span style="font-size:12px;color:#5b7480">${c.gen}세대 · 목표 ${pc(c.p)}</span>${st.map(x => `<div style="margin-top:4px">${x}</div>`).join('')}<div class="why">💡 ${c === best ? `<b>추천 이유:</b> ${bestWhy}<br>` : ''}${why(c)}</div></div><button class="btn go" data-a="planpick" data-v="${k}">${c.gen === 1 ? '넣기' : '이 길로'}</button></div>`; };
     const sec = (n, ttl, L) => L.length ? `<h5><span>${ttl}</span></h5>` + L.map(c => card(c, all.indexOf(c))).join('') : (n === 1 && !d.length ? '<p class="note">⚡ 1세대: 한 번에 바로 나오는 짝은 없어요 · 거쳐 가야 해요</p>' : '');
     openSheet(head('🎯 짝 고르기', 'boxopen" data-id="' + i) + `<p class="note">목표: <b>${C.goalText(g)}</b> · 필요한 유전자는 가게에 다 있어요. 길을 골라 주세요</p>
       ${needH(g, G)}
@@ -3220,8 +3265,10 @@ function act(a, el) {
       const done = () => location.reload(); toast('🔄 새 가게를 여는 중…');
       (CLOUD.ref ? CLOUD.ref.set({ v: txt, t: N.savedAt }).catch(() => { }) : Promise.resolve()).then(() => setTimeout(done, 300)); return; }
     case 'entry': return showEntry(id);
-    case 'dreamset': { const a = C.ALBUM_BY[id], g = dreamGoal(a); if (!g) return; S.dream = { key: id, g, day: S.day }; save(); dreamChip(); toast(`🌟 목표 구피: ${a.name} · 오른쪽 위 🌟를 누르면 언제든 길을 봐요`); const bi = dreamBox(); if (U('goal')) C.setBoxGoal(S, bi, g); save(); return showPath(g, bi); }
-    case 'dreampath': { if (!S.dream) return; return showPath(S.dream.g, dreamBox()); }
+    case 'dreamset': { const a = C.ALBUM_BY[id], g = dreamGoal(a); if (!g) return; S.dream = { key: id, g, day: S.day }; save(); dreamChip(); toast(`🌟 최종 목표: ${a.name} · 🌟를 누르면 언제든 족보를 봐요`); save(); return showTree(g); }
+    case 'dreampath': { if (!S.dream) return; return showTree(S.dream.g); }
+    case 'treegoal': { const q = (UI.treeG || [])[+el.dataset.v]; if (!q) return; C.setBoxGoal(S, id, q); save(); render(); toast(`🎯 번식통 ${id + 1} 목표: ${C.goalText(q)}`); return showPairPick(id, q); }
+    case 'treebuy': { const q = (UI.treeG || [])[+el.dataset.v]; if (!q) return; const G = C.goalShop(S, q); return notice(`<h3>🛒 ${C.goalText(q)} 구하기</h3><div style="text-align:left">${needH(q, G)}</div><div class="row"><button class="btn" data-a="dreampath">◀ 족보</button><button class="btn go" data-a="shop">상점</button></div>`); }
     case 'dreamoff': S.dream = null; save(); dreamChip(); toast('🌟 목표 구피를 내려놓았어요'); return closeSheet();
     case 'fish': closePop(); return showFish(id);
     case 'pick': return showPick(id, el.dataset.sex);
