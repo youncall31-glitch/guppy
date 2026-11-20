@@ -131,6 +131,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 .slot.full{border-style:solid;border-color:#cfe1df;background:#fff;color:var(--ink)}
 .slot svg{width:80px;height:42px}
 .fsel{display:flex;gap:6px;margin:0 0 10px}.fsel select{flex:1;min-width:0;padding:7px 6px;border-radius:10px;border:1px solid #d5e0e3;background:#fff;font-size:13px}
+.nrow{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 0}.nchip{font-size:12px;font-weight:700;padding:4px 9px;border-radius:99px;background:#e3f5ea;color:#22714a}.nchip.low{background:#fff4d6;color:#94650a}.nchip.no{background:#fde4e1;color:#b13a2c}.pcard .why{margin-top:6px;font-size:12px;color:#40606b;background:#f2f7f9;border-radius:9px;padding:6px 8px;line-height:1.45}
 .pcard{display:flex;align-items:center;gap:8px;background:#fff;border-radius:14px;padding:10px 12px;margin:0 0 8px;box-shadow:0 1px 3px rgba(20,58,79,.08);border:2px solid transparent}.pcard.best{border-color:#e8b923;background:#fffbea}.pcard .btn{flex:none}.pcard b{font-size:13.5px}.pcard small{font-size:12px;color:#5b7480}
 .grp{background:#fff;border-radius:14px;margin:0 0 8px;box-shadow:0 1px 3px rgba(20,58,79,.08);border:2px solid transparent;overflow:hidden}.grp.tr.r{border-color:#7fb6e8}.grp.tr.e{border-color:#b892e6}.grp.tr.l{border-color:#e8b923}
 .gh{display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer}.gh .gp{width:78px;height:40px;flex:none;background:linear-gradient(#e6f3f6,#d4e9ee);border-radius:9px;display:flex;align-items:center;justify-content:center}.gh .gp svg{width:92%;height:36px}
@@ -1027,6 +1028,26 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     if (g.fin && g.tail && !(FIN_OK[g.tail] || []).includes(g.fin)) B.push(`${TAILS[g.tail].n} 꼬리에서는 ${FINS[g.fin].n}가 드러나지 않아요`);
     return B;
   }
+  /* 🛒 목표에 필요한 것 추천: 유전자 현황 + 사진첩 품종(유전자 확실) · 희귀 혈통/뽑기(운) */
+  function goalShop(S, g, rng) {
+    rng = rng || Math.random; const N = goalNeeds(g), L = S.fish.filter(f => !f.sick), has = (x, l, a) => (x.g[l] || GDEF[l]).includes(a);
+    const items = N.map(([l, a, rec, n]) => { const H = L.filter(f => has(f, l, a)); return { l, a, rec, n, cnt: H.length, m: H.filter(f => f.sex === 'm').length, f: H.filter(f => f.sex === 'f').length }; });
+    const pfx = (rare, l, a) => LOCKED_AL.has(a) ? 0 : 1 - Math.pow(1 - ((FREQ[rare ? 'rare' : 'common'][l] || {})[a] || 0), 2);
+    const A = L.filter(f => isAdult(f) && !(f.sex === 'f' && (f.preg || f.age > f.life * .85))), cv = x => N.filter(([l, a]) => has(x, l, a)).length;
+    const M = A.filter(f => f.sex === 'm').sort((a, b) => cv(b) - cv(a)).slice(0, 8), F = A.filter(f => f.sex === 'f').sort((a, b) => cv(b) - cv(a)).slice(0, 8);
+    let now = 0; M.forEach(m => F.forEach(f => { now = Math.max(now, goalChance(m, f, g, 60, rng)); }));
+    const buy = [];
+    ALBUM.filter(x => S.album[x.key] && !x.ph.plat).forEach(x => {
+      const G = genesOf(x.ph), cover = N.filter(([l, a]) => G[l] && G[l].includes(a)); if (!cover.length) return;
+      const v = sex => ({ id: -9, g: G, sex, ph: Object.assign({}, x.ph), line: {}, tsz: .96 });
+      let pm = 0, pf = 0; F.forEach(f => { pm = Math.max(pm, goalChance(v('m'), f, g, 60, rng)); }); M.forEach(m => { pf = Math.max(pf, goalChance(m, v('f'), g, 60, rng)); });
+      const pp = goalChance(v('m'), v('f'), g, 30, rng), fills = cover.filter(([l, a]) => !items.find(it => it.l === l && it.a === a).cnt).map(c => c[3]);
+      buy.push({ kind: 'known', key: x.key, name: x.name, ph: x.ph, cost: knownCost(x.ph), cover: cover.map(c => c[3]), fills, p: Math.max(pm, pf), sex: pm >= pf ? 'm' : 'f', pair: pp, goal: goalMatch({ ph: x.ph, sex: 'm', tsz: .96 }, g) });
+    });
+    buy.sort((a, b) => b.fills.length - a.fills.length || (b.p - now) / b.cost - (a.p - now) / a.cost);
+    const luck = items.filter(it => !it.cnt).map(it => ({ n: it.n, rare: pfx(true, it.l, it.a), common: pfx(false, it.l, it.a), locked: LOCKED_AL.has(it.a) }));
+    return { items, now, buy: buy.filter(b => b.fills.length || b.p > now + .03 || b.goal).slice(0, 3), luck };
+  }
   /* 가상 새끼 뽑기 */
   function vKids(m, f, n, rng) { const line = lineOf(f, m), K = []; for (let i = 0; i < n; i++) { const gg = {}; GLOC.forEach(l => { gg[l] = [inherit(f.g[l] || GDEF[l], l, rng), inherit(m.g[l] || GDEF[l], l, rng)]; }); const sex = rng() < .5 ? 'm' : 'f', ph = express(gg, line, rng); finVis(ph, sex); K.push({ id: -1 - i, g: gg, sex, ph, line, tsz: ((f.tsz || 1) + (m.tsz || 1)) / 2 }); } return K; }
   /* 3세대 길: 1) A×B로 일부를 모으고 2) 그 새끼 × C로 나머지를 더 모으고 3) 형제끼리(또는 다른 구피와) */
@@ -1185,7 +1206,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     S.fish.forEach(f => { walk(f.id, 0); if (f.mate) walk(f.mate.id, 0); });
     for (const k in S.reg) if (!keep.has(+k)) delete S.reg[k];
   }
-  root.CORE = { goalBlock, planThree, planTwo, planStep2, goalUse, RESIZE_COST, TIER_N, phTier, geneTier, tierOf, FILTER_COST, COMMON_K, AP_N, UNL_ALL, apLeft, skipAp, unl, GRAD_BONUS, GDEF, mktPct, SHOW, showCap, MKT, UPKEEP, mktMul, ORD_K, ORD_GAP, buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
+  root.CORE = { goalShop, GACHA_COST, goalBlock, planThree, planTwo, planStep2, goalUse, RESIZE_COST, TIER_N, phTier, geneTier, tierOf, FILTER_COST, COMMON_K, AP_N, UNL_ALL, apLeft, skipAp, unl, GRAD_BONUS, GDEF, mktPct, SHOW, showCap, MKT, UPKEEP, mktMul, ORD_K, ORD_GAP, buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
     newState, express, score, basePrice, keyOf, nameOf, recipeLines, recipeCost, health, inbreed, makeChild, dayTick, sell, moveTo, rescue, buyFounder, buy, buyRecipe, boostBirth, growFry,
     sellPrice, dailyOf, tankIncome, comment, survival, at, isAdult, tankCap, tankUsed, inTank, roomTank, maxPlants, donate, donateRep, repMult, autoManage, AUTO_DEFAULT, nurseryCap, pagesDone, pruneReg, randomGenes };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2822,36 +2843,61 @@ function showPlace(f) {
     <label style="display:flex;gap:8px;align-items:center;margin:12px 2px;font-size:14px"><input type="checkbox" id="pmark" checked> 🏷 표시해 두기 <small style="color:#7a8b91">(어항에서 노란 핀으로 보여요)</small></label>`);
 }
 /* 🎯 목표 짝 고르기: 한 세대에 바로 vs 새끼를 거쳐 2단계로 · 사장님이 고른다 */
+/* 목표 유전자 현황 + 🛒 필요한 것 추천(이유 포함) */
+function needH(g, G) {
+  const chip = it => `<span class="nchip ${it.cnt ? (it.rec && (!it.m || !it.f) || it.cnt === 1 ? 'low' : 'ok') : 'no'}">${it.n} ${it.cnt ? `${it.cnt}마리` : '없음'}</span>`;
+  const pc = p => p < .01 ? '1% 미만' : '약 ' + Math.round(p * 100) + '%';
+  let h = `<div class="nrow">${G.items.map(chip).join('')}</div><p class="note" style="margin-top:2px">숫자는 그 유전자를 가진(숨긴 아이 포함) 구피 수 · 🟢 넉넉 🟡 적음 🔴 없음${G.items.some(it => it.rec) ? ' · 숨은 형질은 엄마·아빠 둘 다 가져야 겉으로 나와요' : ''}</p>`;
+  const recs = [];
+  G.buy.forEach(b => { const why = b.goal ? `목표 그 자체예요. 사진첩에서 만난 품종이라 유전자가 확실해요. ♂♀ 한 쌍을 데려오면 바로 목표끼리 짝지을 수 있어요` : b.fills.length ? `가게에 없는 <b>${b.fills.join('·')}</b> 유전자를 두 벌씩 확실히 가지고 와요${b.p > 0 ? ` · 지금 구피와 짝지으면 1세대 목표 ${pc(b.p)}` : ' · 데려온 뒤 거쳐 가는 길로 이어 가요'}` : `${b.cover.join('·')} 유전자를 두 벌씩 확실히 가지고 있어서, 지금 구피와 짝지으면 1세대 목표가 ${pc(G.now)} → <b>${pc(b.p)}</b>로 올라요`;
+    recs.push(`<div class="pcard"><div style="flex:1;min-width:0"><b>📖 ${b.name} ${b.goal ? '♂♀' : b.sex === 'm' ? '♂' : '♀'} 데려오기</b><small style="display:block">💡 ${why}</small></div><div style="display:flex;flex-direction:column;gap:4px">${(b.goal ? ['m', 'f'] : [b.sex]).map(x => `<button class="btn go" data-a="buyknown" data-id="${b.key}" data-sex="${x}" ${S.money < b.cost ? 'disabled' : ''}>${b.goal ? (x === 'm' ? '♂ ' : '♀ ') : ''}🪙${fmt(b.cost)}</button>`).join('')}</div></div>`); });
+  G.luck.filter(x => !G.buy.some(b => b.fills.includes(x.n))).forEach(x => {
+    if (x.locked) { recs.push(`<div class="pcard"><div style="flex:1"><b>🎨 ${x.n}는 아직 안 풀린 색이에요</b><small style="display:block">💡 사진첩을 더 채우면 풀려요 · 그 전에는 어디서도 안 나와요</small></div></div>`); return; }
+    const ex = c => Math.round(c / Math.max(x.rare, .01) / 10) * 10;
+    recs.push(`<div class="pcard"><div style="flex:1;min-width:0"><b>💎 ${x.n} 유전자 들이기 (운)</b><small style="display:block">💡 사진첩에 ${x.n}가 보이는 품종이 없어서 확실히 데려올 수 없어요. ${U('gacha') ? '희귀 혈통이나 뽑기' : '희귀 혈통'} 한 마리에 ${x.n} 유전자가 들어 있을 확률 ${pc(x.rare)} · 평균 🪙${fmt(ex(C.RARE_COST))}(희귀 혈통)${U('gacha') ? ` / 🪙${fmt(ex(C.GACHA_COST))}(뽑기 · 더 싸지만 치어부터 키워요)` : ''}쯤 들어요</small></div><div style="display:flex;flex-direction:column;gap:4px">${['m', 'f'].map(x => `<button class="btn go" data-a="founder" data-sex="${x}" data-rare="1" ${S.money < C.RARE_COST ? 'disabled' : ''}>💎${x === 'm' ? '♂' : '♀'} 🪙${C.RARE_COST}</button>`).join('')}${U('gacha') ? `<button class="btn" data-a="gacha" ${S.money < C.GACHA_COST ? 'disabled' : ''}>🎲 🪙${C.GACHA_COST}</button>` : ''}</div></div>`); });
+  if (recs.length) h += `<h5><span>🛒 있으면 좋은 것</span></h5>` + recs.join('');
+  return h;
+}
 function showPairPick(i, g) {
   toast('🧮 길을 계산하고 있어요…');
   setTimeout(() => {
-    const B = C.goalBlock(S, g); if (B.length) return showMiss(g, { miss: B, sure: true });
+    const B = C.goalBlock(S, g), G = C.goalShop(S, g); UI.ppG = G; if (B.length) return showMiss(g, { miss: B, sure: true }, G);
     const r = C.planFor(S, g, i), d = (r.opts || []).map(c => Object.assign(c, { gen: 1 })), t = C.planTwo(S, g, i, 3).map(c => Object.assign(c, { gen: 2 })), u = C.planThree(S, g, i, 2).map(c => Object.assign(c, { gen: 3 }));
     const dd = L => { const seen = new Set(); return L.filter(c => { const k = c.gen + C.nameOf(c.m.ph) + C.nameOf(c.f.ph) + (c.mate || '') + (c.c ? C.nameOf((S.fish.find(y => y.id === c.c) || c.m).ph) : ''); if (seen.has(k)) return false; seen.add(k); return true; }); };
     d.splice(0, d.length, ...dd(d)); t.splice(0, t.length, ...dd(t)); u.splice(0, u.length, ...dd(u));
-    const all = d.concat(t, u); if (!all.length) return showMiss(g, { miss: r.miss.concat(['유전자는 가게에 다 있지만, 지금 계산으로는 3세대 안에 잘 안 나와요', '필요한 유전자를 가진 아이끼리 먼저 짝지어 새끼를 늘려 보세요']), pair: null });
+    if (d.length) G.now = Math.max(...d.map(c => c.p)); G.buy = G.buy.filter(b => b.fills.length || b.goal || b.p > G.now + .03);
+    const all = d.concat(t, u); if (!all.length) return showMiss(g, { miss: ['유전자는 가게에 다 있지만, 지금 계산으로는 3세대 안에 잘 안 나와요', '필요한 유전자를 가진 아이끼리 먼저 짝지어 새끼를 늘려 보세요'], pair: null }, G);
     const sc = c => c.p / Math.sqrt(c.gen), best = all.reduce((a, b) => sc(b) > sc(a) ? b : a);
     UI.pp = { i, g, all };
     const pc = p => `<b>${p < .01 ? '1% 미만' : '약 ' + Math.round(p * 100) + '%'}</b>`, hh = h => h != null && h < .75 ? ` · <span style="color:#b5651d">⚠️ 친척 사이 혈통 ${Math.round(h * 100)}%</span>` : '';
     const nm = (x, sx) => `${C.nameOf(x.ph)} ${sx}`, byId = id => S.fish.find(y => y.id === id), nmI = id => { const x = byId(id); return x ? nm(x, x.sex === 'm' ? '♂' : '♀') : '다른 구피'; };
     const mateN = c => c.mate === 'sib' ? '형제끼리' : nmI(c.mate) + '와';
+    const hv = x => (C.goalUse(x, g) || { have: [] }).have, hvs = x => hv(x).length ? hv(x).join('·') : '없음', rec = C.goalNeeds(g).filter(x => x[2]).map(x => x[3]);
+    const why = c => { const x = byId(c.c);
+      if (c.gen === 1) { const rb = rec.filter(n => hv(c.m).includes(n) && hv(c.f).includes(n)); return `♂는 ${hvs(c.m)}, ♀는 ${hvs(c.f)} 유전자를 가졌어요${rb.length ? ` · 숨은 형질(${rb.join('·')})을 둘 다 가져서 바로 나올 수 있어요` : ''}`; }
+      const un = [...new Set(hv(c.m).concat(hv(c.f)))], N = C.goalNeeds(g).length;
+      if (c.gen === 2) return `둘이 합쳐 필요한 유전자 ${un.length}/${N}개(${un.join('·')})를 가졌어요 · 한 배에서는 드물지만, 새끼에게 모은 뒤 ${c.mate === 'sib' ? '형제끼리 짝지으면 숨은 형질이 겉으로 나와요' : `${nmI(c.mate)}(${x ? hvs(x) : ''})와 짝지으면 확률이 올라요`}`;
+      const xm = x ? hv(x).filter(n => !un.includes(n)) : []; return `1단계 부모가 ${un.join('·') || '일부'} 유전자를 가졌고, 2단계 짝 ${nmI(c.c)}${xm.length ? `가 없던 ${xm.join('·')} 유전자를 더해 줘요` : `도 ${hvs(x)} 유전자를 가져서 한 번 더 겹쳐 줘요`} · 세 세대에 걸쳐 필요한 유전자를 한 줄로 진하게 모아요`; };
+    const maxP = all.reduce((a, b) => b.p > a.p ? b : a), fast = all.filter(c => c.gen === Math.min(...all.map(x => x.gen))).reduce((a, b) => b.p > a.p ? b : a);
+    const bestWhy = best === maxP && best === fast ? '확률도 가장 높고 가장 빨라요' : best === maxP ? `확률이 가장 높아요${best.gen > fast.gen ? ` · ${fast.gen}세대 길(${pc(fast.p).replace(/<\/?b>/g, '')})보다 ${best.gen - fast.gen}세대 더 걸리지만 그만한 값이 있어요` : ''}` : `확률은 ${maxP.gen}세대 길(${pc(maxP.p).replace(/<\/?b>/g, '')})보다 조금 낮지만 ${maxP.gen - best.gen}세대 빨라서 유지비와 시간이 덜 들어요`;
     const card = (c, k) => { const st = c.gen === 1 ? [`<b>${nm(c.m, '♂')} × ${nm(c.f, '♀')}</b><small style="display:block">이번 배 새끼 중 목표 ${pc(c.p)}${hh(c.h)}</small>`]
       : c.gen === 2 ? [`<b>1) ${nm(c.m, '♂')} × ${nm(c.f, '♀')}</b><small style="display:block">필요한 유전자를 새끼 한 마리에 모아요</small>`, `<b>2) 그 새끼를 ${mateN(c)} 짝지어요</b><small style="display:block">새끼 중 목표 ${pc(c.p)}${c.mate === 'sib' ? ' · 형제끼리라 혈통 건강이 조금 떨어져요' : ''}</small>`]
       : [`<b>1) ${nm(c.m, '♂')} × ${nm(c.f, '♀')}</b><small style="display:block">유전자 일부를 새끼에게 모아요</small>`, `<b>2) 그 새끼 × ${nmI(c.c)}</b><small style="display:block">나머지 유전자까지 한 줄로 모아요</small>`, `<b>3) 그 새끼들끼리 짝지어요</b><small style="display:block">새끼 중 목표 ${pc(c.p)}</small>`];
-      return `<div class="pcard ${c === best ? 'best' : ''}"><div style="flex:1;min-width:0">${c === best ? '<span class="tbd l" style="position:static;display:inline-block;margin-bottom:4px">⭐ 추천</span> ' : ''}<span style="font-size:12px;color:#5b7480">${c.gen}세대 · 목표 ${pc(c.p)}</span>${st.map(x => `<div style="margin-top:4px">${x}</div>`).join('')}</div><button class="btn go" data-a="planpick" data-v="${k}">${c.gen === 1 ? '넣기' : '이 길로'}</button></div>`; };
+      return `<div class="pcard ${c === best ? 'best' : ''}"><div style="flex:1;min-width:0">${c === best ? '<span class="tbd l" style="position:static;display:inline-block;margin-bottom:4px">⭐ 추천</span> ' : ''}<span style="font-size:12px;color:#5b7480">${c.gen}세대 · 목표 ${pc(c.p)}</span>${st.map(x => `<div style="margin-top:4px">${x}</div>`).join('')}<div class="why">💡 ${c === best ? `<b>추천 이유:</b> ${bestWhy}<br>` : ''}${why(c)}</div></div><button class="btn go" data-a="planpick" data-v="${k}">${c.gen === 1 ? '넣기' : '이 길로'}</button></div>`; };
     const sec = (n, ttl, L) => L.length ? `<h5><span>${ttl}</span></h5>` + L.map(c => card(c, all.indexOf(c))).join('') : (n === 1 && !d.length ? '<p class="note">⚡ 1세대: 한 번에 바로 나오는 짝은 없어요 · 거쳐 가야 해요</p>' : '');
     openSheet(head('🎯 짝 고르기', 'boxopen" data-id="' + i) + `<p class="note">목표: <b>${C.goalText(g)}</b> · 필요한 유전자는 가게에 다 있어요. 길을 골라 주세요</p>
+      ${needH(g, G)}
       <h5><span>⭐ 추천 길</span></h5>${card(best, all.indexOf(best))}
       ${sec(1, '⚡ 1세대 · 바로', d.filter(c => c !== best))}${sec(2, '🧭 2세대 · 한 번 거쳐서', t.filter(c => c !== best))}${u.filter(c => c !== best).length ? sec(3, '🧭 3세대 · 두 번 거쳐서', u.filter(c => c !== best)) : ''}
       <p class="note">💡 %는 마지막 세대 새끼 중 목표가 나올 어림값이에요. ⭐ 추천은 확률과 걸리는 세대를 함께 따진 거예요. 거쳐 가는 길은 단계마다 실제로 태어난 새끼로 다시 계산해서 짝을 골라 줘요.</p>`, 'pairpick', i, true);
   }, 30);
 }
 function placePair(i, m, f) { C.at(S, 'box' + i).forEach(x => { if (x !== m && x !== f) C.moveTo(S, x.id, 'nursery') || C.moveTo(S, x.id, 'tank'); }); C.moveTo(S, m.id, 'box' + i); C.moveTo(S, f.id, 'box' + i); }
-function showMiss(g, r) {
+function showMiss(g, r, G) {
   notice(`<h3 style="font-family:'Gowun Dodum'">🎯 ${C.goalText(g)}</h3>
     ${r.pair ? `<p>가장 좋은 짝으로 넣었어요 · 목표가 나올 확률 <b>약 ${Math.round(r.pair.p * 100)}%</b></p>` : r.sure ? '<p><b>지금 가게 구피로는 만들 수 없어요.</b></p>' : '<p><b>만들 수는 있지만 지금은 확률이 아주 낮아요.</b></p>'}
     ${r.miss.length ? `<p style="margin:10px 0 4px;font-weight:700">부족한 것</p><ul style="margin:0 0 8px 18px;padding:0">${r.miss.map(x => `<li style="margin:3px 0">${x}</li>`).join('')}</ul>` : ''}
-    <p class="note">💡 숨은 유전자는 겉모습으로 안 보여요. 부족한 유전자는 🛒 희귀 혈통이나 🎲 치어 뽑기로 들여오고, 한 세대에 안 되면 형질을 한 마리에 먼저 모은 뒤 다시 짝지어요.</p>
+    ${G ? `<div style="text-align:left">${needH(g, G)}</div>` : '<p class="note">💡 숨은 유전자는 겉모습으로 안 보여요. 부족한 유전자는 🛒 희귀 혈통이나 🎲 치어 뽑기로 들여오고, 한 세대에 안 되면 형질을 한 마리에 먼저 모은 뒤 다시 짝지어요.</p>'}
     <div class="row"><button class="btn" data-a="boxes">번식으로</button><button class="btn go" data-a="shop">상점 가기</button></div>`);
 }
 function showBoxRes(i) {
