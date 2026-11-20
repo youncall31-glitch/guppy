@@ -2033,7 +2033,7 @@ function menuHtml() {
     + (t.show ? it('care', '🖼', '전시 어항 장치') + it('viewmode', '🎬', '감상 모드') : it('care', '💧', '물과 먹이', `<span class="${w < 50 ? 'warn' : ''}">${Math.round(t.water)}%</span>`))
     + (t.show ? '' : it('divt', '🚧', '암수 칸막이', `<span>${t.divOwn ? (t.div ? '세움' : '걷음') : '🪙' + C.DIV_COST}</span>`))
     + (U('deco') ? '' : '<!--') + it('decomode', '🪴', '꾸미기', `<span>${C.decoStats(t).n}/${C.slotCount(t.size)}</span>`) + (U('deco') ? '' : '-->')
-    + it('quiet', '🔕', '알림 줄이기', `<span>${S.quiet ? '켬' : '끔'}</span>`) + it('log', '📜', '가게 기록') + it('helpon', '❔', '궁금한 것 눌러 보기') + it('help', '📘', '도움말 · 튜토리얼') + ((S.goal || 0) < C.AP_N ? it('appass', '🎓', '수습 패스하기', `<span>🪙${C.apLeft(S)}</span>`) : '') + it('resetask', '🔄', '처음부터 다시 하기', '', 'class="danger"');
+    + it('quiet', '🔕', '알림 줄이기', `<span>${S.quiet ? '켬' : '끔'}</span>`) + it('log', '📜', '가게 기록') + it('helpon', '❔', '궁금한 것 눌러 보기') + it('help', '📘', '도움말 · 튜토리얼') + ((S.goal || 0) < C.AP_N ? it('appass', '🎓', '수습 패스하기', `<span>🪙${C.apLeft(S)}</span>`) : '') + it('stcopy', '🧾', '게임 상태 복사 (상담용)') + it('resetask', '🔄', '처음부터 다시 하기', '', 'class="danger"');
 }
 function menuToggle(on) { const m = $('#menu'); on = on == null ? !m.classList.contains('on') : on; if (on) menuHtml(); m.classList.toggle('on', on); if (on) tutOn('menu'); }
 function renderHud() {
@@ -2166,10 +2166,12 @@ function dreamUse(f, others) {
 }
 function whyPrecious(f, others) {
   const O = (others || S.fish).filter(x => x.id !== f.id), R = [], gl = (x, l) => x.g[l] || C.GDEF[l] || [];
-  if (C.isAdult(f) && !O.some(x => C.isAdult(x) && C.keyOf(x.ph) === C.keyOf(f.ph))) R.push('이 모습은 이 아이뿐이에요');
-  const last = RARE_AL.concat(ALL_AL).filter(([l, a]) => gl(f, l).includes(a) && !O.some(x => gl(x, l).includes(a))).map(x => x[2]);
+  if (C.isAdult(f) && C.phTier(f.ph) >= 1 && !O.some(x => C.isAdult(x) && C.keyOf(x.ph) === C.keyOf(f.ph))) R.push('이 모습은 이 아이뿐이에요');   // 흔한(일반) 모습은 다시 만들기 쉬워 지키지 않는다
+  const last = RARE_AL.filter(([l, a]) => gl(f, l).includes(a) && !O.some(x => gl(x, l).includes(a))).map(x => x[2]);
   if (last.length) R.push(`${last.slice(0, 3).join('·')} 유전자를 가진 마지막 아이예요`);
-  const od = (S.orders || []).find(o => { const M = C.orderMatches(S, o); if (!M.some(x => x.id === f.id)) return false; return M.reduce((b, x) => C.sellPrice(S, x) < C.sellPrice(S, b) ? x : b).id === f.id; });   // 의뢰마다 보낼 한 마리(가장 싼 아이)만 지킨다 if (od) R.push(`📋 ${od.who} 의뢰에 맞아요 · 보내면 🪙${fmt(od.reward)}`);
+  const od = (S.orders || []).find(o =>   // 의뢰마다 보낼 한 마리(가장 싼 아이)만 지킨다
+    { const M = C.orderMatches(S, o); if (!M.some(x => x.id === f.id)) return false; return M.reduce((b, x) => C.sellPrice(S, x) < C.sellPrice(S, b) ? x : b).id === f.id; });
+  if (od) R.push(`📋 ${od.who} 의뢰에 맞아요 · 보내면 🪙${fmt(od.reward)}`);
   const du = dreamUse(f, others); if (du) R.push(du);
   if (f.fav) R.push('⭐ 즐겨찾기한 아이예요'); else if (f.nick) R.push(`이름(${f.nick})을 붙여 준 아이예요`);
   return R;
@@ -2197,14 +2199,14 @@ function sellMatch() {
   return { L, coins, prot };
 }
 /* 💰 팔기 정리: 게임이 먼저 크게 나눠 주고, 묶음째 판다 · 🛡 지킬 조건은 체크로 켜고 끈다 */
-const GUARDS = [['last', '하나뿐인 모습'], ['gene', '마지막 유전자'], ['epic', '💎 에픽 이상'], ['fix', '고정 혈통(2대+)'], ['ord', '📋 의뢰감'], ['dream', '🌟 목표에 필요'], ['fav', '⭐ 즐겨찾기·이름']];
+const GUARDS = [['last', '하나뿐인 레어 모습'], ['gene', '마지막 레어 유전자'], ['epic', '💎 에픽 이상'], ['fix', '고정 혈통(2대+)'], ['ord', '📋 의뢰감'], ['dream', '🌟 목표에 필요'], ['fav', '⭐ 즐겨찾기·이름']];
 const guard = () => Object.assign({ last: 1, gene: 1, epic: 1, fix: 1, ord: 1, dream: 1, fav: 1 }, S.guard || {});
 const guardOf = r => /목표/.test(r) ? 'dream' : /뿐/.test(r) ? 'last' : /유전자를 가진 마지막/.test(r) ? 'gene' : /의뢰/.test(r) ? 'ord' : 'fav';
 const fixOf = f => Math.max(0, ...Object.values(f.line || {}).map(v => +v || 0));
 function sortSell() {
   const P = sellPool(), byLook = {}, out = { dup: [], old: [], one: [], prot: [] };
   P.forEach(f => { const k = label(f) + '|' + f.sex; (byLook[k] = byLook[k] || []).push(f); });
-  const G = guard(), why = new Map(); P.forEach(f => { const R = whyPrecious(f).filter(r => G[guardOf(r)]); if (G.fix && fixOf(f) >= 2) R.push(`🧬 고정 ${fixOf(f)}대 혈통`); if (G.epic) { const T = C.tierOf(f); if (T.tier >= 2) R.push(`💎 ${T.hidden >= T.shown && T.hidden ? '숨은 ' : ''}${C.TIER_N[T.tier]}`); } if (R.length) why.set(f.id, R); });
+  const G = guard(), why = new Map(); P.forEach(f => { const R = whyPrecious(f).filter(r => G[guardOf(r)]); if (G.fix && fixOf(f) >= 2) R.push(`🧬 고정 ${fixOf(f)}대 혈통`); if (G.epic) { const T = C.tierOf(f); if (T.shown >= 2) R.push(`💎 ${C.TIER_N[T.shown]}`); } if (R.length) why.set(f.id, R); });   // 💎는 겉모습이 에픽 이상일 때만 · 숨은 에픽 보인자는 '마지막 레어 유전자'일 때만 지킨다
   Object.values(byLook).forEach(A => {
     A.sort((a, b) => C.sellPrice(S, b) - C.sellPrice(S, a));
     let dk = 0; A.forEach(f => { const R = why.get(f.id); if (R && R.every(r => /^🌟/.test(r))) { if (dk >= 2) why.delete(f.id); else dk++; } });   // 🌟 목표 때문에만 지키는 아이는 같은 모습·성별마다 2마리까지(번식용) · 나머지는 팔 수 있게
@@ -2920,6 +2922,11 @@ function act(a, el) {
     case 'appass': menuToggle && menuToggle(false); return notice(`<h3 style="font-family:'Gowun Dodum'">🎓 수습 과정을 패스할까요?</h3><p class="note" style="margin:8px 0 12px">남은 수습 보상 <b>🪙${C.apLeft(S)}</b>(졸업 보너스 포함)을 그대로 받고, 모든 기능이 한 번에 열려요.<br>이미 게임을 아는 분께 추천해요.</p><div class="row"><button class="btn" data-a="close">계속 배울게요</button><button class="btn go" data-a="appassgo">패스하기</button></div>`);
     case 'appassgo': closeSheet(); passAp(); return;
     case 'quiet': S.quiet = !S.quiet; save(); menuHtml(); toast(S.quiet ? '🔕 저절로 일어난 일은 📜 가게 기록에만 남겨요' : '🔔 저절로 일어난 일도 위에 잠깐 보여 줘요'); return;
+    case 'stcopy': { menuToggle && menuToggle(false); const D = Object.assign({}, S); delete D.log; const txt = 'GUPPY-STATE ' + JSON.stringify(D);
+      const done = ok => toast(ok ? '🧾 복사했어요 · 대화창에 붙여 넣어 주세요' : '아래 글을 길게 눌러 전체 선택 → 복사해 주세요');
+      openSheet(head('🧾 게임 상태 복사') + `<p class="note">지금 가게 상태(구피·돈·어항)를 글자로 만들었어요. 복사해서 붙여 넣으면 똑같은 상황을 확인할 수 있어요. 개인정보는 없어요.</p><textarea id="stx" readonly style="-webkit-user-select:text;user-select:text;width:100%;height:150px;font-size:10px;border-radius:10px;border:1px solid #cfdde2;padding:6px">${txt.replace(/</g, '&lt;')}</textarea><div class="row" style="margin-top:8px"><button class="btn go" data-a="stcopy2">📋 복사하기</button></div><p class="note" style="text-align:center">${fmt(txt.length)}자</p>`, 'stcopy');
+      return; }
+    case 'stcopy2': { const t = $('#stx'); t.focus(); t.select(); let ok = false; try { ok = document.execCommand('copy'); } catch (e) {} if (navigator.clipboard) navigator.clipboard.writeText(t.value).then(() => toast('🧾 복사했어요 · 대화창에 붙여 넣어 주세요'), () => { if (!ok) toast('글을 길게 눌러 전체 선택 → 복사해 주세요'); }); else toast(ok ? '🧾 복사했어요 · 대화창에 붙여 넣어 주세요' : '글을 길게 눌러 전체 선택 → 복사해 주세요'); return; }
     case 'resetask': menuToggle && menuToggle(false); return openSheet(head('🔄 처음부터 다시 하기') + `<p class="note" style="text-align:center;margin:14px 0">가게를 처음 상태로 되돌려요.<br><b>구피 ${S.fish.length}마리 · 🪙${fmt(S.money)} · 사진첩 ${Object.keys(S.album).length}칸 · ${S.day}일째</b>가<br>모두 사라지고 되돌릴 수 없어요.</p>
       <div class="row" style="gap:8px"><button class="btn" data-a="close" style="flex:1">그만두기</button><button class="btn danger" data-a="resetgo" style="flex:1">${el.dataset.sure ? '정말 지울게요' : '처음부터 시작'}</button></div>`, 'reset');
     case 'resetgo': { if (!UI.resetSure) { UI.resetSure = 1; el.textContent = '한 번 더 누르면 지워져요'; setTimeout(() => { UI.resetSure = 0; }, 4000); return; }
