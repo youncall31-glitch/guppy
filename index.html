@@ -401,6 +401,16 @@ body.hasdream #shelf{right:66px;left:66px}
 .tbx{display:flex;align-items:center;gap:4px;margin-top:5px;flex-wrap:wrap}.tbx span{font-size:11.5px;font-weight:700;color:#40606b}.tbx .btn{min-width:32px;padding:4px 8px}
 .tmain .tbox{display:inline-block;margin-top:4px;font-size:11.5px;font-weight:800;color:#2a7a8c;background:#e6f3f6;padding:2px 8px;border-radius:99px}
 .tmain>.btn{margin-top:5px}
+/* 🌳 족보 가지선: 부모에서 내려오는 세로선 + 자식으로 꺾이는 가로선 · 단계마다 색을 달리 */
+.ttree .trow{padding-left:0!important;min-height:0}.ttree .tpre{display:none}
+.ttree .tbody{border-bottom:0!important;background:#fff;border:2px solid #e1ebee!important;border-radius:12px;padding:7px 8px!important;margin:4px 0}
+.ttree .trow.root .tbody{border-color:#e8b923!important;background:#fffbea}.ttree .trow.ready .tbody{border-color:#7fcfa5!important;background:#eefaf3}.ttree .trow.have .tbody{border-color:#cfe6ea!important}
+.tkids{position:relative;margin-left:16px;padding-left:18px}
+.tkids::before{content:'';position:absolute;left:0;top:-4px;bottom:0;border-left:3px solid var(--tl)}
+.tkids>.titem{position:relative}
+.tkids>.titem::before{content:'';position:absolute;left:-18px;top:20px;width:16px;height:12px;border-bottom:3px solid var(--tl);border-left:3px solid var(--tl);border-bottom-left-radius:10px;transform:translateY(-12px)}
+.tkids>.titem:last-child::after{content:'';position:absolute;left:-20px;top:22px;bottom:-2px;width:8px;background:#fff}
+.tkids.k1{--tl:#e8b923}.tkids.k2{--tl:#4fb3c4}.tkids.k3{--tl:#a78bdb}
 </style>
 </head>
 <body>
@@ -2802,10 +2812,10 @@ function showTree(g) {
     const st = ok ? `<span class="tst ok">✓</span>` : half ? `<span class="tst half">◐</span>` : `<span class="tst no">✗</span>`;
     const info = ok ? `보유 ${n.own.length}마리` : half ? `숨긴 아이 ${n.hid.length}마리 (겉으론 안 보여요)` : n.kids ? (ready ? '<b class="rd">재료가 다 있어요 · 번식통에 목표로 정해 보세요</b>' : '아래 단계부터 모아요') : '가진 구피가 없어요';
     const act = ok ? '' : n.kids ? (bi >= 0 ? `<span class="tbox">🎯 번식통 ${bi + 1}에서 진행 중</span>` : U('boxes') ? `<div class="tbx"><span>🎯 번식통에 목표로</span>${Array.from({ length: S.boxes }, (_, i) => `<button class="btn ${ready ? 'go' : ''} sm" data-a="treegoal" data-id="${i}" data-v="${gi}">${i + 1}</button>`).join('')}</div>` : '') : half ? '' : `<button class="btn sm" data-a="treebuy" data-v="${gi}">🛒 구하기</button>`;
-    rows.push(`<div class="trow ${depth ? '' : 'root'} ${ready ? 'ready' : ''}" style="padding-left:${Math.max(0, depth - 1) * 16 + (depth ? 14 : 0)}px">${depth ? '<span class="tpre">↳</span>' : ''}<div class="tbody">${st}<div class="tmain"><b>${depth ? '' : '🌟 '}${C.goalText(n.g)}</b><small>${info}</small>${ok ? `<div class="tpics">${n.own.slice(0, 4).map(mini).join('')}</div>` : ''}${act}</div></div></div>`);
-    (n.kids || []).forEach((k, i) => walk(k, depth ? pre + (last ? '\u3000' : '│') : '', i === n.kids.length - 1, depth + 1));
+    const kids = (n.kids || []).map(k => walk(k, '', false, depth + 1)).join('');
+    return `<div class="titem d${Math.min(depth, 3)}"><div class="trow ${depth ? '' : 'root'} ${ready ? 'ready' : ''} ${ok ? 'have' : ''}"><div class="tbody">${st}<div class="tmain"><b>${depth ? '' : '🌟 '}${C.goalText(n.g)}</b><small>${info}</small>${ok ? `<div class="tpics">${n.own.slice(0, 4).map(mini).join('')}</div>` : ''}${act}</div></div></div>${kids ? `<div class="tkids k${Math.min(depth + 1, 3)}">${kids}</div>` : ''}</div>`;
   };
-  walk(root, '', true, 0);
+  rows.push(walk(root, '', true, 0));
   openSheet(head('🌳 족보') + `<p class="note">맨 위가 최종 목표, 아래로 갈수록 그 재료예요. <b>✓ 있음 · ◐ 숨긴 아이만 · ✗ 없음</b><br>중간 단계를 번식통 목표로 정해서 원하는 길로 가요. 아래 칸이 다 ✓면 <b>재료가 다 있어요</b> · 번호를 누르면 그 번식통 목표가 되고 짝 고르기로 이어져요.</p>
     <div class="ttree">${rows.join('')}</div>
     <div class="row" style="margin-top:10px"><button class="btn" data-a="album">📖 목표 바꾸기</button><button class="btn" data-a="dreamoff">목표 그만두기</button></div>`, 'tree', null, true);
