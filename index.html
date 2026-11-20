@@ -411,6 +411,7 @@ body.hasdream #shelf{right:66px;left:66px}
 .tkids>.titem::before{content:'';position:absolute;left:-18px;top:20px;width:16px;height:12px;border-bottom:3px solid var(--tl);border-left:3px solid var(--tl);border-bottom-left-radius:10px;transform:translateY(-12px)}
 .tkids>.titem:last-child::after{content:'';position:absolute;left:-20px;top:22px;bottom:-2px;width:8px;background:#fff}
 .tkids.k1{--tl:#e8b923}.tkids.k2{--tl:#4fb3c4}.tkids.k3{--tl:#a78bdb}
+#hud #react{min-width:16px}#hud .tsw .ar{width:12px!important}#hud #feedBtn{padding:0 9px!important}
 </style>
 </head>
 <body>
@@ -425,7 +426,7 @@ body.hasdream #shelf{right:66px;left:66px}
       <button class="pill" data-a="log" aria-label="기록" data-tx="📜 가게 기록">📜</button>
       <button class="pill" id="helpBtn" data-a="helpmode" aria-label="도움말">?</button>
       <div id="shelf"></div><div id="react"></div>
-      <button id="feedBtn" data-tx="🍤 누르면 먹이 · 끌어서 원하는 곳에 뿌려도 돼요">🍤 먹이</button><button id="viewBtn" data-a="viewmode" data-tx="🖼 감상 모드 · 가로로 어항 전체를 봐요" style="display:none">감상</button>
+      <button id="feedBtn" data-tx="🍤 누르면 먹이 · 끌어서 원하는 곳에 뿌려도 돼요">먹이</button><button id="viewBtn" data-a="viewmode" data-tx="🖼 감상 모드 · 가로로 어항 전체를 봐요" style="display:none">감상</button>
       <button class="pill" id="menuBtn" data-a="menu" aria-label="메뉴" data-tx="☰ 속도 · 주문 · 물과 먹이 · 꾸미기 · 기록 · 도움말">☰<b class="dot"></b></button>
       <div id="menu"></div>
       
@@ -1321,7 +1322,7 @@ body.hasdream #shelf{right:66px;left:66px}
     S.fish.forEach(f => { walk(f.id, 0); if (f.mate) walk(f.mate.id, 0); });
     for (const k in S.reg) if (!keep.has(+k)) delete S.reg[k];
   }
-  root.CORE = { goalShop, GACHA_COST, goalBlock, planThree, planTwo, planStep2, goalUse, RESIZE_COST, TIER_N, phTier, geneTier, tierOf, FILTER_COST, COMMON_K, AP_N, UNL_ALL, apLeft, skipAp, unl, GRAD_BONUS, GDEF, mktPct, SHOW, showCap, MKT, UPKEEP, mktMul, ORD_K, ORD_GAP, buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
+  root.CORE = { revealCheck, goalShop, GACHA_COST, goalBlock, planThree, planTwo, planStep2, goalUse, RESIZE_COST, TIER_N, phTier, geneTier, tierOf, FILTER_COST, COMMON_K, AP_N, UNL_ALL, apLeft, skipAp, unl, GRAD_BONUS, GDEF, mktPct, SHOW, showCap, MKT, UPKEEP, mktMul, ORD_K, ORD_GAP, buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
     newState, express, score, basePrice, keyOf, nameOf, recipeLines, recipeCost, health, inbreed, makeChild, dayTick, sell, moveTo, rescue, buyFounder, buy, buyRecipe, boostBirth, growFry,
     sellPrice, dailyOf, tankIncome, comment, survival, at, isAdult, tankCap, tankUsed, inTank, roomTank, maxPlants, donate, donateRep, repMult, autoManage, AUTO_DEFAULT, nurseryCap, pagesDone, pruneReg, randomGenes };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2249,7 +2250,7 @@ function renderHud() {
   { const ie = $('#inc'), up = S.lastUpkeep ? ` · 🍤−${fmt(S.lastUpkeep)}` : ''; ie.textContent = (inc.pays ? `+${fmt(inc.total)}/일${up}${S.auto && S.auto.on ? ' · 🤖' : ''}` : S.tanks.some(t => t.show) ? '손님 없음' + up : (up ? up.slice(3) + '/일' : '') + (S.auto && S.auto.on ? ' 🤖' : '')); ie.classList.toggle('warn', !inc.pays && S.tanks.some(t => t.show));
     const ob = $('#ordBtn'), on = (S.orders || []).length; ob.style.display = on ? '' : 'none'; ob.classList.toggle('ok', on && S.orders.some(o => C.orderMatches(S, o).length)); ob.innerHTML = `📋${on > 1 ? `<b>${on}</b>` : ''}`; }
   { const t = curTank(), n = S.tanks.length, w = C.careOf(t).water, nm = t.show ? C.THEMES[t.theme].n : C.SIZES[t.size].n + (S.tanks.filter(x => !x.show).length > 1 ? ' ' + S.tanks.slice(0, S.cur + 1).filter(x => !x.show).length : '');
-    const st = `🐟${C.tankUsed(S)}/${C.tankCap(S)}${t.show ? '' : `<span class="wd">💧${Math.round(t.water)}</span>`}`;
+    const st = `${C.tankUsed(S)}/${C.tankCap(S)}${t.show ? '' : `<span class="wd">💧${Math.round(t.water)}</span>`}`;
     $('#shelf').innerHTML = `<div><div class="tsw ${n > 1 ? 'multi' : ''}">${n > 1 ? `<button class="ar" data-a="tprev" aria-label="이전 어항">‹</button>` : ''}<button class="tn" data-a="${!t.show && w < 97 ? 'wcq' : 'care'}" data-tx="${t.show ? '🖼 누르면 전시 어항 장치' : '💧 누르면 바로 물갈이'}"><b>${nm}</b><span class="${!t.show && w < 50 ? 'warn' : ''}">${st}</span></button>${n > 1 ? `<button class="ar" data-a="tnext" aria-label="다음 어항">›</button>` : ''}</div></div>`;
     const mb = $('#menuBtn'); if (mb) mb.classList.toggle('alert', (S.orders || []).some(o => C.orderMatches(S, o).length) || (!t.show && w < 50));
     if ($('#menu').classList.contains('on')) menuHtml(); }
@@ -2264,7 +2265,7 @@ function renderHud() {
   if (gb) { gb.style.display = g && !DECO_MODE && (!TUT.on || TUT.coach || TUT.i >= TS().length - 1) ? '' : 'none'; if (g) { const ok = g.ok(S); gb.classList.toggle('ready', ok); gb.innerHTML = g.who ? (ok ? `💌 ${g.who}에게 보내기 · 🪙${g.r}` : `💌 ${g.who} · ${g.t}`) : (ok ? `🎁 ${g.t} · 🪙${g.r + (g.grad || 0)} 받기` : `${g.ap ? `🎓 ${(S.goal || 0) + 1}/${C.AP_N} · ` : '🎯 '}${g.t} · 🪙${g.r}`); gb.dataset.tx = ok ? '' : `💡 ${g.h}`; gb.classList.toggle('req', !!g.who); } }
   dreamChip(); renderNext();
   const T = C.careOf(curTank()), fb = $('#feedBtn');
-  if (fb) { fb.style.display = VB.tank && !DECO_MODE && !curTank().show ? '' : 'none'; const vb = $('#viewBtn'); if (vb) vb.style.display = VB.tank && !DECO_MODE && curTank().show ? '' : 'none'; { const full = !curTank().show && C.careOf(curTank()).full >= 2.5; fb.textContent = full ? '😋 배불러요' : `${C.FOODS[S.feedKind || 'flake'].i} 먹이`; fb.classList.toggle('full', full); } }
+  if (fb) { fb.style.display = VB.tank && !DECO_MODE && !curTank().show ? '' : 'none'; const vb = $('#viewBtn'); if (vb) vb.style.display = VB.tank && !DECO_MODE && curTank().show ? '' : 'none'; { const full = !curTank().show && C.careOf(curTank()).full >= 2.5; fb.textContent = full ? '배불러요' : '먹이'; fb.classList.toggle('full', full); } }
   { const db = $('#decoBtn'); if (db) db.style.display = DECO_MODE ? '' : 'none'; }
   murk();
   const nurAd = C.at(S, 'nursery').filter(C.isAdult).length;
