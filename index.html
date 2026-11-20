@@ -333,6 +333,31 @@ body.hasdream #shelf{right:66px;left:66px}
 #lane #goal{width:100%;height:34px;padding:0 12px!important;border-radius:12px!important;background:rgba(255,255,255,.6)!important;color:#24343c!important;font-size:13px!important;font-weight:700;text-align:left}
 #lane #goal.ready{background:var(--accent2)!important;color:#fff!important}#lane #goal.req{background:rgba(255,244,214,.95)!important;color:#5a4300!important}
 #hud .pill.day{flex:none!important;margin-left:auto}#hud .pill.money{flex:none}
+/* ===== 2줄 배치: 1줄 [돈·날짜·속도] [‹ 어항 ›] [먹이·감상·☰] / 2줄 알림 띠 ===== */
+#hud{gap:4px!important;align-items:center}
+#hud .pill{height:38px;display:flex;align-items:center;box-sizing:border-box}
+#hud .pill.money{flex:none;padding:0 9px!important;min-width:0!important;flex-direction:row!important;align-items:center!important;border-radius:12px 4px 4px 12px!important}#hud .pill.money #inc{display:none!important}#hud .pill.money .mv{font-size:14.5px}
+#hud .pill.day{margin-left:0!important;border-radius:4px!important;padding:0 6px!important}#hud .pill.day .dl{gap:4px!important}#hud .pill.day #day{font-size:12.5px}.dring,.dring svg{width:18px!important;height:18px!important}
+#hud .pill#spd{border-radius:4px 12px 12px 4px!important;padding:0 7px!important;font-size:13px}
+#hud #shelf{position:static!important;flex:1;min-width:0;display:flex;justify-content:center;top:auto!important;left:auto!important;right:auto!important}
+#hud #shelf>div{min-width:0;max-width:100%}
+#hud .tsw .ar{width:22px!important;height:38px!important;font-size:22px!important;border-radius:8px!important;background:rgba(255,255,255,.55)!important}
+#hud .tsw .tn{height:38px!important;flex-direction:column;justify-content:center;align-items:center;gap:0!important;padding:0 8px!important}
+#hud .tsw .tn b{font-size:12.5px!important;line-height:1.2;max-width:100%;overflow:hidden;text-overflow:ellipsis}#hud .tsw .tn span{font-size:10px!important;line-height:1.2;max-width:100%}
+#hud #feedBtn,#hud #viewBtn{position:static!important;height:38px!important;padding:0 9px!important;border-radius:12px!important;background:rgba(255,255,255,.6)!important;color:#24343c!important;font-size:12.5px!important;font-weight:800;border:0;box-shadow:none!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;flex:none}
+#hud #menuBtn{height:38px;width:38px;padding:0!important;justify-content:center;border-radius:12px!important;flex:none}
+#lane{top:calc(52px + env(safe-area-inset-top))!important;gap:6px}
+#lane>#goal,#lane>#nextAct,#lane>#rescue{flex:1;min-width:0}
+#lane #dream{position:static!important;flex:none;width:44px!important;height:34px!important;padding:0 3px!important;border-radius:12px!important;border:2px solid #ffcf4a!important;background:rgba(255,246,214,.92)!important;box-shadow:none!important}#lane #dream b{display:none}
+.toast,#note{top:calc(52px + env(safe-area-inset-top))!important}
+#float{top:calc(46px + env(safe-area-inset-top))!important}
+#menu{top:44px!important}
+/* 어항 고르기: 화살표를 알약 안쪽에 붙여 하나의 칸으로 */
+#hud .tsw{gap:0!important;background:rgba(255,255,255,.6);border-radius:12px;height:38px;overflow:hidden}
+#hud .tsw .tn{background:transparent!important;padding:0 6px!important;box-shadow:none!important;border:0!important}
+#hud .tsw .ar{background:transparent!important;width:18px!important;font-size:20px!important;color:#5b7480!important;border-radius:0!important}
+#hud .tsw.multi .tn{padding:0 2px!important}
+#hud #spd{font-size:12px!important}#hud #feedBtn{padding:0 8px!important}
 </style>
 </head>
 <body>
@@ -346,15 +371,15 @@ body.hasdream #shelf{right:66px;left:66px}
       <button class="pill" id="ordBtn" data-a="orders" aria-label="주문" data-tx="📋 손님 주문" style="display:none">📋</button>
       <button class="pill" data-a="log" aria-label="기록" data-tx="📜 가게 기록">📜</button>
       <button class="pill" id="helpBtn" data-a="helpmode" aria-label="도움말">?</button>
+      <div id="shelf"></div>
+      <button id="feedBtn" data-tx="🍤 누르면 먹이 · 끌어서 원하는 곳에 뿌려도 돼요">🍤 먹이</button><button id="viewBtn" data-a="viewmode" data-tx="🖼 감상 모드 · 가로로 어항 전체를 봐요" style="display:none">감상</button>
       <button class="pill" id="menuBtn" data-a="menu" aria-label="메뉴" data-tx="☰ 속도 · 주문 · 물과 먹이 · 꾸미기 · 기록 · 도움말">☰<b class="dot"></b></button>
       <div id="menu"></div>
       
     </div>
     <div id="stats" style="display:none"></div>
-    <div id="bar2"><div id="shelf"></div>
-    <div id="tools"><button id="feedBtn" data-tx="🍤 누르면 먹이 · 끌어서 원하는 곳에 뿌려도 돼요">🍤 먹이</button><button id="viewBtn" data-a="viewmode" data-tx="🖼 감상 모드 · 가로로 어항 전체를 봐요" style="display:none">🖼</button><button id="dream" data-a="dreampath" aria-label="목표 구피" style="display:none"></button></div></div>
     <div id="lane"><button id="goal" data-a="goal" data-tx="🎯 지금 목표 · 끝내면 보상" style="display:none"></button><button id="nextAct" data-a="nextact" style="display:none"></button>
-    <div id="rescue"><button data-a="rescue"><span id="rtxt"></span><small id="rsub"></small><i id="rbar"></i></button></div></div>
+    <div id="rescue"><button data-a="rescue"><span id="rtxt"></span><small id="rsub"></small><i id="rbar"></i></button></div><button id="dream" data-a="dreampath" aria-label="목표 구피" style="display:none"></button></div>
     <div id="crowd"></div>
     <div id="scroll"><i></i></div>
     <div id="bubble"></div>
@@ -623,7 +648,7 @@ body.hasdream #shelf{right:66px;left:66px}
     color: { n: '발색 사료', i: '🌈', price: 4, d: '3일간 색 진하게 · 💰+25%' } };
   const careOf = t => { if (t.water == null) t.water = 100; if (t.full == null) t.full = 0; if (t.color == null) t.color = 0; if (t.brine == null) t.brine = 0; delete t.fed; return t; };
   const waterMult = w => w >= 60 ? 1 : w >= 30 ? 0.85 : 0.65;
-  const careMult = t => { careOf(t); return waterMult(t.water) * (t.full > 0 ? 1.1 : 1); };
+  const careMult = t => { careOf(t); return waterMult(t.water) * (t.show || t.full > 0 ? 1.1 : 1); };   // 전시 어항은 먹이 걱정 없이 늘 배부른 셈
   const tankOfFish = (S, f) => inTank(f) ? S.tanks[tankIdx(f)] : null;
   const colorOn = (S, f) => { const t = tankOfFish(S, f); return !!(t && t.color > 0) && f.ph.color !== 'gray'; };
   function feed(S, ti, kind) {
@@ -1623,7 +1648,7 @@ function showFrontG(T) {
   if (A.bubble) { for (let i = 0; i < 14; i++) { const bx = x + w * (.12 + .76 * ((i * 37) % 14) / 14), r = 1.5 + (i % 3), d = 3 + (i % 5) * .7; g += `<circle pointer-events="none" cx="${bx}" cy="${y + h}" r="${r}" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width=".8"><animate attributeName="cy" from="${y + h}" to="${y}" dur="${d}s" begin="${(i * .37) % d}s" repeatCount="indefinite"/><animate attributeName="cx" values="${bx};${bx + 4};${bx - 3};${bx}" dur="${d}s" repeatCount="indefinite"/></circle>`; } }
   return g;
 }
-let TOP_RES = 140;   // 화면 위에서 어항 테두리까지 비워 둘 높이(px): 돈·날짜 줄만 비우고, 어항 이름·목표 알약은 어항 위에 떠 있게
+let TOP_RES = 100;   // 화면 위에서 어항 테두리까지 비워 둘 높이(px): 돈·날짜 줄만 비우고, 어항 이름·목표 알약은 어항 위에 떠 있게
 // 일반 어항은 크기가 커져도 한 화면에 다 보이게(가로로 밀 필요 없음) · 대신 물고기를 조금 작게 그려 넓어진 느낌을 준다
 // 전시 어항만 넓은 풍경 그림이라 좌우로 밀어서 본다
 const viewW = t => t && t.show ? C.SIZES[t.size].w : 1;
@@ -2164,14 +2189,14 @@ function menuHtml() {
 }
 function menuToggle(on) { const m = $('#menu'); on = on == null ? !m.classList.contains('on') : on; if (on) menuHtml(); m.classList.toggle('on', on); if (on) tutOn('menu'); }
 function renderHud() {
-  $('#money').textContent = fmt(S.money); $("#day").textContent = `${S.day}일`; $('#spd').innerHTML = `⏳<b>×${S.speed}</b>`;
+  $('#money').textContent = S.money >= 1e4 ? (S.money / 1e4).toFixed(S.money >= 1e5 ? 0 : 1).replace(/\.0$/, '') + '만' : fmt(S.money); $("#day").textContent = `${S.day}일`; $('#spd').innerHTML = `⏳<b>×${S.speed}</b>`;
   const used = C.tankUsed(S), fryN = C.at(S, tankLoc()).filter(f => !C.isAdult(f)).length, inc = C.tankIncome(S), cap = C.tankCap(S);
   $('#stats').innerHTML = `<span class="${used > cap ? 'warn' : ''}" data-tx="🐟 이 어항의 구피 / 정원">🐟 ${used}/${cap}${fryN ? ` · 치어 ${fryN}` : ''}</span><span data-tx="🪴 꾸민 자리 / 전체 자리">🪴 ${C.decoStats(curTank()).n}/${C.slotCount(curTank().size)}</span>${(S.orders || []).length ? `<span class="tap ${S.orders.some(o => C.orderMatches(S, o).length) ? 'ok' : ''}" data-a="orders" data-tx="📋 손님 주문">📋 ${S.orders.length}</span>` : ''}<span class="tap ${C.careOf(curTank()).water < 50 ? 'warn' : ''}" data-a="${curTank().show ? 'care' : 'wcq'}" data-tx="${curTank().show ? '🖼 전시 어항 꾸미기' : '💧 누르면 바로 물갈이'}">${curTank().show ? '🖼 꾸미기 장치' : `💧${Math.round(curTank().water)}%${curTank().full > 0 ? ' · 🍤' : ''}`}</span><span class="${inc.pays ? '' : 'warn'}" data-tx="하루 손님 수입 · 예쁜 구피·수초가 많을수록 ↑">${inc.pays ? `손님 🪙${fmt(inc.total)}/일` : '손님 없음'}</span>${S.rep >= 1 ? `<span data-tx="⭐ 기증하면 올라요 · 하루 1%씩 식어요">⭐ 평판 ${Math.round(S.rep)} · 손님 +${Math.round((C.repMult(S) - 1) * 100)}%</span>` : ''}${S.auto && S.auto.on ? '<span data-tx="🤖 자동 관리가 켜져 있어요">🤖 자동</span>' : ''}`;
   { const ie = $('#inc'), up = S.lastUpkeep ? ` · 🍤−${fmt(S.lastUpkeep)}` : ''; ie.textContent = (inc.pays ? `+${fmt(inc.total)}/일${up}${S.auto && S.auto.on ? ' · 🤖' : ''}` : S.tanks.some(t => t.show) ? '손님 없음' + up : (up ? up.slice(3) + '/일' : '') + (S.auto && S.auto.on ? ' 🤖' : '')); ie.classList.toggle('warn', !inc.pays && S.tanks.some(t => t.show));
     const ob = $('#ordBtn'), on = (S.orders || []).length; ob.style.display = on ? '' : 'none'; ob.classList.toggle('ok', on && S.orders.some(o => C.orderMatches(S, o).length)); ob.innerHTML = `📋${on > 1 ? `<b>${on}</b>` : ''}`; }
-  { const t = curTank(), n = S.tanks.length, w = C.careOf(t).water, nm = t.show ? '🖼 ' + C.THEMES[t.theme].n : C.SIZES[t.size].n + (S.tanks.filter(x => !x.show).length > 1 ? ' ' + S.tanks.slice(0, S.cur + 1).filter(x => !x.show).length : '');
-    const st = `🐟 ${C.tankUsed(S)}/${C.tankCap(S)}${t.show ? ' · 시간 멈춤' : ` · 💧${Math.round(t.water)}%${t.full > 0 ? ' · 🍤' : ''}`}${S.fish.some(f => f.atRisk && f.loc === tankLoc()) ? ' · 🐣' : ''}`;
-    $('#shelf').innerHTML = `<div><div class="tsw">${n > 1 ? `<button class="ar" data-a="tprev" aria-label="이전 어항">‹</button>` : ''}<button class="tn" data-a="${!t.show && w < 97 ? 'wcq' : 'care'}" data-tx="${t.show ? '🖼 누르면 전시 어항 장치' : '💧 누르면 바로 물갈이'}"><b>${nm}</b><span class="${!t.show && w < 50 ? 'warn' : ''}">${st}${t.div ? ' · 🚧' : ''}${t.filter ? ' · 🫧' : ''}</span></button>${n > 1 ? `<button class="ar" data-a="tnext" aria-label="다음 어항">›</button>` : ''}</div></div>`;
+  { const t = curTank(), n = S.tanks.length, w = C.careOf(t).water, nm = t.show ? C.THEMES[t.theme].n : C.SIZES[t.size].n + (S.tanks.filter(x => !x.show).length > 1 ? ' ' + S.tanks.slice(0, S.cur + 1).filter(x => !x.show).length : '');
+    const st = `🐟${C.tankUsed(S)}/${C.tankCap(S)}${t.show ? '' : ` 💧${Math.round(t.water)}`}`;
+    $('#shelf').innerHTML = `<div><div class="tsw ${n > 1 ? 'multi' : ''}">${n > 1 ? `<button class="ar" data-a="tprev" aria-label="이전 어항">‹</button>` : ''}<button class="tn" data-a="${!t.show && w < 97 ? 'wcq' : 'care'}" data-tx="${t.show ? '🖼 누르면 전시 어항 장치' : '💧 누르면 바로 물갈이'}"><b>${nm}</b><span class="${!t.show && w < 50 ? 'warn' : ''}">${st}</span></button>${n > 1 ? `<button class="ar" data-a="tnext" aria-label="다음 어항">›</button>` : ''}</div></div>`;
     const mb = $('#menuBtn'); if (mb) mb.classList.toggle('alert', (S.orders || []).some(o => C.orderMatches(S, o).length) || (!t.show && w < 50));
     if ($('#menu').classList.contains('on')) menuHtml(); }
   if (0) $('#shelf').innerHTML = S.tanks.map((t, i) => { const cur = i === S.cur, w = C.careOf(t).water;
@@ -2185,7 +2210,7 @@ function renderHud() {
   if (gb) { gb.style.display = g && !DECO_MODE && (!TUT.on || TUT.coach || TUT.i >= TS().length - 1) ? '' : 'none'; if (g) { const ok = g.ok(S); gb.classList.toggle('ready', ok); gb.innerHTML = g.who ? (ok ? `💌 ${g.who}에게 보내기 · 🪙${g.r}` : `💌 ${g.who} · ${g.t}`) : (ok ? `🎁 ${g.t} · 🪙${g.r + (g.grad || 0)} 받기` : `${g.ap ? `🎓 ${(S.goal || 0) + 1}/${C.AP_N} · ` : '🎯 '}${g.t} · 🪙${g.r}`); gb.dataset.tx = ok ? '' : `💡 ${g.h}`; gb.classList.toggle('req', !!g.who); } }
   dreamChip(); renderNext();
   const T = C.careOf(curTank()), fb = $('#feedBtn');
-  if (fb) { fb.style.display = VB.tank && !DECO_MODE ? '' : 'none'; const vb = $('#viewBtn'); if (vb) vb.style.display = VB.tank && !DECO_MODE && curTank().show ? '' : 'none'; { const full = !curTank().show && C.careOf(curTank()).full >= 2.5; fb.textContent = full ? '😋 배불러요' : `${C.FOODS[S.feedKind || 'flake'].i} 먹이`; fb.classList.toggle('full', full); } }
+  if (fb) { fb.style.display = VB.tank && !DECO_MODE && !curTank().show ? '' : 'none'; const vb = $('#viewBtn'); if (vb) vb.style.display = VB.tank && !DECO_MODE && curTank().show ? '' : 'none'; { const full = !curTank().show && C.careOf(curTank()).full >= 2.5; fb.textContent = full ? '😋 배불러요' : `${C.FOODS[S.feedKind || 'flake'].i} 먹이`; fb.classList.toggle('full', full); } }
   { const db = $('#decoBtn'); if (db) db.style.display = DECO_MODE ? '' : 'none'; }
   murk();
   const nurAd = C.at(S, 'nursery').filter(C.isAdult).length;
