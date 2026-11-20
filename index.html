@@ -305,6 +305,10 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
 body.hasdream #shelf{right:66px;left:66px}
 #crowd{top:auto!important;bottom:0;height:0!important;overflow:visible!important}
 .cust{bottom:-40px}.cust .face img{height:92px}.cust .say{bottom:106px;z-index:2}.cust .pay{bottom:104px;z-index:2}.cust .face{position:relative;z-index:1}
+#nextAct{position:absolute;right:10px;bottom:64px;z-index:3;max-width:calc(100% - 120px);min-height:40px;padding:6px 14px;border-radius:14px;border:0;background:#fff;color:#143a4f;font-size:13.5px;font-weight:800;text-align:left;box-shadow:0 4px 14px rgba(0,0,0,.25);line-height:1.25;animation:napop .35s ease-out}
+#nextAct{padding-right:30px!important}#nextAct .nax{position:absolute;right:4px;top:4px;width:24px;height:24px;line-height:24px;text-align:center;font-size:12px;color:#8aa0a8;border-radius:50%}#nextAct.hot{padding-right:14px!important}
+#nextAct small{display:block;font-size:11px;font-weight:600;color:#5b7480}#nextAct.hot{background:#f2a33a;color:#fff}#nextAct.hot small{color:#fff3dc}
+@keyframes napop{from{transform:translateY(8px);opacity:0}}
 </style>
 </head>
 <body>
@@ -329,6 +333,7 @@ body.hasdream #shelf{right:66px;left:66px}
     <div id="bubble"></div>
     <div id="float"></div>
     <div id="lockTag" style="display:none;position:absolute;left:50%;transform:translateX(-50%);top:calc(192px + env(safe-area-inset-top));z-index:3;background:rgba(40,80,130,.75);color:#fff;font-weight:700;font-size:13px;padding:6px 14px;border-radius:999px;pointer-events:none">❄️ 시간이 멈춘 어항</div><div id="tut"><div class="tp"></div><div class="tp"></div><div class="tp"></div><div class="tp"></div><div class="tring"></div><div class="tbox"></div></div><button id="feedBtn" data-tx="🍤 끌어서 어항 위에 놓으면 먹이를 줘요">🍤 먹이</button><div id="pinch"></div>
+    <button id="nextAct" data-a="nextact" style="display:none"></button>
     <div id="rescue"><button data-a="rescue"><span id="rtxt"></span><small id="rsub"></small><i id="rbar"></i></button></div>
     <div id="pop"></div>
     <div id="zoom"><button data-a="zin" aria-label="확대" data-tx="크게 보기 · 두 손가락으로도 돼요">＋</button><button data-a="zout" aria-label="축소" data-tx="작게 보기">－</button></div>
@@ -2149,7 +2154,7 @@ function renderHud() {
   if (risk) { $('#rtxt').textContent = big ? `🐣 치어 ${risk}마리를 건져 주세요!` : `🐣 치어 ${risk} 건지기`; $('#rsub').textContent = `오늘이 지나면 어른 구피가 먹어요 · 수초에 숨을 확률 ${Math.round(C.survival(S) * 100)}%`; }
   const g = C.goalNow(S), gb = $('#goal');
   if (gb) { gb.style.display = g && !DECO_MODE && (!TUT.on || TUT.coach || TUT.i >= TS().length - 1) ? '' : 'none'; if (g) { const ok = g.ok(S); gb.classList.toggle('ready', ok); gb.innerHTML = g.who ? (ok ? `💌 ${g.who}에게 보내기 · 🪙${g.r}` : `💌 ${g.who} · ${g.t}`) : (ok ? `🎁 ${g.t} · 🪙${g.r + (g.grad || 0)} 받기` : `${g.ap ? `🎓 ${(S.goal || 0) + 1}/${C.AP_N} · ` : '🎯 '}${g.t} · 🪙${g.r}`); gb.dataset.tx = ok ? '' : `💡 ${g.h}`; gb.classList.toggle('req', !!g.who); } }
-  dreamChip();
+  dreamChip(); renderNext();
   const T = C.careOf(curTank()), fb = $('#feedBtn');
   if (fb) { fb.style.display = VB.tank && !DECO_MODE ? '' : 'none'; const vb = $('#viewBtn'); if (vb) vb.style.display = VB.tank && !DECO_MODE && curTank().show ? '' : 'none'; { const full = !curTank().show && C.careOf(curTank()).full >= 2.5; fb.textContent = full ? '😋 배불러요' : `${C.FOODS[S.feedKind || 'flake'].i} 먹이`; fb.classList.toggle('full', full); } }
   { const db = $('#decoBtn'); if (db) db.style.display = DECO_MODE ? '' : 'none'; }
@@ -2899,6 +2904,27 @@ function showPairPick(i, g) {
   }, 30);
 }
 function placePair(i, m, f) { C.at(S, 'box' + i).forEach(x => { if (x !== m && x !== f) C.moveTo(S, x.id, 'nursery') || C.moveTo(S, x.id, 'tank'); }); C.moveTo(S, m.id, 'box' + i); C.moveTo(S, f.id, 'box' + i); }
+/* 👉 지금 할 일 하나: 급한 것부터 하나만 · 누르면 바로 하거나 그 화면으로 */
+function nextAction() {
+  const L = [], sz = S.naSnooze || {}, add = x => { if (x.hot || !(sz[x.t] >= S.day)) L.push(x); };
+  if (TUT.on && !TUT.coach || DECO_MODE || S.fish.some(f => f.atRisk)) return null;   // 치어 건지기는 주황 버튼이 따로 있다
+  const t = curTank();
+  if (!t.show && C.careOf(t).water < 45) add({ t: `💧 물이 탁해요 · ${Math.round(C.careOf(t).water)}%`, s: '누르면 바로 물갈이', a: 'wcq', hot: 1 });
+  const g = C.goalNow(S); if (g && !g.who && g.ok(S)) add({ t: `🎁 목표 보상 받기 · 🪙${g.r + (g.grad || 0)}`, s: g.t, a: 'goal', hot: 1 });
+  if (U('boxes')) for (let i = 0; i < S.boxes; i++) {
+    const pl = (S.boxPlan || {})[i]; if (pl && planKids(pl).some(C.isAdult)) add({ t: `🧭 번식통 ${i + 1} · 다음 단계 짝 넣기`, s: '거쳐 가는 길의 새끼가 자랐어요', a: 'boxopen', id: i });
+    const P = boxPar(i); if (P.length < 2 && !P.some(f => f.preg)) { const ad = S.fish.filter(f => C.isAdult(f) && !C.isParent(f) && !f.sep); if (ad.some(f => f.sex === 'm') && ad.some(f => f.sex === 'f' && !f.preg)) add({ t: `💞 번식통 ${i + 1} · 비어 있어요`, s: '누르면 짝 넣기 화면으로', a: 'boxopen', id: i }); }
+  }
+  if (U('orders')) { const o = (S.orders || []).find(o => C.orderMatches(S, o).length); if (o) add({ t: `📋 ${o.who} 의뢰에 보낼 구피가 있어요`, s: `보내면 🪙${fmt(o.reward)}`, a: 'orders' }); }
+  if (!t.show && C.tankUsed(S, S.cur) >= C.tankCap(S, S.cur) && U('sell')) add({ t: '🐟 어항이 꽉 찼어요', s: '남는 아이 정리하기', a: 'sellhub' });
+  return L[0] || null;
+}
+function renderNext() {
+  const b = $('#nextAct'); if (!b) return; let n = VB.tank ? nextAction() : null;
+  if (!n) { b.style.display = 'none'; b.dataset.k = ''; return; }
+  const k = n.t + n.a + (n.id ?? ''); b.style.display = ''; b.classList.toggle('hot', !!n.hot);
+  if (b.dataset.k !== k) { b.dataset.k = k; b.innerHTML = `${n.t}<small>${n.s}</small>${n.hot ? '' : `<span class="nax" data-a="nasnooze" aria-label="오늘은 그만">✕</span>`}`; b.dataset.t = n.t; b.dataset.go = n.a; b.dataset.id = n.id ?? ''; b.style.animation = 'none'; void b.offsetWidth; b.style.animation = ''; }
+}
 function showMiss(g, r, G) {
   notice(`<h3 style="font-family:'Gowun Dodum'">🎯 ${C.goalText(g)}</h3>
     ${r.pair ? `<p>가장 좋은 짝으로 넣었어요 · 목표가 나올 확률 <b>약 ${Math.round(r.pair.p * 100)}%</b></p>` : r.sure ? '<p><b>지금 가게 구피로는 만들 수 없어요.</b></p>' : '<p><b>만들 수는 있지만 지금은 확률이 아주 낮아요.</b></p>'}
@@ -2982,7 +3008,7 @@ function handle(ev, quiet) {
     if (e.t === 'album') { UI.newAlbum++; const gf = S.fish.find(x => x.id === e.id); if (!quiet && !(gf && gf.gacha && ev.some(x => x.t === 'mature' && x.id === e.id))) { if (modalOpen) note(`📸 새 형질 발견! ${C.ALBUM_BY[e.key].name}`); queue(() => showDiscovery(e.key)); } }
     if (e.t === 'firstPay' && !quiet) queue(() => notice(`<h3 style="font-family:'Gowun Dodum'">🎉 첫 손님이 돈을 냈어요!</h3><p>"이제 좀 볼 만하네요!" 손님이 입장료 🪙 ${e.amt}을 내고 갔어요. 어항이 예쁠수록, 품종이 다양할수록, 수초가 많을수록 손님 수입이 늘어요.</p><div class="row"><button class="btn go" data-a="close">신난다</button></div>`));
     if (e.t === 'old' && !quiet) { const f = S.fish.find(x => x.id === e.id); if (f && !f.oldTold && (C.isParent(f) || whyPrecious(f).filter(r => !r.startsWith('📋')).length)) { f.oldTold = 1; queue(() => showOld(f.id)); } }
-    if (e.t === 'gone' && !quiet) { const f = e.f, R = whyPrecious(f, S.fish).filter(r => !r.startsWith('📋')); if (R.length || f.fav || f.nick) note(`🌙 ${f.nick || C.nameOf(f.ph)}이(가) 편히 쉬러 떠났어요 · 📖 사진첩에 추억으로`); }
+    if (e.t === 'gone' && !quiet && e.f) { const f = e.f, R = whyPrecious(f, S.fish).filter(r => !r.startsWith('📋')); if (R.length || f.fav || f.nick) note(`🌙 ${f.nick || C.nameOf(f.ph)}이(가) 편히 쉬러 떠났어요 · 📖 사진첩에 추억으로`); }
     if (e.t === 'upkeep1' && !quiet) note(`🍤 구피가 ${C.UPKEEP.free}마리를 넘어 관리비가 나가요 · 남는 아이는 팔거나 의뢰로 보내요`);
     if (e.t === 'order' && !quiet) note(`📋 새 의뢰 ${e.n}개가 왔어요 · ☰ → 📋 의뢰`);
     if (e.t === 'gift' && !quiet) note('🤝 이웃 가게 사장님이 구피 한 쌍을 나눠 줬어요');
@@ -3149,6 +3175,8 @@ function act(a, el) {
     case 'wcq': { const t = curTank(); if (t.show) return showCare(); if (C.careOf(t).water >= 97) { toast('💧 물이 아직 맑아요'); return showCare(); } err = C.waterChange(S, S.cur); if (!err) { toast(`💧 물을 갈았어요 · 🪙-${C.WC_COST}`); save(); render(); } break; }
     case 'feedkind': S.feedKind = el.dataset.id; save(); return showCare();
     case 'wc': { const e = C.waterChange(S, S.cur); if (e) return toast(e); toast('💧 물을 깨끗하게 갈았어요'); save(); render(); return showCare(); }
+    case 'nasnooze': { const t = $('#nextAct').dataset.t; const z = S.naSnooze || {}; Object.keys(z).forEach(k => { if (z[k] < S.day) delete z[k]; }); z[t] = S.day + 1; S.naSnooze = z; renderNext(); return toast('내일까지 이 알림은 쉬어요'); }
+    case 'nextact': { const go = el.dataset.go; if (!go) return; return act(go, { dataset: { id: el.dataset.id, a: go } }); }
     case 'goal': { tutOn('goal'); const g0 = C.goalNow(S); if (TUT.on) { const r = claimWithUnlock(); if (r) { floatMoney(r); save(); render(); } return; }
       if (g0 && g0.who) return showReq(g0); const r = claimWithUnlock(); if (r) { floatMoney(r); toast(`🎁 목표 보상 🪙${r}`); save(); render(); } else if (g0) goalGo(g0); return; }
     case 'reqsend': { const g0 = C.goalNow(S), r = C.claimGoal(S); if (r) { floatMoney(r); const L = S.lastSent; notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">💌 ${g0.who}</h3><div class="big">${L ? phSVG(L.ph, L.sex) : ''}</div><p style="text-align:center">"고마워요! 정말 예쁘네요"</p><p class="note" style="text-align:center">${L ? L.name : ''}를 보냈어요 · 🪙+${r}</p><div class="row"><button class="btn go" data-a="close">다음 의뢰 보기</button></div>`); save(); render(); } else closeSheet(); return; }
