@@ -412,6 +412,7 @@ body.hasdream #shelf{right:66px;left:66px}
 .tkids>.titem:last-child::after{content:'';position:absolute;left:-20px;top:22px;bottom:-2px;width:8px;background:#fff}
 .tkids.k1{--tl:#e8b923}.tkids.k2{--tl:#4fb3c4}.tkids.k3{--tl:#a78bdb}
 #hud #react{min-width:16px}#hud .tsw .ar{width:12px!important}#hud #feedBtn{padding:0 9px!important}
+.tpics .tmore{font-size:11px;font-weight:800;color:#5b7480;align-self:center;margin-left:2px}.tpics.hidp svg{opacity:.55;outline:2px dashed #e8a33a;outline-offset:-2px}
 </style>
 </head>
 <body>
@@ -2795,7 +2796,7 @@ function treeOf(g) {
   const hid = L => { const q = sub(L); return A.filter(f => !C.goalMatch(f, q) && (() => { const u = C.goalUse(f, q); return u && u.tot && u.n === u.tot; })()); };
   const build = L => {
     const n = { L, g: sub(L), own: own(L), hid: L.length === 1 ? hid(L) : [] };
-    if (L.length > 1) {
+    if (L.length > 1 && !n.own.length) {   // 이미 가진 칸에서 멈춘다 · 없는 칸만 더 쪼개서 가진 구피가 나올 때까지 내려간다
       let best = null; for (let m = 1; m < (1 << L.length) - 1; m++) { const S1 = L.filter((_, i) => m >> i & 1); if (S1.length >= L.length) continue; const o = own(S1).length; if (!o) continue; if (!best || S1.length > best.s.length || (S1.length === best.s.length && o > best.o)) best = { s: S1, o }; }
       const a = best && best.s.length > 1 ? best.s : [L.find(t => own([t]).length) || L[0]], b = L.filter(t => !a.includes(t));
       n.kids = [build(a), build(b)];
@@ -2811,10 +2812,10 @@ function showTree(g) {
   const walk = (n, pre, last, depth) => {
     const ok = n.own.length > 0, half = !ok && n.hid.length > 0, ready = !ok && n.kids && n.kids.every(k => k.own.length || k.hid.length), bi = boxOf(n.g), gi = UI.treeG.push(n.g) - 1;
     const st = ok ? `<span class="tst ok">✓</span>` : half ? `<span class="tst half">◐</span>` : `<span class="tst no">✗</span>`;
-    const info = ok ? `보유 ${n.own.length}마리` : half ? `숨긴 아이 ${n.hid.length}마리 (겉으론 안 보여요)` : n.kids ? (ready ? '<b class="rd">재료가 다 있어요 · 번식통에 목표로 정해 보세요</b>' : '아래 단계부터 모아요') : '가진 구피가 없어요';
+    const info = ok ? `✔ 가진 구피 ${n.own.length}마리 · 여기서 시작해요` : half ? `숨긴 아이 ${n.hid.length}마리 (겉으론 안 보여요)` : n.kids ? (ready ? '<b class="rd">재료가 다 있어요 · 번식통에 목표로 정해 보세요</b>' : '아래 단계부터 모아요') : '가진 구피가 없어요';
     const act = ok ? '' : n.kids ? (bi >= 0 ? `<span class="tbox">🎯 번식통 ${bi + 1}에서 진행 중</span>` : U('boxes') ? `<div class="tbx"><span>🎯 번식통에 목표로</span>${Array.from({ length: S.boxes }, (_, i) => `<button class="btn ${ready ? 'go' : ''} sm" data-a="treegoal" data-id="${i}" data-v="${gi}">${i + 1}</button>`).join('')}</div>` : '') : half ? '' : `<button class="btn sm" data-a="treebuy" data-v="${gi}">🛒 구하기</button>`;
     const kids = (n.kids || []).map(k => walk(k, '', false, depth + 1)).join('');
-    return `<div class="titem d${Math.min(depth, 3)}"><div class="trow ${depth ? '' : 'root'} ${ready ? 'ready' : ''} ${ok ? 'have' : ''}"><div class="tbody">${st}<div class="tmain"><b>${depth ? '' : '🌟 '}${C.goalText(n.g)}</b><small>${info}</small>${ok ? `<div class="tpics">${n.own.slice(0, 4).map(mini).join('')}</div>` : ''}${act}</div></div></div>${kids ? `<div class="tkids k${Math.min(depth + 1, 3)}">${kids}</div>` : ''}</div>`;
+    return `<div class="titem d${Math.min(depth, 3)}"><div class="trow ${depth ? '' : 'root'} ${ready ? 'ready' : ''} ${ok ? 'have' : ''}"><div class="tbody">${st}<div class="tmain"><b>${depth ? '' : '🌟 '}${C.goalText(n.g)}</b><small>${info}</small>${ok ? `<div class="tpics">${n.own.slice(0, 5).map(mini).join('')}${n.own.length > 5 ? `<span class="tmore">+${n.own.length - 5}</span>` : ''}</div>` : half ? `<div class="tpics hidp">${n.hid.slice(0, 5).map(mini).join('')}</div>` : ''}${act}</div></div></div>${kids ? `<div class="tkids k${Math.min(depth + 1, 3)}">${kids}</div>` : ''}</div>`;
   };
   rows.push(walk(root, '', true, 0));
   openSheet(head('🌳 족보') + `<p class="note">맨 위가 최종 목표, 아래로 갈수록 그 재료예요. <b>✓ 있음 · ◐ 숨긴 아이만 · ✗ 없음</b><br>중간 단계를 번식통 목표로 정해서 원하는 길로 가요. 아래 칸이 다 ✓면 <b>재료가 다 있어요</b> · 번호를 누르면 그 번식통 목표가 되고 짝 고르기로 이어져요.</p>
