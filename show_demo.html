@@ -359,10 +359,21 @@ body.hasdream #shelf{right:66px;left:66px}
 #hud .tsw.multi .tn{padding:0 2px!important}
 #hud #spd{font-size:12px!important}#hud #feedBtn{padding:0 8px!important}
 #hud .tn .rx{font-style:normal;animation:rxin .4s ease-out}#hud .tn .rx b{color:#c88a00}@keyframes rxin{from{opacity:0;transform:translateY(4px)}}
-#react{display:none;position:absolute;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:3px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:12px;pointer-events:none;opacity:0;z-index:5;white-space:nowrap}
+#react{position:absolute;display:none!important;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:3px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:12px;pointer-events:none;opacity:0;z-index:5;white-space:nowrap}
 #react b{color:#c88a00;font-size:12px}#react.go{animation:reactin 2.8s ease-out}
 @keyframes reactin{0%{opacity:0;transform:translateY(-30%)}12%{opacity:1;transform:translateY(-50%)}80%{opacity:1;transform:translateY(-50%)}100%{opacity:0;transform:translateY(-90%)}}
 #lane #nextAct::after{content:'›';position:absolute;right:28px;font-size:18px;color:#8aa0a8;font-weight:700}#lane #nextAct.hot::after{right:10px;color:#fff}
+/* 손님 얼굴: 어항 칸과 먹이·감상 사이 빈칸에 잠깐 */
+#hud #shelf{flex:0 1 auto!important}
+#hud #react{position:static!important;display:flex!important;flex:1;min-width:26px;justify-content:center;align-items:center;gap:0;opacity:1;background:none;box-shadow:none;padding:0;font-size:20px;transform:none;pointer-events:none}
+#hud #react i{font-style:normal;opacity:0;display:inline-block}#hud #react i.h{font-size:13px;margin-left:-6px;margin-top:-14px}
+#hud #react.go i{animation:facepop 2.8s ease-out}@keyframes facepop{0%{opacity:0;transform:translateY(8px) scale(.6)}15%{opacity:1;transform:none}75%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-10px)}}
+#hud .tsw .tn span{font-size:11px!important;font-weight:800!important;color:#143a4f!important;opacity:1!important}#hud .tsw .tn span.warn{color:#c2410c!important}
+#hud{gap:3px!important}#hud .pill.money{padding:0 7px!important}#hud .pill.day{padding:0 5px!important}#hud .pill#spd{padding:0 6px!important}
+#hud #feedBtn,#hud #viewBtn{padding:0 7px!important}#hud #menuBtn{width:34px!important}
+#hud .tsw .ar{width:14px!important;font-size:18px!important}#hud .tsw .tn{padding:0 5px!important}#hud #react{min-width:24px}
+#hud #shelf{flex:0 1 auto!important;min-width:64px}
+#hud .tsw .tn span{letter-spacing:-.3px}#hud .tsw .tn span .wd{margin-left:3px;display:inline!important;font:inherit!important}#hud #react{min-width:20px}
 </style>
 </head>
 <body>
@@ -376,7 +387,7 @@ body.hasdream #shelf{right:66px;left:66px}
       <button class="pill" id="ordBtn" data-a="orders" aria-label="주문" data-tx="📋 손님 주문" style="display:none">📋</button>
       <button class="pill" data-a="log" aria-label="기록" data-tx="📜 가게 기록">📜</button>
       <button class="pill" id="helpBtn" data-a="helpmode" aria-label="도움말">?</button>
-      <div id="shelf"></div>
+      <div id="shelf"></div><div id="react"></div>
       <button id="feedBtn" data-tx="🍤 누르면 먹이 · 끌어서 원하는 곳에 뿌려도 돼요">🍤 먹이</button><button id="viewBtn" data-a="viewmode" data-tx="🖼 감상 모드 · 가로로 어항 전체를 봐요" style="display:none">감상</button>
       <button class="pill" id="menuBtn" data-a="menu" aria-label="메뉴" data-tx="☰ 속도 · 주문 · 물과 먹이 · 꾸미기 · 기록 · 도움말">☰<b class="dot"></b></button>
       <div id="menu"></div>
@@ -2201,8 +2212,8 @@ function renderHud() {
   { const ie = $('#inc'), up = S.lastUpkeep ? ` · 🍤−${fmt(S.lastUpkeep)}` : ''; ie.textContent = (inc.pays ? `+${fmt(inc.total)}/일${up}${S.auto && S.auto.on ? ' · 🤖' : ''}` : S.tanks.some(t => t.show) ? '손님 없음' + up : (up ? up.slice(3) + '/일' : '') + (S.auto && S.auto.on ? ' 🤖' : '')); ie.classList.toggle('warn', !inc.pays && S.tanks.some(t => t.show));
     const ob = $('#ordBtn'), on = (S.orders || []).length; ob.style.display = on ? '' : 'none'; ob.classList.toggle('ok', on && S.orders.some(o => C.orderMatches(S, o).length)); ob.innerHTML = `📋${on > 1 ? `<b>${on}</b>` : ''}`; }
   { const t = curTank(), n = S.tanks.length, w = C.careOf(t).water, nm = t.show ? C.THEMES[t.theme].n : C.SIZES[t.size].n + (S.tanks.filter(x => !x.show).length > 1 ? ' ' + S.tanks.slice(0, S.cur + 1).filter(x => !x.show).length : '');
-    const st = `🐟${C.tankUsed(S)}/${C.tankCap(S)}${t.show ? '' : ` 💧${Math.round(t.water)}`}`;
-    $('#shelf').innerHTML = `<div><div class="tsw ${n > 1 ? 'multi' : ''}">${n > 1 ? `<button class="ar" data-a="tprev" aria-label="이전 어항">‹</button>` : ''}<button class="tn" data-a="${!t.show && w < 97 ? 'wcq' : 'care'}" data-tx="${t.show ? '🖼 누르면 전시 어항 장치' : '💧 누르면 바로 물갈이'}"><b>${nm}</b><span class="${!t.show && w < 50 ? 'warn' : ''}">${performance.now() < REACT.until ? REACT.h : st}</span></button>${n > 1 ? `<button class="ar" data-a="tnext" aria-label="다음 어항">›</button>` : ''}</div></div>`;
+    const st = `🐟${C.tankUsed(S)}/${C.tankCap(S)}${t.show ? '' : `<span class="wd">💧${Math.round(t.water)}</span>`}`;
+    $('#shelf').innerHTML = `<div><div class="tsw ${n > 1 ? 'multi' : ''}">${n > 1 ? `<button class="ar" data-a="tprev" aria-label="이전 어항">‹</button>` : ''}<button class="tn" data-a="${!t.show && w < 97 ? 'wcq' : 'care'}" data-tx="${t.show ? '🖼 누르면 전시 어항 장치' : '💧 누르면 바로 물갈이'}"><b>${nm}</b><span class="${!t.show && w < 50 ? 'warn' : ''}">${st}</span></button>${n > 1 ? `<button class="ar" data-a="tnext" aria-label="다음 어항">›</button>` : ''}</div></div>`;
     const mb = $('#menuBtn'); if (mb) mb.classList.toggle('alert', (S.orders || []).some(o => C.orderMatches(S, o).length) || (!t.show && w < 50));
     if ($('#menu').classList.contains('on')) menuHtml(); }
   if (0) $('#shelf').innerHTML = S.tanks.map((t, i) => { const cur = i === S.cur, w = C.careOf(t).water;
@@ -2289,8 +2300,8 @@ let REACT = { h: '', until: 0 };
 function spawnCustomers(e) {   // 손님 반응: 말 대신 얼굴·하트와 돈 · 어항 칸 아래 줄에 잠깐 (어항·알림 띠를 가리지 않게)
   if (!(e.amt > 0)) return; const inc = C.tankIncome(S);
   const k = e.amt >= 60 ? 3 : e.amt >= 20 ? 2 : 1, face = inc.pays ? ['😊', '😍', '🤩'][k - 1] : '🙂';
-  REACT = { h: `<i class="rx">${face}${'💕'.repeat(Math.min(k, 2))} <b>+🪙${fmt(e.amt)}</b></i>`, until: performance.now() + 3200 };
-  renderHud(); setTimeout(renderHud, 3300);
+  const el = $('#react'); if (el) { el.innerHTML = `<i>${face}</i>${k > 1 ? '<i class="h">💕</i>' : ''}`; el.classList.remove('go'); void el.offsetWidth; el.classList.add('go'); }
+  floatMoney(e.amt);
 }
 /* 남는 구피: 같은 모습(품종)마다 가장 좋은 ♂♀ 한 쌍만 남기고 나머지. 의뢰에 맞는 아이·즐겨찾기·이름 붙인 아이·부모·임신 중·번식통·전시 어항은 건드리지 않는다 */
 /* 소중한 아이: 팔거나 떠나보내면 되돌릴 수 없는 경우만 */
