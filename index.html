@@ -2259,9 +2259,17 @@ function refreshSheet() {
   if (k === 'fishes') showFishes(); else if (k === 'auto') showAuto(); else if (k === 'boxes') showBoxes(); else if (k === 'box') showBox(UI.arg); else if (k === 'shop') showShop(); else if (k === 'log') showLog(); else if (k === 'fish') showFish(UI.arg, true);
 }
 const head = (t, back) => `<div class="sh">${back ? `<button class="x" data-a="${back}">◀</button>` : ''}<h3>${t}</h3><button class="x" data-a="close">닫기</button></div>`;
-let toastT; function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), Math.min(2600, 1400 + t.length * 22)); }
+/* 튜토리얼 안내창이 떠 있으면 알림 글자가 그 창과 겹치지 않게 아래(또는 위)로 비켜 준다 */
+function avoidTut(el) {
+  el.style.removeProperty('top'); el.style.removeProperty('z-index'); const t = $('#tut'); if (!t || !t.classList.contains('on')) return;
+  const b = t.querySelector('.tbox'); if (!b || !b.getClientRects().length) return; const r = b.getBoundingClientRect(), lane = $('#lane').getBoundingClientRect();
+  if (r.bottom < lane.top - 4 || r.top > lane.bottom + 50) { el.style.setProperty('z-index', '75', 'important'); return; }   // 안 겹치면 제자리 · 어둡게 가린 막 위로
+  const below = r.bottom + 10, top = below + 50 < innerHeight - 80 ? below : Math.max(8, r.top - 50);
+  el.style.setProperty('top', top + 'px', 'important'); el.style.setProperty('z-index', '75', 'important');
+}
+let toastT; function toast(t) { const el = $('#toast'); el.textContent = t; avoidTut(el); el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), Math.min(2600, 1400 + t.length * 22)); }
 /* 저절로 일어난 일(출산·성장·자동 판매·새 의뢰 등)은 위쪽에 작은 한 줄로만 잠깐. '알림 줄이기'를 켜면 가게 기록에만 남긴다 */
-let noteT; function note(t) { if (S.quiet) return; const el = $('#note'); if (!el) return toast(t); el.textContent = t; el.classList.add('show'); clearTimeout(noteT); noteT = setTimeout(() => el.classList.remove('show'), 1900); }
+let noteT; function note(t) { if (S.quiet) return; const el = $('#note'); if (!el) return toast(t); el.textContent = t; avoidTut(el); { const ts = $('#toast'); if (ts && ts.classList.contains('show')) { el.style.setProperty('top', ((parseFloat(ts.style.getPropertyValue('top')) || ts.getBoundingClientRect().top) + ts.offsetHeight + 6) + 'px', 'important'); el.style.setProperty('z-index', '75', 'important'); } } el.classList.add('show'); clearTimeout(noteT); noteT = setTimeout(() => el.classList.remove('show'), 1900); }
 let bubT; function bubble(t) { const b = $('#bubble'); b.innerHTML = '🧑 ' + t; b.classList.add('show'); clearTimeout(bubT); bubT = setTimeout(() => b.classList.remove('show'), 4500); }
 function floatMoney(n) { if (!n) return; const el = $('#float'); el.textContent = '+🪙' + fmt(n); el.classList.remove('go'); void el.offsetWidth; el.classList.add('go'); }
 
