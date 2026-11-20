@@ -350,7 +350,7 @@ body.hasdream #shelf{right:66px;left:66px}
 #lane>#goal,#lane>#nextAct,#lane>#rescue{flex:1;min-width:0}
 #lane #dream{position:static!important;flex:none;width:44px!important;height:34px!important;padding:0 3px!important;border-radius:12px!important;border:2px solid #ffcf4a!important;background:rgba(255,246,214,.92)!important;box-shadow:none!important}#lane #dream b{display:none}
 .toast,#note{top:calc(52px + env(safe-area-inset-top))!important}
-#float{top:calc(46px + env(safe-area-inset-top))!important}
+#float{top:calc(12px + env(safe-area-inset-top))!important;left:64px;right:auto!important;z-index:8!important}
 #menu{top:44px!important}
 /* 어항 고르기: 화살표를 알약 안쪽에 붙여 하나의 칸으로 */
 #hud .tsw{gap:0!important;background:rgba(255,255,255,.6);border-radius:12px;height:38px;overflow:hidden}
@@ -358,6 +358,11 @@ body.hasdream #shelf{right:66px;left:66px}
 #hud .tsw .ar{background:transparent!important;width:18px!important;font-size:20px!important;color:#5b7480!important;border-radius:0!important}
 #hud .tsw.multi .tn{padding:0 2px!important}
 #hud #spd{font-size:12px!important}#hud #feedBtn{padding:0 8px!important}
+#hud .tn .rx{font-style:normal;animation:rxin .4s ease-out}#hud .tn .rx b{color:#c88a00}@keyframes rxin{from{opacity:0;transform:translateY(4px)}}
+#react{display:none;position:absolute;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:3px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:12px;pointer-events:none;opacity:0;z-index:5;white-space:nowrap}
+#react b{color:#c88a00;font-size:12px}#react.go{animation:reactin 2.8s ease-out}
+@keyframes reactin{0%{opacity:0;transform:translateY(-30%)}12%{opacity:1;transform:translateY(-50%)}80%{opacity:1;transform:translateY(-50%)}100%{opacity:0;transform:translateY(-90%)}}
+#lane #nextAct::after{content:'›';position:absolute;right:28px;font-size:18px;color:#8aa0a8;font-weight:700}#lane #nextAct.hot::after{right:10px;color:#fff}
 </style>
 </head>
 <body>
@@ -1657,6 +1662,7 @@ const fishK = () => { const t = curTank(); return t && !t.show ? FISH_K[t.size] 
 function layout() {
   if (VIEWMODE) { VIEW_DIRTY = true; return fitViewer(); }   // 감상 중 화면이 돌아가도 어항은 그대로, 끝낼 때 다시 맞춘다
   const r = $('#tankwrap').getBoundingClientRect(); if (!r.width) return;
+  { const ln = $('#lane'); if (ln) TOP_RES = Math.max(100, Math.round(ln.getBoundingClientRect().bottom - r.top + 12)); }   // 노치(안전 영역)가 있는 폰에서도 알림 띠가 어항에 걸치지 않게
   VB.k = 360 / r.width; VB.h = Math.max(300, Math.round(r.height * VB.k)); VB.sand = VB.h - 34; VB.top = 96 * VB.k;
   if (typeof ART_BG !== 'undefined') {
     const ih = 360 * ART_BG.h / ART_BG.w, W = ART_BG.water, TW = 360 * viewW(curTank());
@@ -2196,7 +2202,7 @@ function renderHud() {
     const ob = $('#ordBtn'), on = (S.orders || []).length; ob.style.display = on ? '' : 'none'; ob.classList.toggle('ok', on && S.orders.some(o => C.orderMatches(S, o).length)); ob.innerHTML = `📋${on > 1 ? `<b>${on}</b>` : ''}`; }
   { const t = curTank(), n = S.tanks.length, w = C.careOf(t).water, nm = t.show ? C.THEMES[t.theme].n : C.SIZES[t.size].n + (S.tanks.filter(x => !x.show).length > 1 ? ' ' + S.tanks.slice(0, S.cur + 1).filter(x => !x.show).length : '');
     const st = `🐟${C.tankUsed(S)}/${C.tankCap(S)}${t.show ? '' : ` 💧${Math.round(t.water)}`}`;
-    $('#shelf').innerHTML = `<div><div class="tsw ${n > 1 ? 'multi' : ''}">${n > 1 ? `<button class="ar" data-a="tprev" aria-label="이전 어항">‹</button>` : ''}<button class="tn" data-a="${!t.show && w < 97 ? 'wcq' : 'care'}" data-tx="${t.show ? '🖼 누르면 전시 어항 장치' : '💧 누르면 바로 물갈이'}"><b>${nm}</b><span class="${!t.show && w < 50 ? 'warn' : ''}">${st}</span></button>${n > 1 ? `<button class="ar" data-a="tnext" aria-label="다음 어항">›</button>` : ''}</div></div>`;
+    $('#shelf').innerHTML = `<div><div class="tsw ${n > 1 ? 'multi' : ''}">${n > 1 ? `<button class="ar" data-a="tprev" aria-label="이전 어항">‹</button>` : ''}<button class="tn" data-a="${!t.show && w < 97 ? 'wcq' : 'care'}" data-tx="${t.show ? '🖼 누르면 전시 어항 장치' : '💧 누르면 바로 물갈이'}"><b>${nm}</b><span class="${!t.show && w < 50 ? 'warn' : ''}">${performance.now() < REACT.until ? REACT.h : st}</span></button>${n > 1 ? `<button class="ar" data-a="tnext" aria-label="다음 어항">›</button>` : ''}</div></div>`;
     const mb = $('#menuBtn'); if (mb) mb.classList.toggle('alert', (S.orders || []).some(o => C.orderMatches(S, o).length) || (!t.show && w < 50));
     if ($('#menu').classList.contains('on')) menuHtml(); }
   if (0) $('#shelf').innerHTML = S.tanks.map((t, i) => { const cur = i === S.cur, w = C.careOf(t).water;
@@ -2279,9 +2285,12 @@ function fishList() {
 /* 손님: 하루가 지날 때 몇 명이 들러 어항을 보고, 한마디 하고, 마음에 들면 입장료를 낸다 (그림이 오기 전까지 이모지) */
 const FACES = ['🧑‍🦳', '👩‍🎓', '🧑‍💼', '👵', '👦', '🧑‍🔬', '👩', '🧔', '👧', '🧑‍🎨'];
 let custN = 0;
-function spawnCustomers(e) {   // 손님 그림 대신: 알림 띠에 한마디 + 돈 숫자 (어항을 가리지 않게)
-  if (!(e.amt > 0)) return; const inc = C.tankIncome(S), n = Math.max(1, Math.min(9, Math.round((inc.visitors || 3) / 1.5)));
-  note(`👥 손님 ${n}명 · “${e.say || C.comment(S, inc, Math.random)}” · +🪙${fmt(e.amt)}`); floatMoney(e.amt);
+let REACT = { h: '', until: 0 };
+function spawnCustomers(e) {   // 손님 반응: 말 대신 얼굴·하트와 돈 · 어항 칸 아래 줄에 잠깐 (어항·알림 띠를 가리지 않게)
+  if (!(e.amt > 0)) return; const inc = C.tankIncome(S);
+  const k = e.amt >= 60 ? 3 : e.amt >= 20 ? 2 : 1, face = inc.pays ? ['😊', '😍', '🤩'][k - 1] : '🙂';
+  REACT = { h: `<i class="rx">${face}${'💕'.repeat(Math.min(k, 2))} <b>+🪙${fmt(e.amt)}</b></i>`, until: performance.now() + 3200 };
+  renderHud(); setTimeout(renderHud, 3300);
 }
 /* 남는 구피: 같은 모습(품종)마다 가장 좋은 ♂♀ 한 쌍만 남기고 나머지. 의뢰에 맞는 아이·즐겨찾기·이름 붙인 아이·부모·임신 중·번식통·전시 어항은 건드리지 않는다 */
 /* 소중한 아이: 팔거나 떠나보내면 되돌릴 수 없는 경우만 */
