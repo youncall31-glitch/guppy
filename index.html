@@ -131,6 +131,7 @@ button{font:inherit;cursor:pointer;border:0;border-radius:10px;color:inherit}
 .slot.full{border-style:solid;border-color:#cfe1df;background:#fff;color:var(--ink)}
 .slot svg{width:80px;height:42px}
 .fsel{display:flex;gap:6px;margin:0 0 10px}.fsel select{flex:1;min-width:0;padding:7px 6px;border-radius:10px;border:1px solid #d5e0e3;background:#fff;font-size:13px}
+.pcard{display:flex;align-items:center;gap:8px;background:#fff;border-radius:14px;padding:10px 12px;margin:0 0 8px;box-shadow:0 1px 3px rgba(20,58,79,.08);border:2px solid transparent}.pcard.best{border-color:#e8b923;background:#fffbea}.pcard .btn{flex:none}.pcard b{font-size:13.5px}.pcard small{font-size:12px;color:#5b7480}
 .grp{background:#fff;border-radius:14px;margin:0 0 8px;box-shadow:0 1px 3px rgba(20,58,79,.08);border:2px solid transparent;overflow:hidden}.grp.tr.r{border-color:#7fb6e8}.grp.tr.e{border-color:#b892e6}.grp.tr.l{border-color:#e8b923}
 .gh{display:flex;align-items:center;gap:10px;padding:8px 10px;cursor:pointer}.gh .gp{width:78px;height:40px;flex:none;background:linear-gradient(#e6f3f6,#d4e9ee);border-radius:9px;display:flex;align-items:center;justify-content:center}.gh .gp svg{width:92%;height:36px}
 .gh .gt{flex:1;min-width:0}.gh .gt b{display:block;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gh .gt small{color:#6b7f86;font-size:12px}.gh .gn{text-align:right;font-size:12.5px;color:#36515b;white-space:nowrap}.gh .gn b{font-size:15px;color:#143a4f}.gh .tbd{position:static;margin-left:4px;vertical-align:1px}
@@ -1018,6 +1019,37 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     });
     return out.filter(o => o.p > 0).sort((a, b) => b.p - a.p).slice(0, top);
   }
+  /* 확실히 못 만드는 경우만: 필요한 유전자를 가진 구피가 가게에 한 마리도 없거나, 수컷·암컷이 아예 없거나, 꼬리와 지느러미가 안 맞을 때 */
+  function goalBlock(S, g) {
+    const A = S.fish.filter(f => !f.sick && !(S.tanks[+String(f.loc).slice(4)] || {}).show), B = [];
+    if (!A.some(f => f.sex === 'm') || !A.some(f => f.sex === 'f')) B.push('수컷과 암컷이 모두 있어야 해요');
+    goalNeeds(g).forEach(([l, a, rec, n]) => { if (!A.some(f => (f.g[l] || GDEF[l]).includes(a))) B.push(`${n} 유전자를 가진 구피가 한 마리도 없어요`); });
+    if (g.fin && g.tail && !(FIN_OK[g.tail] || []).includes(g.fin)) B.push(`${TAILS[g.tail].n} 꼬리에서는 ${FINS[g.fin].n}가 드러나지 않아요`);
+    return B;
+  }
+  /* 가상 새끼 뽑기 */
+  function vKids(m, f, n, rng) { const line = lineOf(f, m), K = []; for (let i = 0; i < n; i++) { const gg = {}; GLOC.forEach(l => { gg[l] = [inherit(f.g[l] || GDEF[l], l, rng), inherit(m.g[l] || GDEF[l], l, rng)]; }); const sex = rng() < .5 ? 'm' : 'f', ph = express(gg, line, rng); finVis(ph, sex); K.push({ id: -1 - i, g: gg, sex, ph, line, tsz: ((f.tsz || 1) + (m.tsz || 1)) / 2 }); } return K; }
+  /* 3세대 길: 1) A×B로 일부를 모으고 2) 그 새끼 × C로 나머지를 더 모으고 3) 형제끼리(또는 다른 구피와) */
+  function planThree(S, g, bi, top, rng) {
+    rng = rng || Math.random; top = top || 2;
+    const free = S.fish.filter(f => isAdult(f) && !f.sick && (!isParent(f) || f.loc === 'box' + bi) && !frozen(S, f));
+    const M = free.filter(f => f.sex === 'm'), F = free.filter(f => f.sex === 'f' && !f.preg && f.age < f.life * .85), N = goalNeeds(g);
+    if (!M.length || !F.length || N.length < 2) return [];
+    const has = (x, l, a) => (x.g[l] || GDEF[l]).includes(a), cv = x => N.filter(([l, a]) => has(x, l, a)).length;
+    let P = []; M.slice(0, 40).forEach(m => F.slice(0, 40).forEach(f => P.push({ m, f, c: N.filter(([l, a]) => has(m, l, a) || has(f, l, a)).length })));
+    P.sort((a, b) => b.c - a.c); P = P.slice(0, 4); const out = [];
+    P.forEach(p => {
+      const K1 = vKids(p.m, p.f, 10, rng).sort((a, b) => cv(b) - cv(a)), k = K1[0]; if (!k) return;
+      const miss = N.filter(([l, a]) => !has(k, l, a));
+      const Cs = free.filter(x => x !== p.m && x !== p.f && x.sex !== k.sex && !(x.sex === 'f' && x.preg)).map(x => ({ x, c: miss.filter(([l, a]) => has(x, l, a)).length + cv(x) * .1 })).sort((a, b) => b.c - a.c).slice(0, 3);
+      Cs.forEach(({ x: c }) => {
+        const m2 = k.sex === 'm' ? k : c, f2 = k.sex === 'm' ? c : k, K2 = vKids(m2, f2, 10, rng); let tot = 0;
+        K2.forEach(k2 => { let best = 0; K2.filter(y => y !== k2 && y.sex !== k2.sex).slice(0, 4).forEach(y => { const v = k2.sex === 'm' ? goalChance(k2, y, g, 25, rng) : goalChance(y, k2, g, 25, rng); if (v > best) best = v; }); tot += best; });
+        out.push({ m: p.m, f: p.f, c: c.id, p: tot / K2.length });
+      });
+    });
+    const seen = new Set(); return out.filter(o => o.p > 0).sort((a, b) => b.p - a.p).filter(o => { const k = o.m.id + '-' + o.f.id; if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, top);
+  }
   /* 2단계 짝: 1단계 새끼들 중에서 목표가 가장 잘 나오는 짝(새끼×새끼 또는 새끼×다른 구피) */
   function planStep2(S, pl, bi) {
     const free = S.fish.filter(f => isAdult(f) && !f.sick && (!isParent(f) || f.loc === 'box' + bi) && !frozen(S, f));
@@ -1153,7 +1185,7 @@ details.tip{margin:0 2px 10px;font-size:13px;color:#5b6d74}details.tip summary{l
     S.fish.forEach(f => { walk(f.id, 0); if (f.mate) walk(f.mate.id, 0); });
     for (const k in S.reg) if (!keep.has(+k)) delete S.reg[k];
   }
-  root.CORE = { planTwo, planStep2, goalUse, RESIZE_COST, TIER_N, phTier, geneTier, tierOf, FILTER_COST, COMMON_K, AP_N, UNL_ALL, apLeft, skipAp, unl, GRAD_BONUS, GDEF, mktPct, SHOW, showCap, MKT, UPKEEP, mktMul, ORD_K, ORD_GAP, buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
+  root.CORE = { goalBlock, planThree, planTwo, planStep2, goalUse, RESIZE_COST, TIER_N, phTier, geneTier, tierOf, FILTER_COST, COMMON_K, AP_N, UNL_ALL, apLeft, skipAp, unl, GRAD_BONUS, GDEF, mktPct, SHOW, showCap, MKT, UPKEEP, mktMul, ORD_K, ORD_GAP, buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
     newState, express, score, basePrice, keyOf, nameOf, recipeLines, recipeCost, health, inbreed, makeChild, dayTick, sell, moveTo, rescue, buyFounder, buy, buyRecipe, boostBirth, growFry,
     sellPrice, dailyOf, tankIncome, comment, survival, at, isAdult, tankCap, tankUsed, inTank, roomTank, maxPlants, donate, donateRep, repMult, autoManage, AUTO_DEFAULT, nurseryCap, pagesDone, pruneReg, randomGenes };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2207,7 +2239,7 @@ function whyPrecious(f, others) {
     { const M = C.orderMatches(S, o); if (!M.some(x => x.id === f.id)) return false; return M.reduce((b, x) => C.sellPrice(S, x) < C.sellPrice(S, b) ? x : b).id === f.id; });
   if (od) R.push(`📋 ${od.who} 의뢰에 맞아요 · 보내면 🪙${fmt(od.reward)}`);
   const du = dreamUse(f, others); if (du) R.push(du);
-  Object.values(S.boxPlan || {}).forEach(pl => { if (f.sire !== pl.m || f.dam !== pl.f || !C.isAdult(f)) return; const sc = x => (C.goalUse(x, pl.g) || { n: 0 }).n, K = planKids(pl).filter(x => C.isAdult(x) && x.sex === f.sex).sort((a, b) => sc(b) - sc(a)); if (K.indexOf(f) < 3) R.push('🧭 2단계 길에 쓸 새끼예요'); });
+  Object.values(S.boxPlan || {}).forEach(pl => { if (f.sire !== pl.m || f.dam !== pl.f || !C.isAdult(f)) return; const sc = x => (C.goalUse(x, pl.g) || { n: 0 }).n, K = planKids(pl).filter(x => C.isAdult(x) && x.sex === f.sex).sort((a, b) => sc(b) - sc(a)); if (K.indexOf(f) < 3) R.push('🧭 거쳐 가는 길에 쓸 새끼예요'); });
   if (f.fav) R.push('⭐ 즐겨찾기한 아이예요'); else if (f.nick) R.push(`이름(${f.nick})을 붙여 준 아이예요`);
   return R;
 }
@@ -2236,7 +2268,7 @@ function sellMatch() {
 /* 💰 팔기 정리: 게임이 먼저 크게 나눠 주고, 묶음째 판다 · 🛡 지킬 조건은 체크로 켜고 끈다 */
 const GUARDS = [['last', '하나뿐인 레어 모습'], ['gene', '마지막 레어 유전자'], ['epic', '💎 에픽 이상'], ['fix', '고정 혈통(2대+)'], ['ord', '📋 의뢰감'], ['dream', '🌟 목표에 필요'], ['fav', '⭐ 즐겨찾기·이름']];
 const guard = () => Object.assign({ last: 1, gene: 1, epic: 1, fix: 1, ord: 1, dream: 1, fav: 1 }, S.guard || {});
-const guardOf = r => /2단계/.test(r) ? 'ord' : /목표/.test(r) ? 'dream' : /뿐/.test(r) ? 'last' : /유전자를 가진 마지막/.test(r) ? 'gene' : /의뢰/.test(r) ? 'ord' : 'fav';
+const guardOf = r => /거쳐 가는 길/.test(r) ? 'ord' : /목표/.test(r) ? 'dream' : /뿐/.test(r) ? 'last' : /유전자를 가진 마지막/.test(r) ? 'gene' : /의뢰/.test(r) ? 'ord' : 'fav';
 const fixOf = f => Math.max(0, ...Object.values(f.line || {}).map(v => +v || 0));
 function sortSell() {
   const P = sellPool(), byLook = {}, out = { dup: [], old: [], one: [], prot: [] };
@@ -2422,8 +2454,9 @@ function showRevealMany() {   // 🎉 치어가 자라 정체 공개: 카드를 
 function planKids(pl) { return S.fish.filter(f => f.sire === pl.m && f.dam === pl.f); }
 function planBanner(i) {
   const pl = (S.boxPlan || {})[i]; if (!pl) return ''; const K = planKids(pl), A = K.filter(C.isAdult);
-  const st = A.length ? `1단계 새끼 ${A.length}마리가 자랐어요 · 이제 2단계 짝을 넣을 수 있어요` : K.length ? `1단계 새끼 ${K.length}마리가 자라는 중이에요` : '1단계 짝이 새끼를 낳기를 기다려요';
-  return `<div class="surp" style="background:#eef6ff;margin:8px 0"><div><b>🧭 2단계 길 · 목표 ${C.goalText(pl.g)}</b><small>${st}</small></div><div style="display:flex;flex-direction:column;gap:4px">${A.length ? `<button class="btn go" data-a="plan2" data-id="${i}">2단계 짝 넣기</button>` : ''}<button class="btn sm" data-a="planoff" data-id="${i}">그만두기</button></div></div>`;
+  const st = A.length ? `새끼 ${A.length}마리가 자랐어요 · 다음 짝을 넣을 수 있어요` : K.length ? `새끼 ${K.length}마리가 자라는 중이에요` : '지금 짝이 새끼를 낳기를 기다려요';
+  const gen = pl.gen || 2, stage = gen - (pl.left || 1);
+  return `<div class="surp" style="background:#eef6ff;margin:8px 0"><div><b>🧭 ${gen}세대 길 · ${stage}/${gen}단계 · 목표 ${C.goalText(pl.g)}</b><small>${st}</small></div><div style="display:flex;flex-direction:column;gap:4px">${A.length ? `<button class="btn go" data-a="plan2" data-id="${i}">${(pl.left || 1) >= 2 ? '다음 단계 짝 넣기' : '마지막 단계 짝 넣기'}</button>` : ''}<button class="btn sm" data-a="planoff" data-id="${i}">그만두기</button></div></div>`;
 }
 function showBox(i) {
   const P = boxPar(i), K = boxFry(i), m = P.find(x => x.sex === 'm'), f = P.find(x => x.sex === 'f'), gl = (S.boxGoal || {})[i], dest = (S.boxDest || {})[i] || 'tank';
@@ -2790,24 +2823,33 @@ function showPlace(f) {
 }
 /* 🎯 목표 짝 고르기: 한 세대에 바로 vs 새끼를 거쳐 2단계로 · 사장님이 고른다 */
 function showPairPick(i, g) {
-  toast('🧮 짝을 계산하고 있어요…');
+  toast('🧮 길을 계산하고 있어요…');
   setTimeout(() => {
-    const r = C.planFor(S, g, i), T = C.planTwo(S, g, i, 2), d = r.opts || [], top = Math.max(0, ...d.map(x => x.p));
-    const T2 = T.filter(t => t.p > top * 1.15 + .01);   // 바로 가는 길보다 확실히 나을 때만 보여 준다
-    if (!d.length && !T2.length) return showMiss(g, r);
-    UI.pp = { i, g, d, t: T2 };
-    const pc = p => `<b>${p < .01 ? '1% 미만' : '약 ' + Math.round(p * 100) + '%'}</b>`, hh = h => h < .75 ? ` · <span style="color:#b5651d">⚠️ 친척 사이 혈통 ${Math.round(h * 100)}%</span>` : '';
-    const nm = (x, sx) => `${C.nameOf(x.ph)} ${sx}`, mateN = t => t.mate === 'sib' ? '형제끼리' : (() => { const x = S.fish.find(y => y.id === t.mate); return x ? nm(x, x.sex === 'm' ? '♂' : '♀') + '와' : '다른 구피와'; })();
-    openSheet(head('🎯 짝 고르기', 'boxopen" data-id="' + i) + `<p class="note">목표: <b>${C.goalText(g)}</b> · 길을 골라 주세요</p>
-      ${d.length ? `<h5><span>⚡ 바로 · 한 세대</span></h5>` + d.map((c, k) => `<div class="it" style="align-items:center"><div style="flex:1"><b>${nm(c.m, '♂')} × ${nm(c.f, '♀')}</b><small style="display:block">낳은 새끼 중 목표 ${pc(c.p)}${hh(c.h)}</small></div><button class="btn go" data-a="planpick" data-v="d${k}">넣기</button></div>`).join('') : '<p class="note">⚡ 한 세대에 바로 나올 짝은 없어요</p>'}
-      ${T2.length ? `<h5><span>🧭 거쳐 가기 · 두 세대</span></h5>` + T2.map((t, k) => `<div class="it" style="align-items:center"><div style="flex:1"><b>1) ${nm(t.m, '♂')} × ${nm(t.f, '♀')}</b><small style="display:block">필요한 유전자를 새끼 한 마리에 모아요 (이번 배 목표 ${pc(t.p1)})</small><b style="display:block;margin-top:4px">2) 그 새끼를 ${mateN(t)} 짝지어요</b><small style="display:block">목표 ${pc(t.p)} · 한 세대 더 걸려요${t.mate === 'sib' ? ' · 형제끼리는 혈통 건강이 조금 떨어져요' : ''}</small></div><button class="btn go" data-a="planpick" data-v="t${k}">이 길로</button></div>`).join('') : ''}
-      <p class="note">💡 %는 어림값이에요. 숨은 유전자는 겉모습에 안 보여서, 2단계 길은 새끼가 자란 뒤 다시 계산해서 가장 좋은 짝을 골라 줘요.</p>`, 'pairpick', i, true);
+    const B = C.goalBlock(S, g); if (B.length) return showMiss(g, { miss: B, sure: true });
+    const r = C.planFor(S, g, i), d = (r.opts || []).map(c => Object.assign(c, { gen: 1 })), t = C.planTwo(S, g, i, 3).map(c => Object.assign(c, { gen: 2 })), u = C.planThree(S, g, i, 2).map(c => Object.assign(c, { gen: 3 }));
+    const dd = L => { const seen = new Set(); return L.filter(c => { const k = c.gen + C.nameOf(c.m.ph) + C.nameOf(c.f.ph) + (c.mate || '') + (c.c ? C.nameOf((S.fish.find(y => y.id === c.c) || c.m).ph) : ''); if (seen.has(k)) return false; seen.add(k); return true; }); };
+    d.splice(0, d.length, ...dd(d)); t.splice(0, t.length, ...dd(t)); u.splice(0, u.length, ...dd(u));
+    const all = d.concat(t, u); if (!all.length) return showMiss(g, { miss: r.miss.concat(['유전자는 가게에 다 있지만, 지금 계산으로는 3세대 안에 잘 안 나와요', '필요한 유전자를 가진 아이끼리 먼저 짝지어 새끼를 늘려 보세요']), pair: null });
+    const sc = c => c.p / Math.sqrt(c.gen), best = all.reduce((a, b) => sc(b) > sc(a) ? b : a);
+    UI.pp = { i, g, all };
+    const pc = p => `<b>${p < .01 ? '1% 미만' : '약 ' + Math.round(p * 100) + '%'}</b>`, hh = h => h != null && h < .75 ? ` · <span style="color:#b5651d">⚠️ 친척 사이 혈통 ${Math.round(h * 100)}%</span>` : '';
+    const nm = (x, sx) => `${C.nameOf(x.ph)} ${sx}`, byId = id => S.fish.find(y => y.id === id), nmI = id => { const x = byId(id); return x ? nm(x, x.sex === 'm' ? '♂' : '♀') : '다른 구피'; };
+    const mateN = c => c.mate === 'sib' ? '형제끼리' : nmI(c.mate) + '와';
+    const card = (c, k) => { const st = c.gen === 1 ? [`<b>${nm(c.m, '♂')} × ${nm(c.f, '♀')}</b><small style="display:block">이번 배 새끼 중 목표 ${pc(c.p)}${hh(c.h)}</small>`]
+      : c.gen === 2 ? [`<b>1) ${nm(c.m, '♂')} × ${nm(c.f, '♀')}</b><small style="display:block">필요한 유전자를 새끼 한 마리에 모아요</small>`, `<b>2) 그 새끼를 ${mateN(c)} 짝지어요</b><small style="display:block">새끼 중 목표 ${pc(c.p)}${c.mate === 'sib' ? ' · 형제끼리라 혈통 건강이 조금 떨어져요' : ''}</small>`]
+      : [`<b>1) ${nm(c.m, '♂')} × ${nm(c.f, '♀')}</b><small style="display:block">유전자 일부를 새끼에게 모아요</small>`, `<b>2) 그 새끼 × ${nmI(c.c)}</b><small style="display:block">나머지 유전자까지 한 줄로 모아요</small>`, `<b>3) 그 새끼들끼리 짝지어요</b><small style="display:block">새끼 중 목표 ${pc(c.p)}</small>`];
+      return `<div class="pcard ${c === best ? 'best' : ''}"><div style="flex:1;min-width:0">${c === best ? '<span class="tbd l" style="position:static;display:inline-block;margin-bottom:4px">⭐ 추천</span> ' : ''}<span style="font-size:12px;color:#5b7480">${c.gen}세대 · 목표 ${pc(c.p)}</span>${st.map(x => `<div style="margin-top:4px">${x}</div>`).join('')}</div><button class="btn go" data-a="planpick" data-v="${k}">${c.gen === 1 ? '넣기' : '이 길로'}</button></div>`; };
+    const sec = (n, ttl, L) => L.length ? `<h5><span>${ttl}</span></h5>` + L.map(c => card(c, all.indexOf(c))).join('') : (n === 1 && !d.length ? '<p class="note">⚡ 1세대: 한 번에 바로 나오는 짝은 없어요 · 거쳐 가야 해요</p>' : '');
+    openSheet(head('🎯 짝 고르기', 'boxopen" data-id="' + i) + `<p class="note">목표: <b>${C.goalText(g)}</b> · 필요한 유전자는 가게에 다 있어요. 길을 골라 주세요</p>
+      <h5><span>⭐ 추천 길</span></h5>${card(best, all.indexOf(best))}
+      ${sec(1, '⚡ 1세대 · 바로', d.filter(c => c !== best))}${sec(2, '🧭 2세대 · 한 번 거쳐서', t.filter(c => c !== best))}${u.filter(c => c !== best).length ? sec(3, '🧭 3세대 · 두 번 거쳐서', u.filter(c => c !== best)) : ''}
+      <p class="note">💡 %는 마지막 세대 새끼 중 목표가 나올 어림값이에요. ⭐ 추천은 확률과 걸리는 세대를 함께 따진 거예요. 거쳐 가는 길은 단계마다 실제로 태어난 새끼로 다시 계산해서 짝을 골라 줘요.</p>`, 'pairpick', i, true);
   }, 30);
 }
 function placePair(i, m, f) { C.at(S, 'box' + i).forEach(x => { if (x !== m && x !== f) C.moveTo(S, x.id, 'nursery') || C.moveTo(S, x.id, 'tank'); }); C.moveTo(S, m.id, 'box' + i); C.moveTo(S, f.id, 'box' + i); }
 function showMiss(g, r) {
   notice(`<h3 style="font-family:'Gowun Dodum'">🎯 ${C.goalText(g)}</h3>
-    ${r.pair ? `<p>가장 좋은 짝으로 넣었어요 · 목표가 나올 확률 <b>약 ${Math.round(r.pair.p * 100)}%</b></p>` : '<p><b>지금은 이 목표를 만들 짝이 없어요.</b></p>'}
+    ${r.pair ? `<p>가장 좋은 짝으로 넣었어요 · 목표가 나올 확률 <b>약 ${Math.round(r.pair.p * 100)}%</b></p>` : r.sure ? '<p><b>지금 가게 구피로는 만들 수 없어요.</b></p>' : '<p><b>만들 수는 있지만 지금은 확률이 아주 낮아요.</b></p>'}
     ${r.miss.length ? `<p style="margin:10px 0 4px;font-weight:700">부족한 것</p><ul style="margin:0 0 8px 18px;padding:0">${r.miss.map(x => `<li style="margin:3px 0">${x}</li>`).join('')}</ul>` : ''}
     <p class="note">💡 숨은 유전자는 겉모습으로 안 보여요. 부족한 유전자는 🛒 희귀 혈통이나 🎲 치어 뽑기로 들여오고, 한 세대에 안 되면 형질을 한 마리에 먼저 모은 뒤 다시 짝지어요.</p>
     <div class="row"><button class="btn" data-a="boxes">번식으로</button><button class="btn go" data-a="shop">상점 가기</button></div>`);
@@ -3096,13 +3138,25 @@ function act(a, el) {
       C.moveTo(S, p.m.id, 'box' + id); C.moveTo(S, p.f.id, 'box' + id);
       toast(`✨ ${C.nameOf(p.m.ph)} ♂ × ${C.nameOf(p.f.ph)} ♀ · 새끼 혈통 ${Math.round(p.h * 100)}%`); break;
     }
-    case 'planpick': { const P = UI.pp; if (!P) return; const v = el.dataset.v, k = +v.slice(1), i = P.i; S.boxPlan = S.boxPlan || {};
-      if (v[0] === 'd') { const c = P.d[k]; placePair(i, c.m, c.f); delete S.boxPlan[i]; C.setBoxGoal(S, i, P.g); toast(`✨ ${C.nameOf(c.m.ph)} ♂ × ${C.nameOf(c.f.ph)} ♀ · 목표 약 ${Math.round(c.p * 100)}%`); }
-      else { const t = P.t[k]; placePair(i, t.m, t.f); S.boxPlan[i] = { g: P.g, m: t.m.id, f: t.f.id, day: S.day }; C.setBoxGoal(S, i, null); toast('🧭 1단계 시작 · 새끼가 자라면 번식통에서 2단계 짝을 넣어요'); }
+    case 'planpick': { const P = UI.pp; if (!P) return; const c = P.all[+el.dataset.v], i = P.i; if (!c) return; S.boxPlan = S.boxPlan || {};
+      placePair(i, c.m, c.f);
+      if (c.gen === 1) { delete S.boxPlan[i]; C.setBoxGoal(S, i, P.g); toast(`✨ ${C.nameOf(c.m.ph)} ♂ × ${C.nameOf(c.f.ph)} ♀ · 목표 약 ${Math.round(c.p * 100)}%`); }
+      else { S.boxPlan[i] = { g: P.g, m: c.m.id, f: c.f.id, gen: c.gen, left: c.gen - 1, c: c.c || null, day: S.day }; C.setBoxGoal(S, i, null); toast(`🧭 ${c.gen}세대 길 · 1단계 시작 · 새끼가 자라면 번식통에서 다음 짝을 넣어요`); }
       UI.pp = null; save(); render(); return showBox(i); }
     case 'plan2': { const pl = (S.boxPlan || {})[id]; if (!pl) return; if (!UI.pregOk && boxPar(id).length) return pregGuard(id, null, () => act('plan2', el));
-      const c = C.planStep2(S, pl, id); if (!c) { toast(planKids(pl).some(C.isAdult) ? '지금 자란 새끼들로는 목표가 안 나와요 · 1단계 짝이 더 낳을 때까지 기다리거나 그만둬요' : '아직 다 자란 1단계 새끼가 없어요'); return; }
-      placePair(id, c.m, c.f); C.setBoxGoal(S, id, pl.g); delete S.boxPlan[id]; toast(`🧭 2단계 · ${C.nameOf(c.m.ph)} ♂ × ${C.nameOf(c.f.ph)} ♀ · 목표 약 ${Math.round(c.p * 100)}%`); save(); render(); return showBox(id); }
+      if ((pl.left || 1) >= 2) {   // 중간 단계: 유전자를 가장 많이 모은 새끼 × 나머지를 가진 구피
+        const N = C.goalNeeds(pl.g), has = (x, l, a) => (x.g[l] || C.GDEF[l]).includes(a), cv = x => N.filter(([l, a]) => has(x, l, a)).length;
+        const free = S.fish.filter(f => C.isAdult(f) && !f.sick && (!C.isParent(f) || f.loc === 'box' + id) && !(f.sex === 'f' && (f.preg || f.age > f.life * .85)));
+        const K = planKids(pl).filter(x => free.includes(x)).sort((a, b) => cv(b) - cv(a)), k = K[0];
+        if (!k) { toast('아직 다 자란 1단계 새끼가 없어요'); return; }
+        const miss = N.filter(([l, a]) => !has(k, l, a)), pref = free.find(x => x.id === pl.c && x.sex !== k.sex);
+        const c = pref || free.filter(x => x.sex !== k.sex && !planKids(pl).includes(x)).sort((x1, x2) => miss.filter(([l, al]) => has(x2, l, al)).length - miss.filter(([l, al]) => has(x1, l, al)).length || cv(x2) - cv(x1))[0];
+        if (!c) { toast('짝지을 구피가 없어요'); return; }
+        const m = k.sex === 'm' ? k : c, f = k.sex === 'm' ? c : k; placePair(id, m, f); pl.m = m.id; pl.f = f.id; pl.left--;
+        toast(`🧭 ${pl.gen - pl.left}단계 · ${C.nameOf(m.ph)} ♂ × ${C.nameOf(f.ph)} ♀ · 유전자를 더 모아요`); save(); render(); return showBox(id);
+      }
+      const c = C.planStep2(S, pl, id); if (!c) { toast(planKids(pl).some(C.isAdult) ? '지금 자란 새끼들로는 목표가 안 나와요 · 더 낳을 때까지 기다리거나 그만둬요' : '아직 다 자란 새끼가 없어요'); return; }
+      placePair(id, c.m, c.f); C.setBoxGoal(S, id, pl.g); delete S.boxPlan[id]; toast(`🧭 마지막 단계 · ${C.nameOf(c.m.ph)} ♂ × ${C.nameOf(c.f.ph)} ♀ · 목표 약 ${Math.round(c.p * 100)}%`); save(); render(); return showBox(id); }
     case 'planoff': { const pl = (S.boxPlan || {})[id]; if (pl) { C.setBoxGoal(S, id, pl.g); delete S.boxPlan[id]; } save(); return showBox(id); }
     case 'pregok': { const f = UI.pend; UI.pend = null; closeSheet(); UI.pregOk = 1; try { f && f(); } finally { UI.pregOk = 0; } return; }
     case 'emptybox': if (!UI.pregOk) return pregGuard(id, null, () => act('emptybox', el)); boxPar(id).forEach(f => { if (C.moveTo(S, f.id, 'tank')) C.moveTo(S, f.id, 'nursery'); }); save(); render(); return showBox(id);
