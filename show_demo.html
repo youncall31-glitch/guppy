@@ -1834,7 +1834,7 @@ function syncTank() {
   list.forEach(f => {
     const st = stageOf(f), ad = st === 'a', [y0, y1] = bounds(st !== 'f');
     const [x0, x1] = xb(), s = SW[f.id] || (SW[f.id] = { x: x0 + Math.random() * (x1 - x0), y: y0 + Math.random() * (y1 - y0), dir: 1, sp: .3 });
-    if (s.stage !== st) { s.y = y0 + Math.random() * (y1 - y0); if (s.social != null) s.cruise = (ad ? 7 : st === 'j' ? 5 : 4) + Math.random() * 5; } s.stage = st; s.adult = ad; s.juv = st === 'j'; s.sz = sizeOf(f); s.tx = s.x; s.ty = s.y;
+    if (s.stage !== st) { s.y = y0 + Math.random() * (y1 - y0); if (s.social != null) s.cruise = ad ? 28 + Math.random() * 16 : (st === 'j' ? 7 : 4) + Math.random() * 5; /* 실제 영상: 어른은 보통 몸길이 1~3배/초, 휙은 4배/초쯤 */ } s.stage = st; s.adult = ad; s.juv = st === 'j'; s.sz = sizeOf(f); s.tx = s.x; s.ty = s.y;
     const el = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     el.setAttribute('class', 'fishg'); el.dataset.id = f.id;
     el.innerHTML = `<rect x="-85" y="-55" width="170" height="110" fill="transparent"/><ellipse class="halo" cx="8" cy="2" rx="88" ry="52" fill="url(#haloG)" opacity="0"/>${f.mark ? '<g class="pin"><circle cx="30" cy="-62" r="15" fill="#ffd23f" stroke="#fff" stroke-width="5"/><path d="M30 -47 L30 -30" stroke="#ffd23f" stroke-width="6" stroke-linecap="round"/></g>' : ''}<g transform="translate(-52 -30)">${ad ? tankFishG(f.ph, f.sex, f.id % 3, tailVis(f.tsz)) : st === 'j' ? tankFishG(JUV_PH, 'f', f.id % 3) : fryChainG()}</g>`;
@@ -2030,7 +2030,7 @@ function swim(now) {
   const LOCKED = !!curTank().lock, CT = curTank(); HUNGRY = !CT.show && !TUT.on && CT.full != null && CT.full <= 0;
   for (const id in SW) {
     const s = SW[id]; if (!s.el) continue;
-    if (s.social == null) { s.social = Math.random() < .15; s.home = null; s.ox = (Math.random() - .5) * 110; s.oy = (Math.random() - .5) * 60; s.vx = 0; s.vy = 0; s.face = s.dir || 1; s.ph = Math.random() * 6.28; s.tph = Math.random() * 6.28; s.cruise = (s.adult ? 8.5 : 4.5) + Math.random() * 5; s.dart = 0; s.rest = 0; s.tdir = s.dir || 1; s.curious = Math.random() < .75; s.pers = Math.exp((Math.random() + Math.random() + Math.random() - 1.5) * .55); s.pace = 1; s.surge = .5 + Math.random() * .9; }
+    if (s.social == null) { s.social = Math.random() < .15; s.home = null; s.ox = (Math.random() - .5) * 110; s.oy = (Math.random() - .5) * 60; s.vx = 0; s.vy = 0; s.face = s.dir || 1; s.ph = Math.random() * 6.28; s.tph = Math.random() * 6.28; s.cruise = s.adult ? 28 + Math.random() * 16 : 4.5 + Math.random() * 5; s.dart = 0; s.rest = 0; s.tdir = s.dir || 1; s.curious = Math.random() < .75; s.pers = Math.exp((Math.random() + Math.random() + Math.random() - 1.5) * .55); s.pace = 1; s.surge = .5 + Math.random() * .9; }
     if (s.pend) {   // 아직 엄마 배 속: 엄마 뒤에 숨겨 두었다가 차례가 되면 톡
       const m = SW[s.momId];
       if (CLOCK < s.pend && m) { const [vx, vy] = ventOf(m); s.x = vx; s.y = vy; continue; }
@@ -2105,14 +2105,14 @@ function swim(now) {
       } else if (s.rest > 0) s.rest -= dt;
       else if (Math.hypot(s.tx - s.x, s.ty - s.y) < 5) {
         const [y0, y1] = bounds(s.adult || s.juv);
-        if (Math.random() < .55) s.rest = 1.5 + Math.random() * 4.5;                      // 잠깐 제자리에 떠 있기
+        if (Math.random() < (s.adult ? .55 : .55)) s.rest = 1 + Math.random() * 3.5;                      // 잠깐 제자리에 떠 있기
         { const r = Math.random(); s.pace = r < .25 ? .5 + Math.random() * .2 : r < .7 ? .85 + Math.random() * .3 : r < .92 ? 1.3 + Math.random() * .3 : 1.8 + Math.random() * .4; }   // 이번엔 어슬렁 / 보통 / 바지런 / 쌩
         const upY = () => y0 + (y1 - y0) * (s.adult ? Math.pow(Math.random(), 1.9) : Math.random());   // 실제 구피처럼 어른은 물 윗부분에 많이 머문다
         if (s.home == null) { s.home = bx0 + 20 + Math.random() * Math.max(10, bx1 - bx0 - 40); s.homeY = upY(); }
-        const far = Math.random() < .2, H = !s.adult && !s.juv ? hidePts() : [];
+        const far = Math.random() < (s.adult ? .35 : .2), H = !s.adult && !s.juv ? hidePts() : [];
         if (far && Math.random() < .5) { s.home = bx0 + 20 + Math.random() * Math.max(10, bx1 - bx0 - 40); s.homeY = upY(); }   // 가끔 자리를 옮긴다
         if (H.length && Math.random() < .65) { const h = H[Math.random() * H.length | 0]; s.tx = h.x + (Math.random() - .5) * 34; s.ty = Math.max(y0, Math.min(y1, h.y - Math.random() * 20)); } else
-        s.tx = Math.max(bx0, Math.min(bx1, far ? bx0 + Math.random() * (bx1 - bx0) : s.home + (Math.random() - .5) * 80));
+        s.tx = Math.max(bx0, Math.min(bx1, far ? bx0 + Math.random() * (bx1 - bx0) : s.home + (Math.random() - .5) * (s.adult ? 150 : 80)));
         s.ty = Math.max(y0, Math.min(y1, far ? upY() : s.homeY + (Math.random() - .5) * 40));
       }
       if (s.dart > 0) s.dart -= dt; else if (Math.random() < dt * (s.adult ? .05 : .06)) s.dart = .3 + Math.random() * .3;   // 실제 구피: 떠 있다가 짧게 휙휙   // 가끔 휙
@@ -2128,8 +2128,8 @@ function swim(now) {
       const dx = s.tx - s.x, dy = s.ty - s.y, d = Math.hypot(dx, dy) || 1;
       let fk = LOCKED ? .35 : 1, glide = false;
       if (s.stage === 'f') { if (s.bt > 0) { s.bt -= dt; fk = 2.6; } else { s.gt = (s.gt || 0) - dt; fk = 0; glide = true; if (s.gt <= 0) { s.bt = .18 + Math.random() * .25; s.gt = .4 + Math.random() * 1.3; } } }
-      const want = s.rest > 0 ? 0 : s.cl ? Math.min(26, Math.hypot(s.tx - s.x, s.ty - s.y) * 1.5) : s.lure ? Math.min(40, d * 3) * (s.stage === 'f' ? Math.max(.5, fk) : 1) : fk *  Math.min(s.cruise * (s.pers || 1) * (s.pace || 1) * (1 + .22 * Math.sin(CLOCK * (s.surge || 1) + s.ph)) * (s.dart > 0 ? 2.1 : 1) * (s.f && s.f.preg === 1 ? .55 : s.f && s.f.preg ? .8 : 1) * (s.f && s.f.age > s.f.life * .75 ? .7 : 1), d * .9);
-      const k = Math.min(1, dt * (glide ? .9 : s.stage === 'f' ? 6 : s.lure ? 2.6 : s.dart > 0 ? 2 : 1.2));                // 관성: 천천히 속도를 바꾼다
+      const want = s.rest > 0 ? 0 : s.cl ? Math.min(26, Math.hypot(s.tx - s.x, s.ty - s.y) * 1.5) : s.lure ? Math.min(40, d * 3) * (s.stage === 'f' ? Math.max(.5, fk) : 1) : fk *  Math.min(s.cruise * (s.pers || 1) * (s.pace || 1) * (1 + .22 * Math.sin(CLOCK * (s.surge || 1) + s.ph)) * (s.dart > 0 ? (s.adult ? 3 : 2.1) : 1) * (s.f && s.f.preg === 1 ? .55 : s.f && s.f.preg ? .8 : 1) * (s.f && s.f.age > s.f.life * .75 ? .7 : 1), d * (s.adult ? 2.4 : .9));
+      const k = Math.min(1, dt * (glide ? .9 : s.stage === 'f' ? 6 : s.lure ? 2.6 : s.dart > 0 ? 3.2 : s.adult ? 2 : 1.2));                // 관성: 천천히 속도를 바꾼다
       s.vx += (dx / d * want - s.vx) * k; s.vy += (dy / d * want * (s.lure ? 1 : .8) - s.vy) * k;
       s.x += s.vx * dt; s.y += s.vy * dt + Math.sin(CLOCK * 1.1 + s.ph) * 1.2 * dt;  // 물살에 살짝 오르내림
       { const nd = s.vx > 0 ? 1 : -1; if (Math.abs(s.vx) > 2.5 && nd !== s.dir) { s.flipW = (s.flipW || 0) + dt; if (s.flipW > (s.dart > 0 || s.lure ? .06 : .22)) { s.dir = nd; s.flipW = 0; } } else s.flipW = 0; }
