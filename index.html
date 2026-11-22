@@ -416,6 +416,34 @@ body.hasdream #shelf{right:66px;left:66px}
 .tprow{display:flex;align-items:center;gap:6px;margin:0 0 8px}.tpl{flex:none;width:18px;font-size:15px;color:#40606b}.tps{display:flex;gap:6px;overflow-x:auto;padding:2px 0 4px;flex:1}
 .tpc{flex:none;width:86px;background:#fff;border:2px solid #e1ebee;border-radius:12px;padding:5px 4px;text-align:center;font:inherit;color:#24343c}.tpc.on{border-color:#2a9d8f;background:#eefaf6;box-shadow:0 0 0 3px rgba(42,157,143,.15)}
 .tpc b{display:block;font-size:10.5px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tpc small{display:block;font-size:10px;color:#2a7a8c;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tpc .tpic svg{width:56px;height:28px}
+
+/* ===== 디자인 A: 밝은 유리 HUD · 민트 젤리 · 어두운 유리 독 ===== */
+:root{--jelly:linear-gradient(#8ff0d8 0%,#3fd1b0 45%,#1fa58a 100%);--jsh:#13785f}
+.btn.go,#nextAct.hot,#lane #rescue button,#rescue button{background:var(--jelly)!important;color:#fff!important;text-shadow:0 1px 2px rgba(0,70,55,.5);border:0!important;border-radius:14px!important;box-shadow:0 4px 0 var(--jsh),inset 0 2px 0 rgba(255,255,255,.5)!important;font-weight:800!important}
+.btn.go:active,#nextAct.hot:active,#rescue button:active{transform:translateY(4px);box-shadow:0 0 0 var(--jsh),inset 0 2px 0 rgba(255,255,255,.5)!important}
+.btn.go.sm{box-shadow:0 3px 0 var(--jsh),inset 0 1px 0 rgba(255,255,255,.5)!important}
+.btn.go.sm:active{transform:translateY(3px)}
+.btn.go:disabled,.btn:disabled{background:#e3e9ea!important;color:#7d8d92!important;box-shadow:0 2px 0 #c9d3d5!important;text-shadow:none!important;transform:none!important;opacity:1!important}.btn:disabled *{color:#7d8d92!important}
+.btn:not(.go):not(.ad):not(.sell):not(.warn){background:rgba(20,45,58,.06)!important;border:1px solid rgba(20,45,58,.16)!important;color:#24343c!important}
+.btn{border-radius:14px!important}
+.btn.ad{background:linear-gradient(#3b4175,#2b2f55)!important;box-shadow:0 3px 0 #1b1e3a!important}
+.btn.danger,#menu .danger,.danger{background:#8d9aa0!important;color:#fff!important;border:0!important;box-shadow:0 3px 0 #6c787d!important}
+#dock{background:rgba(8,24,33,.74)!important;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border-radius:22px 22px 0 0;border-top:0!important;box-shadow:0 -8px 24px rgba(0,0,0,.35)}
+#dock button.on{background:rgba(63,209,176,.2)!important}
+#hud .pill,#hud .tsw,#hud #viewBtn,#hud #menuBtn{background:linear-gradient(#ffffff,#e9f1f2)!important;box-shadow:0 3px 0 rgba(20,45,58,.18)!important;color:#143a4f!important;border:0!important}
+#hud .pill *,#hud .tsw *{color:#143a4f!important}.dring .rb{stroke:rgba(20,58,79,.18)!important}
+#hud #feedBtn{background:var(--jelly)!important;color:#fff!important;text-shadow:0 1px 2px rgba(0,70,55,.5);box-shadow:0 3px 0 var(--jsh),inset 0 2px 0 rgba(255,255,255,.5)!important;border:0!important}
+#hud #feedBtn *{color:#fff!important}
+#hud #menuBtn{font-size:12px!important;font-weight:800!important;width:auto!important;padding:0 7px!important}#hud .pill.money{padding-left:5px!important;padding-right:6px!important}
+#lane #dream{width:auto!important;display:flex;align-items:center;gap:2px;padding:0 8px 0 3px!important}#lane #dream svg{width:34px!important;height:26px!important}#dream em{font-style:normal;font-size:12px;font-weight:800;color:#7a5a00}
+.sheet .sh{border-bottom:1px solid rgba(20,45,58,.06)}
+.fc{box-shadow:0 2px 0 rgba(20,58,79,.08),0 1px 3px rgba(20,58,79,.06)!important}
+/* 사진첩: 흐림 대신 카드 뒷면 */
+.cell.no{background:repeating-linear-gradient(135deg,#2f6f7a 0 8px,#2a6570 8px 16px)!important;color:#d8eeee!important;position:relative;box-shadow:inset 0 0 0 3px rgba(255,255,255,.18)}
+.cell.no svg{filter:brightness(0) invert(1)!important;opacity:.22!important}
+.cell.no .rc{color:#ffe9a6!important}
+.big.back{position:relative;background:linear-gradient(#e6f3f6,#d4e9ee);border-radius:14px}
+.big.back .stamp{position:absolute;top:8px;right:10px;background:#fff;color:#2f6f7a;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:8px;border:1.5px solid #2f6f7a;transform:rotate(4deg)}
 </style>
 </head>
 <body>
@@ -431,7 +459,7 @@ body.hasdream #shelf{right:66px;left:66px}
       <button class="pill" id="helpBtn" data-a="helpmode" aria-label="도움말">?</button>
       <div id="shelf"></div><div id="react"></div>
       <button id="feedBtn" data-tx="🍤 누르면 먹이 · 끌어서 원하는 곳에 뿌려도 돼요">먹이</button><button id="viewBtn" data-a="viewmode" data-tx="🖼 감상 모드 · 가로로 어항 전체를 봐요" style="display:none">감상</button>
-      <button class="pill" id="menuBtn" data-a="menu" aria-label="메뉴" data-tx="☰ 속도 · 주문 · 물과 먹이 · 꾸미기 · 기록 · 도움말">☰<b class="dot"></b></button>
+      <button class="pill" id="menuBtn" data-a="menu" aria-label="메뉴" data-tx="☰ 속도 · 주문 · 물과 먹이 · 꾸미기 · 기록 · 도움말">메뉴<b class="dot"></b></button>
       <div id="menu"></div>
       
     </div>
@@ -2715,8 +2743,8 @@ function showAlbum() {
 }
 function showEntry(key) {
   const a = C.ALBUM_BY[key], s = S.album[key], has = S.recipes[key];
-  openSheet(head(s ? a.name : '아직 못 본 구피', 'album') + `<div class="big" ${s ? '' : 'style="filter:blur(4px) saturate(.75);opacity:.6"'}>${phSVG(s ? s.ph : a.ph, s ? s.sex : 'm')}</div>
-    ${s ? `<p>${s.day}일째에 처음 만났다 · 기준 판매가 🪙 ${fmt(C.basePrice(a.ph))}</p><div class="row" style="margin:4px 0 2px">${['m', 'f'].map(x => `<button class="btn ${x === 'm' ? 'go' : ''}" data-a="buyknown" data-id="${key}" data-sex="${x}" ${S.money < C.knownCost(a.ph) ? 'disabled' : ''}>🛒 ${x === 'm' ? '수컷' : '암컷'} 데려오기 🪙${fmt(C.knownCost(a.ph))}</button>`).join('')}</div><p class="note" style="margin:2px 2px 10px">꼬리는 ★2~3</p>` : '<p class="note">흐릿하게만 보인다. 대충 어떤 모습일지 짐작해 보자.</p>'}
+  openSheet(head(s ? a.name : '아직 못 본 구피', 'album') + `<div class="big${s ? '' : ' back'}">${phSVG(s ? s.ph : a.ph, s ? s.sex : 'm')}${s ? '' : '<span class="stamp">아직 못 만남</span>'}</div>
+    ${s ? `<p>${s.day}일째에 처음 만났다 · 기준 판매가 🪙 ${fmt(C.basePrice(a.ph))}</p><div class="row" style="margin:4px 0 2px">${['m', 'f'].map(x => `<button class="btn ${x === 'm' ? 'go' : ''}" data-a="buyknown" data-id="${key}" data-sex="${x}" ${S.money < C.knownCost(a.ph) ? 'disabled' : ''}>🛒 ${x === 'm' ? '수컷' : '암컷'} 데려오기 🪙${fmt(C.knownCost(a.ph))}</button>`).join('')}</div><p class="note" style="margin:2px 2px 10px">꼬리는 ★2~3</p>` : '<p class="note">아직 만나지 못한 구피예요. 모습은 알려져 있으니 목표로 삼아 보세요.</p>'}
     ${has || s ? `<div class="recipe"><b>📜 조합 공식</b><ul>${C.recipeLines(a).map(l => `<li>${l}</li>`).join('')}</ul><span class="note">공식을 알아도 결과는 확률이다. 비싼 구피일수록 확률이 낮다.</span></div>` : `<div class="row"><button class="btn go" data-a="recipe" data-id="${key}" ${S.money < C.recipeCost(a) ? 'disabled' : ''}>📜 조합 공식 사기 🪙${fmt(C.recipeCost(a))}</button></div>`}`, 'entry', key, true);
   { const g = dreamGoal(a), on = S.dream && S.dream.key === key; $('#sheet').insertAdjacentHTML('beforeend', g ? `<div class="row" style="margin-top:8px">${on ? `<button class="btn" data-a="dreamoff">🌟 목표 구피 그만두기</button><button class="btn go" data-a="dreampath">🧭 가는 길 보기</button>` : `<button class="btn ad" data-a="dreamset" data-id="${key}">🌟 이 구피를 목표로 · 가는 길 찾기</button>`}</div>` : '<p class="note" style="text-align:center">플래티넘·전설은 아주 드문 돌연변이라 길을 정할 수 없어요</p>'); }
   if (s) setTimeout(() => coach('known', [{ el: () => $('#modal [data-a=buyknown]'), t: '🛒 다시 데려오기', x: '만난 품종은 언제든 데려와요.' }]), 350);
@@ -2724,7 +2752,7 @@ function showEntry(key) {
 /* 🌟 목표 구피: 사진첩에서 하나 골라 거기까지 가는 길을 늘 띄워 둔다 */
 function dreamGoal(a) { const p = a.ph; if (p.plat) return null; const g = { color: p.color }; if (p.albino) g.albino = true; else if (a.page === 'trait') { if (p.metal) g.metal = true; if (p.bigd) g.bigd = true; if (p.fin) { g.fin = p.fin; g.tail = 'delta'; } } else { g.tail = p.tail; g.pat = p.pat; } return g; }
 function dreamBox() { const d = S.dream; if (!d) return 0; for (let i = 0; i < S.boxes; i++) if (JSON.stringify((S.boxGoal || {})[i]) === JSON.stringify(d.g)) return i; for (let i = 0; i < S.boxes; i++) if (!C.at(S, 'box' + i).filter(x => !x.sep).length) return i; return 0; }
-function dreamChip() { const c = $('#dream'); if (!c) return; const d = S.dream; c.style.display = d && !DECO_MODE && !(TUT.on && !TUT.coach) ? '' : 'none'; document.body.classList.toggle('hasdream', c.style.display !== 'none'); if (!d) return; const a = C.ALBUM_BY[d.key]; if (c.dataset.k !== d.key) { c.dataset.k = d.key; c.innerHTML = `${phSVG(a.ph, 'm')}<b>🌟</b>`; } }
+function dreamChip() { const c = $('#dream'); if (!c) return; const d = S.dream; c.style.display = d && !DECO_MODE && !(TUT.on && !TUT.coach) ? '' : 'none'; document.body.classList.toggle('hasdream', c.style.display !== 'none'); if (!d) return; const a = C.ALBUM_BY[d.key]; if (c.dataset.k !== d.key) { c.dataset.k = d.key; c.innerHTML = `${phSVG(a.ph, 'm')}<em>목표</em><b>🌟</b>`; } }
 function showAuto() {
   const A = S.auto, sw = (k, t, d) => `<div class="opt" data-a="autok" data-k="${k}"><div><b>${t}</b><small>${d}</small></div><span class="sw ${A[k] ? 'on' : ''}"></span></div>`;
   openSheet(head('🤖 자동 관리', 'fishes') + `${tip('auto', '매일 규칙대로 처리해요. ★보호·임신·번식통 구피는 빼요.')}
