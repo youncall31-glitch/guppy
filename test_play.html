@@ -462,6 +462,9 @@ body.hasdream #shelf{right:66px;left:66px}
 .tpc.on::after{content:'✓';position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:var(--jelly);color:#fff;font-size:12px;font-weight:900;line-height:20px;text-align:center;box-shadow:0 2px 0 var(--jsh)}
 .mt0{background:rgba(255,255,255,.72);border:1.5px solid rgba(20,58,79,.18);border-radius:12px;padding:7px 12px;color:#143a4f!important;font-weight:800!important;box-shadow:0 2px 0 rgba(20,58,79,.12);white-space:nowrap}
 .btn.add{background:transparent!important;border:1.5px dashed #3fd1b0!important;color:#13785f!important;font-weight:800!important}
+
+.donebn{display:flex;align-items:center;gap:8px;justify-content:space-between;background:#effbf7;border:1.5px solid #3fd1b0;border-radius:14px;padding:9px 10px;margin:6px 0 8px;font-weight:800;font-size:13px;color:#13785f}
+.sw.on{background:#3fd1b0!important}
 </style>
 </head>
 <body>
@@ -799,7 +802,7 @@ body.hasdream #shelf{right:66px;left:66px}
   const maxPlants = S => Math.max(...S.tanks.map(t => decoStats(t).n));
   function roomTank(S, pref) { const order = [curT(S, pref)].concat(S.tanks.map((_, i) => i)); for (const i of order) if (S.tanks[i] && !S.tanks[i].show && tankUsed(S, i) < tankCap(S, i)) return i; return -1; }
   /* 시세: 같은 품종을 팔수록 내려가고(하루 3마리째엔 경쟁업체 대량 납품) 며칠에 걸쳐 회복. 오늘의 인기 품종은 웃돈 */
-  const MKT = { drop: 0.15, rec: 0.85, flood: 0, hot: 0 }, UPKEEP = { per: 1, free: 20 };   // 관리비: 20마리 넘는 만큼 하루 1씩 (사료·전기)
+  const MKT = { drop: 0.15, rec: 0.85, flood: 0, hot: 0 }, UPKEEP = { per: 1, free: 30 };   // 관리비: 20마리 넘는 만큼 하루 1씩 (사료·전기)
   const mktMul = (S, k) => 1 / (1 + MKT.drop * (S.market[k] || 0)) * (MKT.hot && S.hot === k ? 1 + MKT.hot : 1);
   const mktPct = (S, f) => Math.round((mktMul(S, keyOf(f.ph)) - 1) * 100);
   /* 형질 등급: 0 일반 · 1 레어 · 2 에픽 · 3 전설 (얻기 어려운 정도) */
@@ -864,6 +867,20 @@ body.hasdream #shelf{right:66px;left:66px}
       const pg = (ALBUM_BY[k] || {}).page; S.pageRew = S.pageRew || {};
       if (pg && !S.pageRew[pg] && ALBUM.filter(a => a.page === pg).every(a => S.album[a.key])) { const i = PAGES.findIndex(x => x[0] === pg), coins = 400 + 300 * i; S.pageRew[pg] = 1; S.money += coins; S.tickets = (S.tickets || 0) + 1; log(S, `📖 사진첩 '${PAGES[i][1]}' 완성! 🪙+${coins} · 뽑기권 1장`); ev.push({ t: 'page', page: pg, name: PAGES[i][1], coins }); } }
   }
+  /* 🎯 목표 선별: 목표 유전자를 모두 가진 아이(겉으로 안 보여도), 목표 모습, 처음 보는 모습, 에픽 이상 겉모습만 남긴다.
+     다 가진 아이가 없으면 가장 많이 가진 아이를 남기고, 다음 짝을 위해 암수 한 마리씩은 꼭 남긴다 */
+  const BOX_RUN = 4, ADOPT = 3;
+  const boxRunning = S => { let n = 0; for (let i = 0; i < S.boxes; i++) { if ((S.boxDone || {})[i]) continue; const b = at(S, 'box' + i).filter(f => !f.sep); if (b.some(f => f.sex === 'm' && isAdult(f)) && b.some(f => f.sex === 'f' && isAdult(f))) n++; } return n; };
+  const boxGoalOf = (S, bi) => (S.boxGoal || {})[bi] || (S.treeBox || {})[bi] || null;
+  function sortKids(S, kids, g) {
+    const N = goalNeeds(g); if (!N.length) return kids;
+    const cov = k => N.filter(([l, a]) => (k.g[l] || GDEF[l]).includes(a)).length, full = kids.filter(k => goalMatch(k, g) || cov(k) === N.length);
+    const keep = new Set(full);
+    if (!full.length) ['m', 'f'].forEach(sx => { const c = kids.filter(k => k.sex === sx).sort((a, b) => cov(b) - cov(a))[0]; if (c && cov(c) > 0) keep.add(c); });   // 다 가진 아이가 없으면 암수 한 마리씩 가장 많이 가진 아이
+    const seen = new Set([...keep].map(k => keyOf(k.ph)));
+    kids.forEach(k => { const key = keyOf(k.ph); if (keep.has(k) || seen.has(key)) return; if (!S.album[key] || phTier(k.ph) >= 2) { keep.add(k); seen.add(key); } });   // 처음 보는 모습 · 에픽 이상은 모습마다 한 마리
+    return kids.filter(k => keep.has(k));
+  }
   function birth(S, mom, rng, ev) {
     const dad = mom.mate; if (!dad) { mom.preg = 0; return; }
     const n = Math.max(1, Math.round((3 + rng() * 4) * (0.4 + 0.6 * health(mom.F))));
@@ -871,14 +888,19 @@ body.hasdream #shelf{right:66px;left:66px}
     S.stats.born += n; mom.preg = 0; mom.mate = null;
     if (mom.loc && mom.loc.startsWith('box')) {
       const bi = +mom.loc.slice(3), goal = (S.boxGoal || {})[bi], dest = (S.boxDest || {})[bi] || 'tank'; let given = 0, toN = 0; const ids = [];
+      const g2 = boxGoalOf(S, bi), sortOn = !!g2 && (S.boxSort || {})[bi] !== false, hit = g2 ? kids.filter(k => goalMatch(k, g2)).length : 0;
+      const K = sortOn ? sortKids(S, kids, g2) : kids, adopt = kids.length - K.length, coins = adopt * ADOPT; if (coins) { S.money += coins; S.stats.adopt = (S.stats.adopt || 0) + adopt; }
+      if (hit) { S.boxDone = S.boxDone || {}; S.boxDone[bi] = dad.id + ':' + mom.id; }
       let inBox = at(S, mom.loc).filter(f => f.sep).length, room = nurseryCap(S) - at(S, 'nursery').length;
-      kids.forEach(k => { k.fromBox = bi + 1; if (goal) { k.goal = Object.assign({}, goal); k.goalBox = bi + 1; }
+      K.forEach(k => { k.fromBox = bi + 1; if (goal) { k.goal = Object.assign({}, goal); k.goalBox = bi + 1; }
         if (inBox < BOX_FRY_CAP) { k.loc = mom.loc; k.sep = 1; k.dest = dest; inBox++; ids.push(k.id); S.fish.push(k); }
         else if (room > 0) { k.loc = 'nursery'; room--; toN++; S.fish.push(k); } else given++; });
       mom.rest = REST_DAYS;   // 낳은 뒤에는 며칠 쉰다
       log(S, `🐣 번식통 ${bi + 1}에서 #${mom.id}이(가) 치어 ${n}마리를 낳았다 · 분리망 건너편에서 안전하게 자란다${toN ? ` (${toN}마리는 자리가 없어 보육통으로)` : ''}`);
       if (given) log(S, `번식통과 보육통이 가득 차서 치어 ${given}마리를 이웃 가게에 분양했다`);
-      ev.push({ t: 'birth', where: 'box', box: bi, n, kept: n - given, ids, ask: dest === 'ask' });
+      if (adopt) log(S, `🎯 목표 선별: ${n}마리 중 ${K.length}마리 남김 · ${adopt}마리 이웃 분양 (+${coins})`);
+      if (hit) log(S, `🎉 번식통 ${bi + 1}에서 목표 구피 ${hit}마리! 번식을 쉰다`);
+      ev.push({ t: 'birth', where: 'box', box: bi, n, kept: K.length - given, ids, ask: dest === 'ask', sorted: sortOn, adopt, coins, hit });
     } else {
       // 태어나는 순간 어미나 다른 어른에게 바로 잡아먹히는 아이도 있다 (수초가 많을수록, 어른이 적을수록 덜 먹힌다)
       const ti = inTank(mom) ? tankIdx(mom) : 0, others = at(S, mom.loc).filter(f => isAdult(f) && f !== mom).length;
@@ -951,7 +973,8 @@ body.hasdream #shelf{right:66px;left:66px}
       if (males.length) L.filter(fertile).forEach(f => { if (rng() < pm) { const d = males[Math.floor(rng() * males.length)]; f.preg = GEST; f.pregAt = 'tank' + ti; f.mate = { id: d.id, g: d.g, line: d.line, ph: d.ph }; } });
     });
     for (let i = 0; i < S.boxes; i++) {
-      const b = at(S, 'box' + i).filter(f => !f.sep), m = b.find(f => f.sex === 'm' && isAdult(f)), f = b.find(fertile);
+      const b = at(S, 'box' + i).filter(f => !f.sep), m = b.find(f => f.sex === 'm' && isAdult(f)), f = b.find(fertile), fw = b.find(x => x.sex === 'f');
+      const dn = (S.boxDone || {})[i]; if (dn) { if (!m || !fw || dn !== m.id + ':' + fw.id) delete S.boxDone[i]; else continue; }
       if (m && f && rng() < 0.6) { f.preg = GEST; f.pregAt = 'box' + i; f.mate = { id: m.id, g: m.g, line: m.line, ph: m.ph }; }
     }
     // 4-1) 구피가 한 마리도 없고 새로 들일 돈도 없으면 이웃이 한 쌍을 나눠 준다
@@ -964,6 +987,7 @@ body.hasdream #shelf{right:66px;left:66px}
     // 5) 시장: 같은 품종을 많이 팔면 값이 떨어졌다가 천천히 회복
     for (const k in S.market) { S.market[k] *= MKT.rec; if (S.market[k] < 0.05) delete S.market[k]; }
     if (MKT.hot) { const own = S.fish.filter(isAdult).map(f => keyOf(f.ph)), al = Object.keys(S.album), pool = rng() < 0.5 && own.length ? own : al; S.hot = pool.length ? pool[Math.floor(rng() * pool.length)] : null; }
+    { const nb = boxRunning(S); if (nb) { const c = Math.min(S.money, Math.round(nb * BOX_RUN * (offline ? 0.3 : 1))); S.money -= c; S.lastBoxRun = c; S.stats.upkeep = (S.stats.upkeep || 0) + c; } else S.lastBoxRun = 0; }
     if (UPKEEP.per) { const n = S.fish.length - UPKEEP.free; if (n > 0) { const c = Math.min(S.money, Math.round(n * UPKEEP.per * (offline ? 0.3 : 1))); S.money -= c; S.lastUpkeep = c; S.stats.upkeep = (S.stats.upkeep || 0) + c; if (c && !S.upTold) { S.upTold = 1; log(S, `🍤 구피가 ${UPKEEP.free}마리를 넘어서 사료값·전기세가 나가기 시작했다 (넘는 만큼 하루 1씩)`); ev.push({ t: 'upkeep1' }); } } else S.lastUpkeep = 0; }
     S.rep = (S.rep || 0) * 0.99;
     // 6) 손님
@@ -1372,7 +1396,7 @@ body.hasdream #shelf{right:66px;left:66px}
     S.fish.forEach(f => { walk(f.id, 0); if (f.mate) walk(f.mate.id, 0); });
     for (const k in S.reg) if (!keep.has(+k)) delete S.reg[k];
   }
-  root.CORE = { revealCheck, goalShop, GACHA_COST, goalBlock, planThree, planTwo, planStep2, goalUse, RESIZE_COST, TIER_N, phTier, geneTier, tierOf, FILTER_COST, COMMON_K, AP_N, UNL_ALL, apLeft, skipAp, unl, GRAD_BONUS, GDEF, mktPct, SHOW, showCap, MKT, UPKEEP, mktMul, ORD_K, ORD_GAP, buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
+  root.CORE = { BOX_RUN, ADOPT, boxGoalOf, boxRunning, sortKids, revealCheck, goalShop, GACHA_COST, goalBlock, planThree, planTwo, planStep2, goalUse, RESIZE_COST, TIER_N, phTier, geneTier, tierOf, FILTER_COST, COMMON_K, AP_N, UNL_ALL, apLeft, skipAp, unl, GRAD_BONUS, GDEF, mktPct, SHOW, showCap, MKT, UPKEEP, mktMul, ORD_K, ORD_GAP, buyStarter, STARTER_COLS, STARTER_COST, canHave, pathFor, bornHere, DIV_COST, isParent, BOX_FRY_CAP, THEMES, ADDONS, BREED_PRICE, BREED_MAX, SHOW_MAX, SHOW_CAP, breedCount, showCount, addonBonus, careCost, buyKnown, knownCost, genesOf, syncCols, colOpen, nextCol, COL_UNLOCK, goalChance, planFor, goalNeeds, FINS, goalMatch, goalText, setBoxGoal, REST_DAYS, attend, ATTEND, setLock, frozen, tailStar, orderText, orderMatches, fulfil, makeOrder, gacha, GACHA_COST, GACHA_P, GACHA_PITY, tailWord, FOODS, careOf, careMult, feed, waterChange, WC_COST, GOALS, goalNow, claimGoal, DAY_MS, MATURE, GEST, TAILS, COLORS, PATS, PAGES, ALBUM, ALBUM_BY, SIZES, TANK_PRICE, TANK_MAX, ITEMS, slotCount, decoStats, placeItem, NURSERY_CAP, NURSERY_COST, BOX_COST, BOX_MAX, PLANT_COST, PLANT_MAX, FOOD_COST, FOUNDER_COST, RARE_COST,
     newState, express, score, basePrice, keyOf, nameOf, recipeLines, recipeCost, health, inbreed, makeChild, dayTick, sell, moveTo, rescue, buyFounder, buy, buyRecipe, boostBirth, growFry,
     sellPrice, dailyOf, tankIncome, comment, survival, at, isAdult, tankCap, tankUsed, inTank, roomTank, maxPlants, donate, donateRep, repMult, autoManage, AUTO_DEFAULT, nurseryCap, pagesDone, pruneReg, randomGenes };
 })(typeof window !== 'undefined' ? window : globalThis);
@@ -2609,9 +2633,16 @@ function miniTank(i, big) {
   if (f && f.preg) h += `<span class="mtp">💗 ${f.preg}일</span>`;
   return h + '<u></u></div>';
 }
+function boxSortH(i) {   // 목표 선별 스위치 · 목표 달성으로 쉬는 중이면 다시 번식 버튼
+  const g = C.boxGoalOf(S, i), on = !!g && (S.boxSort || {})[i] !== false, done = (S.boxDone || {})[i];
+  return (done ? `<div class="donebn">🎉 목표 구피가 나왔어요 · 번식을 쉬는 중<button class="btn go sm" data-a="boxresume" data-id="${i}">다시 번식</button></div>` : '')
+    + (g ? `<div class="opt" data-a="boxsort" data-id="${i}"><div><b>🎯 목표 선별</b><small>목표 유전자가 있는 아이 · 처음 보는 모습 · 에픽 이상만 남기고 나머지는 이웃에 분양해요 (🪙${C.ADOPT}씩)</small></div><span class="sw ${on ? 'on' : ''}"></span></div>` : '')
+    + `<p class="note" style="margin:2px 2px 8px">⚡ 짝이 든 번식통은 하루 🪙${C.BOX_RUN} (쉬거나 비면 0)</p>`;
+}
 function boxState(i) {
   const P = boxPar(i), m = P.find(f => f.sex === 'm'), f = P.find(f => f.sex === 'f');
   if (!m && !f) return '비어 있어요'; if (!(m && f)) return `${m ? '암컷' : '수컷'}을 넣어 주세요`;
+  if ((S.boxDone || {})[i] && !f.preg) return '🎉 목표 달성 · 쉬는 중';
   return f.preg ? `💗 ${f.preg}일 뒤 출산` : f.rest > 0 ? `🛌 산후 휴식 ${f.rest}일` : '💞 짝짓기 중';
 }
 function showBoxes() {
@@ -2670,7 +2701,7 @@ function planBanner(i) {
   return `<div class="surp" style="background:#eef6ff;margin:8px 0;flex-wrap:wrap"><div><b>🧭 ${gen}세대 길 · ${stage}/${gen}단계 · 목표 ${C.goalText(pl.g)}</b><small>${st}</small></div><div style="display:flex;flex-direction:column;gap:4px">${A.length ? `<button class="btn go" data-a="plan2" data-id="${i}">${(pl.left || 1) >= 2 ? '다음 단계 짝 넣기' : '마지막 단계 짝 넣기'}</button>` : ''}<button class="btn sm" data-a="planoff" data-id="${i}">그만두기</button></div>${tr}</div>`;
 }
 function showBox(i) {
-  const P = boxPar(i), K = boxFry(i), m = P.find(x => x.sex === 'm'), f = P.find(x => x.sex === 'f'), gl = (S.boxGoal || {})[i], dest = (S.boxDest || {})[i] || 'tank';
+  const P = boxPar(i), K = boxFry(i), m = P.find(x => x.sex === 'm'), f = P.find(x => x.sex === 'f'), gl = C.boxGoalOf(S, i), dest = (S.boxDest || {})[i] || 'tank';
   const slot = (x, sex) => x ? `<div class="slot full" data-a="pick" data-id="${i}" data-sex="${sex}">${fishSVG(x)}<b>${label(x)} ${sexI(x)}</b><span class="chg">바꾸기</span></div>` : `<div class="slot" data-a="pick" data-id="${i}" data-sex="${sex}"><span style="font-size:22px">＋</span>${sex === 'm' ? '수컷' : '암컷'} 고르기</div>`;
   let kinH = ''; if (m && f) { const F = C.inbreed(S, m.id, f.id), hh = C.health(F); kinH = `<div class="kin ${hh < .75 ? 'bad' : ''}">${F > 0 ? `⚠️ 친척 사이 · 새끼 혈통 ${Math.round(hh * 100)}%` : '✓ 남남 · 새끼 혈통 건강'}</div>`; }
   let careH = '';
@@ -2682,7 +2713,7 @@ function showBox(i) {
   const h = head(`번식통 ${i + 1}`, 'boxes') + miniTank(i, true) + `<div class="bs big">${boxState(i)}${f && f.preg ? ` <button class="btn ad" data-a="adbirth" data-id="${f.id}">📺 앞당기기</button>` : ''}</div>
     ${planBanner(i)}<h5 class="bh"><span>부모</span><span><button class="btn go sm" data-a="autopair" data-id="${i}">✨ 추천 짝</button>${P.length ? ` <button class="btn sm" data-a="emptybox" data-id="${i}">빼기</button>` : ''}</span></h5>
     <div class="slots">${slot(m, 'm')}${slot(f, 'f')}</div>${kinH}
-    ${U('goal') ? '' : '<!--'}<button class="goalbtn ${gl ? 'on' : ''}" data-a="boxgoal" data-id="${i}">🎯 ${C.goalText(gl)}${gl && m && f ? ` · <b>예상 ${Math.round(chanceOf(m, f, gl, f.care) * 100)}%</b>` : ''}</button>${U('goal') ? '' : '-->'}${careH}
+    ${U('goal') ? '' : '<!--'}<button class="goalbtn ${gl ? 'on' : ''}" data-a="boxgoal" data-id="${i}">🎯 ${C.goalText(gl)}${gl && m && f ? ` · <b>예상 ${Math.round(chanceOf(m, f, gl, f.care) * 100)}%</b>` : ''}</button>${U('goal') ? '' : '-->'}${careH}${boxSortH(i)}
     <h5 class="bh"><span>🐣 치어칸 ${K.length}/${C.BOX_FRY_CAP}</span><span>${K.length ? `<button class="btn sm" data-a="frytank" data-id="${i}">모두 어항으로</button>` : ''}${miss.length ? ` <button class="btn sm" data-a="sellmiss" data-id="${i}">목표 미달 ${miss.length} 팔기</button>` : ''}</span></h5>
     <div class="seg">${seg}</div><p class="note" style="margin:4px 2px 8px">${{ stay: '새끼는 번식통에서 계속 자라요', tank: '3일쯤 크면 알아서 어항으로 나가요', ask: '낳을 때마다 물어봐요' }[dest]}</p>
     ${K.length ? `<div class="grid3">${K.map(fcard).join('')}</div>` : '<p class="empty">태어난 치어는 여기서 자라요<br><small>번식통은 새끼를 <b>더 만드는</b> 곳 · 자리가 모자라면 🛒 어항을 늘려요</small></p>'}
@@ -3237,7 +3268,8 @@ function handle(ev, quiet) {
     if (e.t === 'mature' && !quiet && !e.box && !TUT.on) { const f = S.fish.find(x => x.id === e.id); if (f && !f.gacha) (UI.revealQ = UI.revealQ || []).push({ id: f.id, nw: ev.some(x => x.t === 'album' && x.id === f.id) }); }
     if (e.t === 'mature' && !quiet) { const f = S.fish.find(x => x.id === e.id); if (f && f.gacha) { const nw = ev.some(x => x.t === 'album' && x.id === f.id); queue(() => showReveal(f, nw)); } }
     if (e.t === 'birth' && e.where === 'box' && !S.seenBoxBirth && e.ids && e.ids.length) { S.seenBoxBirth = 1; const d = (S.boxDest || {})[e.box] || 'tank'; queue(() => notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🐣 번식통에서 첫 새끼!</h3><div class="big">${miniTank(e.box, true)}</div><div class="recipe"><ul class="help"><li>🚧 점선 오른쪽 칸에서 안전하게 자라요</li><li>🐟 ${d === 'stay' ? '번식통에 계속 둬요' : '3일쯤 크면 알아서 어항으로 나가요'}</li><li>⚙️ 번식통을 누르면 바꿀 수 있어요</li></ul></div><div class="row"><button class="btn go" data-a="close">알겠어요</button></div>`)); }
-    else if (e.t === 'birth' && !quiet && e.where === 'box' && !e.ask) note(`🐣 번식통 ${e.box + 1}에서 치어 ${e.n}마리 · 분리망 건너편에서 자라요`);
+    else if (e.t === 'birth' && !quiet && e.where === 'box' && !e.ask) note(e.hit ? `🎉 번식통 ${e.box + 1}에서 목표 구피 ${e.hit}마리! 번식을 쉬어요` : e.sorted ? `🐣 번식통 ${e.box + 1} · ${e.n}마리 중 ${e.kept}마리 남김${e.adopt ? ` · ${e.adopt}마리 분양 🪙${e.coins}` : ''}` : `🐣 번식통 ${e.box + 1}에서 치어 ${e.n}마리 · 분리망 건너편에서 자라요`);
+    if (e.t === 'birth' && e.where === 'box' && e.adopt && !S.sortTold) { S.sortTold = 1; queue(() => notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🎯 목표 선별이 켜져 있어요</h3><div class="recipe"><ul class="help"><li>🧬 목표 유전자를 가진 아이만 남겨요 (겉으로 안 보여도)</li><li>✨ 처음 보는 모습 · 에픽 이상은 꼭 남겨요</li><li>🏡 나머지는 태어나자마자 이웃에 분양 (🪙${C.ADOPT}씩)</li><li>🎉 목표 구피가 나오면 그 번식통은 쉬어요</li><li>⚙️ 번식통 화면에서 끌 수 있어요</li></ul></div><div class="row"><button class="btn go" data-a="close">알겠어요</button></div>`)); }
     if (e.t === 'birth' && e.where === 'box' && e.ask && e.ids && e.ids.length) queue(() => notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🐣 번식통 ${e.box + 1}에서 ${e.ids.length}마리!</h3><div class="big">${miniTank(e.box, true)}</div><p class="note" style="text-align:center">이 아이들을 어떻게 할까요?</p><div class="row"><button class="btn" data-a="birthdest" data-v="stay" data-ids="${e.ids.join(',')}">번식통에 그대로</button><button class="btn go" data-a="birthdest" data-v="tank" data-ids="${e.ids.join(',')}">자라면 어항으로</button></div>`));
     if (e.t === 'album') { UI.newAlbum++; const gf = S.fish.find(x => x.id === e.id); if (!quiet && !(gf && gf.gacha && ev.some(x => x.t === 'mature' && x.id === e.id))) { if (modalOpen) note(`📸 새 형질 발견! ${C.ALBUM_BY[e.key].name}`); queue(() => showDiscovery(e.key)); } }
     if (e.t === 'firstPay' && !quiet) queue(() => notice(`<h3 style="font-family:'Gowun Dodum'">🎉 첫 손님이 돈을 냈어요!</h3><p>"이제 좀 볼 만하네요!" 손님이 입장료 🪙 ${e.amt}을 내고 갔어요. 어항이 예쁠수록, 품종이 다양할수록, 수초가 많을수록 손님 수입이 늘어요.</p><div class="row"><button class="btn go" data-a="close">신난다</button></div>`));
@@ -3449,6 +3481,8 @@ function act(a, el) {
     case 'grip': $('#sheet').classList.toggle('full'); return;
     case 'ptab': UI.ptab = el.dataset.v; return showPick(id, el.dataset.sex);
     case 'none': return;
+    case 'boxsort': { S.boxSort = S.boxSort || {}; const on = S.boxSort[id] !== false; S.boxSort[id] = !on; save(); toast(on ? '🎯 선별을 껐어요 · 태어난 아이를 모두 남겨요' : '🎯 선별을 켰어요 · 목표에 쓸모 있는 아이만 남겨요'); return showBox(id); }
+    case 'boxresume': { if (S.boxDone) delete S.boxDone[id]; save(); toast('💞 다시 번식해요'); render(); return showBox(id); }
     case 'boxdest': { S.boxDest = S.boxDest || {}; S.boxDest[id] = el.dataset.v; boxFry(id).forEach(x => { if (el.dataset.v !== 'ask') x.dest = el.dataset.v; }); save(); toast({ stay: '🐣 치어는 번식통에서 계속 자라요', tank: '🐣 3일쯤 자라면 어항으로 나가요', ask: '🐣 낳을 때마다 물어볼게요' }[el.dataset.v]); return showBox(id); }
     case 'frytank': { let n = 0, left = 0; boxFry(id).forEach(x => { if (C.moveTo(S, x.id, 'tank')) left++; else n++; }); toast(n ? `🐣 ${n}마리를 어항으로 옮겼어요${left ? ` · ${left}마리는 자리가 없어요` : ''}` : '어항에 자리가 없어요'); save(); render(); return showBox(id); }
     case 'sellmiss': { let n = 0, c = 0; boxFry(id).filter(x => x.goalMiss && C.isAdult(x)).forEach(x => { const p = C.sell(S, x.id); if (typeof p === 'number') { n++; c += p; } }); toast(`🪙 목표 미달 ${n}마리를 ${fmt(c)}에 팔았어요`); if (c) floatMoney(c); save(); render(); return showBox(id); }
