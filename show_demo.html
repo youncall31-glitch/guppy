@@ -1120,7 +1120,7 @@ body.hasdream #shelf{right:66px;left:66px}
     A.n = A.last === yesterday ? A.n % 7 + 1 : 1; A.last = today; const r = ATTEND[A.n - 1];
     if (r.c) S.money += r.c; if (r.t) S.tickets = (S.tickets || 0) + r.t; log(S, `📅 ${A.n}일째 출석 보상`); return { n: A.n, r };
   }
-  const REST_DAYS = 4, BOX_FRY_CAP = 30, DIV_COST = 30;   // 번식통 치어칸은 30마리까지
+  const REST_DAYS = 4, BOX_FRY_CAP = 30, DIV_COST = 0;   // 번식통 치어칸은 30마리까지
   /* 원하는 구피 계획: 목표 형질에 필요한 유전자, 짝마다 목표가 나올 확률, 부족한 것 */
   const GDEF = { met: ['t', 't'], dor: ['B', 'B'], fin: ['n', 'n'] }, GLOC = ['tail', 'color', 'pat', 'alb', 'plat', 'met', 'dor', 'fin'];
   function goalNeeds(g) {
@@ -1318,7 +1318,7 @@ body.hasdream #shelf{right:66px;left:66px}
     const T = S.tanks[curT(S)];
     if (what === 'tank') {   // 새 어항 들이기 (arg = 크기)
       const n = breedCount(S), c = BREED_PRICE[n]; if (c == null) return '어항은 더 놓을 수 없다'; if (S.money < c) return '돈이 모자라다';
-      S.money -= c; S.tanks.push({ size: 0, deco: [] }); log(S, `🛒 1자 어항을 새로 들였다 (-${c})`); return null;
+      S.money -= c; S.tanks.push({ size: 0, deco: [], div: true, divOwn: true }); log(S, `🛒 1자 어항을 새로 들였다 (-${c})`); return null;
     }
     if (what === 'show') {   // 3자 전시 어항: 꾸며진 테마째로 들인다
       const th = THEMES[arg]; if (!th || th.soon) return '아직 준비 중이다'; if (showCount(S) >= SHOW_MAX) return '전시 어항은 더 놓을 수 없다'; if (S.money < th.price) return '돈이 모자라다';
@@ -2290,7 +2290,7 @@ function menuHtml() {
   $('#menu').innerHTML = it('speed', '⏱', '시간 빠르기', `<span>${sp.i} ${sp.n}</span>`)
     + (U('orders') ? '' : '<!--') + it('orders', '📋', '의뢰', `<span class="${ready ? 'hot' : ''}">${ready ? '보낼 수 있어요' : on + '개'}</span>`) + (U('orders') ? '' : '-->')
     + (t.show ? it('care', '🖼', '전시 어항 장치') + it('viewmode', '🎬', '감상 모드') : it('care', '💧', '물과 먹이', `<span class="${w < 50 ? 'warn' : ''}">${Math.round(t.water)}%</span>`))
-    + (t.show ? '' : it('divt', '🚧', '암수 칸막이', `<span>${t.divOwn ? (t.div ? '세움' : '걷음') : '🪙' + C.DIV_COST}</span>`))
+    + (t.show ? '' : it('divt', '💞', '암수 합사', `<span>${t.div ? '따로' : '같이'}</span>`))
     + (U('deco') ? '' : '<!--') + it('decomode', '🪴', '꾸미기', `<span>${C.decoStats(t).n}/${C.slotCount(t.size)}</span>`) + (U('deco') ? '' : '-->')
     + it('quiet', '🔕', '알림 줄이기', `<span>${S.quiet ? '켬' : '끔'}</span>`) + it('log', '📜', '가게 기록') + it('helpon', '❔', '궁금한 것 눌러 보기') + it('help', '📘', '도움말 · 튜토리얼') + ((S.goal || 0) < C.AP_N ? it('appass', '🎓', '수습 패스하기', `<span>🪙${C.apLeft(S)}</span>`) : '') + it('stcopy', '🧾', '게임 상태 복사 (상담용)') + it('resetask', '🔄', '처음부터 다시 하기', '', 'class="danger"');
 }
@@ -2723,7 +2723,7 @@ function showShop() {
   const P = {
     tank: `<h5><span>🐟 어항 추가 ${C.breedCount(S)}/${C.BREED_MAX}</span></h5>
     ${(() => { const pr = C.BREED_PRICE[C.breedCount(S)]; if (pr == null) return shopIt('🫧', '어항 추가', '더 놓을 자리가 없어요', null, 'newtank', 'data-id="0"');
-      return `<div class="it"><i>🫧</i><div><b>1자 어항 추가</b><small>16마리 · 공간이 늘어나요 · 🚧 칸막이를 같이 달면 처음부터 암수가 나뉘어요</small></div><div style="display:flex;flex-direction:column;gap:4px"><button class="btn go" data-a="newtank" data-id="0" ${S.money < pr ? 'disabled' : ''}>🪙${fmt(pr)}</button><button class="btn" data-a="newtank" data-id="0" data-div="1" ${S.money < pr + C.DIV_COST ? 'disabled' : ''}>🚧 칸막이 포함 🪙${fmt(pr + C.DIV_COST)}</button></div></div>`; })()}
+      return `<div class="it"><i>🫧</i><div><b>1자 어항 추가</b><small>16마리 · 공간이 늘어나요 · 암수는 처음부터 나뉘어 있어요</small></div><div style="display:flex;flex-direction:column;gap:4px"><button class="btn go" data-a="newtank" data-id="0" ${S.money < pr ? 'disabled' : ''}>🪙${fmt(pr)}</button></div></div>`; })()}
     <h5><span>📐 어항 넓히기</span></h5>${rz || '<p class="note">전시 어항은 넓힐 수 없어요 · 일반 어항으로 넘겨 보세요</p>'}
     <h5><span>장비</span></h5>${curTank().show ? '' : shopIt('🫧', `여과기 · 지금 어항(${tankLabel(S.cur)})`, curTank().filter ? '이미 달려 있어요 · 물이 절반 속도로 탁해져요' : '물이 절반 속도로 탁해져요 · 한 번만 사면 돼요', curTank().filter ? null : C.FILTER_COST, 'filter')}
     ${shopIt('📦', `축양장에 번식통 추가 ${S.boxes}/${C.BOX_MAX}`, '원하는 한 쌍을 하나 더 · 새끼가 더 늘어요', S.boxes < C.BOX_MAX ? C.BOX_COST[S.boxes - 1] : null, 'buy', 'data-id="box"')}
@@ -2805,7 +2805,7 @@ function showCare() {
     <div class="wbar"><i style="width:${w}%;background:${col}"></i></div>
     <p class="note">물 ${w}% · ${w >= 60 ? '맑아요' : w >= 30 ? '조금 탁해요 · 손님 수입 -15%' : '많이 탁해요 · 손님 수입 -35%, 병이 날 수 있어요'}${sick ? ` · 🤒 아픈 구피 ${sick}마리` : ''}<br>${T.full > 0 ? `배불러요 ${Math.ceil(T.full)}일 · 손님 +10%` : '먹이는 선택 · 주면 손님 +10%'}${T.brine > 0 ? ` · 🦐 성장 ${T.brine}일` : ''}${T.color > 0 ? ` · 🌈 발색 ${T.color}일 남음` : ''}</p>
     <div class="row"><button class="btn go" data-a="wc">💧 물 갈기 🪙${C.WC_COST}</button></div>
-    <div class="opt" data-a="divt"><div><b>🚧 암수 칸막이</b><small>세우면 이 어항에서는 새끼를 낳지 않아요 · 교배는 번식통에서</small></div>${curTank().divOwn ? `<span class="sw ${curTank().div ? 'on' : ''}"></span>` : `<button class="btn go">🪙${C.DIV_COST}</button>`}</div>
+    <div class="opt" data-a="divt"><div><b>💞 암수 합사</b><small>기본은 따로예요 · 켜면 이 어항에서도 새끼가 생겨요 (치어 건지기·자리 정리가 늘어요)</small></div><span class="sw ${curTank().div ? '' : 'on'}"></span></div>
     <div class="it" style="display:none"><div style="flex:1"><b>${T.lock ? '❄️ 시간이 멈춘 어항' : '❄️ 시간 멈춤'}</b><small style="display:block;color:#5b6d74">나이·출산이 멈춰요 · 손님 수입 없음</small></div><button class="btn ${T.lock ? 'go' : ''}" data-a="lock">${T.lock ? '다시 흐르게' : '멈추기'}</button></div>
     <p style="margin:14px 0 2px;font-weight:700">먹이 고르기</p>
     <div class="foods">${Object.entries(C.FOODS).map(([k, F]) => `<button class="${(S.feedKind || 'flake') === k ? 'on' : ''}" data-a="feedkind" data-id="${k}">${F.i} <b>${F.n}</b> · 🪙${F.price}${k === 'color' && !S.food ? ' · 🔒 상점에서 들이기' : ''}<small>${F.d}</small></button>`).join('')}</div>
@@ -2952,10 +2952,11 @@ function tutNext() { TUT.i++; if (TUT.i >= TS().length) return tutEnd(); tutShow
 function tutOn(ev) { if (!TUT.on) return; const st = TS()[TUT.i]; if (!st || st.wait !== ev) return;
   if (/^sheet:|^menu$/.test(ev)) { TUT.peek = true; $('#tut').classList.remove('on'); setTimeout(() => { if (ev === 'menu') menuToggle(false); else closeSheet(); TUT.peek = false; if (TUT.on) { $('#tut').classList.add('on'); tutNext(); } }, 1700); return; }
   if (ev === 'born') setTimeout(tutNext, 6500); else setTimeout(tutNext, ev === 'pop' ? 250 : ev === 'tx' ? 1600 : 400); }
-function offerDiv() { if (TUT.on && !TUT.coach) return;   // 튜토리얼 출산 뒤: 어항에서 저절로 새끼가 생기지 않게 칸막이를 권한다 (처음 한 번은 공짜)
-  if (S.divOffered) return; const t = S.tanks.findIndex(x => !x.show && !x.div); if (t < 0) return; S.divOffered = 1; save();
-  queue(() => notice(`<h3 style="font-family:'Gowun Dodum';text-align:center">🚧 칸막이를 세울까요?</h3><div class="recipe"><ul class="help"><li>🐟 수컷은 왼쪽, 암컷은 오른쪽</li><li>🙅 어항에서 저절로 새끼가 안 생겨요<br><small>치어 건지기 · 자리 정리가 줄어요</small></li><li>💞 새끼는 번식통에서 골라서 받아요</li><li>☰ 메뉴에서 언제든 걷을 수 있어요</li></ul></div><div class="row"><button class="btn" data-a="close">나중에</button><button class="btn go" data-a="divfree">무료로 세우기</button></div>`));
+function divAll() {   // 어항은 기본으로 암수를 나눈다 · 합사는 메뉴에서 어항마다 고른다
+  if (S.divV === 1) return; S.divV = 1; S.divOffered = 1;
+  S.tanks.forEach(t => { if (!t.show) { t.divOwn = true; t.div = true; } });
 }
+function offerDiv() { if (TUT.on && !TUT.coach) return; if (S.divV === 1) return; divAll(); save(); layout(); render(); toast('🚧 이제 어항은 암수가 나뉘어 있어요 · 교배는 번식통에서 · 메뉴에서 합사할 수 있어요'); }
 function tutEnd() {
   if (!TUT.coach && !S.divOffered) setTimeout(offerDiv, 1800);
   if (TUT.coach) { TUT.on = false; TUT.coach = false; TUT.list = null; $('#tut').classList.remove('on'); save(); renderHud(); setTimeout(() => { if (!modalOpen && Q.length) Q.shift()(); }, 400); return; } setTimeout(() => { if (!modalOpen && Q.length) Q.shift()(); }, 400); setTimeout(checkAttend, 800); TUT.on = false; TUT.pause = false; $('#tut').classList.remove('on'); S.intro = true; S.tutDone = true; if (TUT.mom && SW[TUT.mom]) SW[TUT.mom].hold = false; save(); renderHud(); }
@@ -3208,7 +3209,7 @@ function showHelp(first) {
     <li>🎁 기증하면 평판 ↑ 손님 ↑</li>
     <li>💞 번식통에서 원하는 짝</li>
     <li>⚠️ 친척끼리는 혈통 건강 ↓</li>
-    <li>🚧 1자 어항엔 암수 칸막이를 세울 수 있어요</li>
+    <li>🚧 어항은 기본으로 암수가 나뉘어 있어요 · 메뉴 → 암수 합사로 같이 둘 수 있어요</li>
     <li>🌙 앱을 닫으면 하루 = 10분</li>
     <li>❔ ☰ → 궁금한 것 눌러 보기</li></ul></div>
     <div class="row"><button class="btn" data-a="tutagain">🎓 튜토리얼 다시 보기</button><button class="btn go" data-a="close">${first ? '시작하기' : '알겠어요'}</button></div>`);
@@ -3442,7 +3443,7 @@ function act(a, el) {
     case 'boxopen': return showBox(id);
     case 'menu': return menuToggle();
     case 'divfree': { const c = curTank(); if (c.show) S.cur = S.tanks.findIndex(x => !x.show); curTank().divOwn = true; C.buy(S, 'div'); closeSheet(); layout(); render(); save(); return toast('🚧 칸막이를 세웠어요 · 수컷은 왼쪽, 암컷은 오른쪽'); }
-    case 'divt': { const own = curTank().divOwn; err = C.buy(S, 'div'); if (!err) { layout(); render(); save(); toast(curTank().div ? '🚧 칸막이를 세웠어요 · 수컷은 왼쪽, 암컷은 오른쪽' : '🚧 칸막이를 걷었어요'); if (UI.sheet === 'notice' && $('#sheet [data-a=divt]')) return showCare(); } break; }
+    case 'divt': { const own = curTank().divOwn; err = C.buy(S, 'div'); if (!err) { layout(); render(); save(); toast(curTank().div ? '🚧 다시 암수를 나눴어요 · 이 어항에선 새끼가 안 생겨요' : '💞 합사했어요 · 이 어항에서도 새끼가 생겨요 (메뉴에서 다시 나눌 수 있어요)'); if (UI.sheet === 'notice' && $('#sheet [data-a=divt]')) return showCare(); } break; }
     case 'helpon': return helpMode(true);
     case 'tprev': case 'tnext': { const n = S.tanks.length, j = (S.cur + (a === 'tnext' ? 1 : n - 1)) % n; return act('switch', { dataset: { id: String(j) } }); }
     case 'grip': $('#sheet').classList.toggle('full'); return;
@@ -3553,6 +3554,7 @@ if (S.rep == null) S.rep = 0;
 if (![.25, .5, 1, 2].includes(S.speed)) S.speed = 1;
 S.auto = Object.assign({}, C.AUTO_DEFAULT, S.auto || {});
 bindZoom(); layout(); render(); swim(); artInit();
+if (S.intro && S.tutDone) divAll();
 /* ---------- 전시 어항 데모 ---------- */
 function demo() {
   if (modalOpen) closeSheet();

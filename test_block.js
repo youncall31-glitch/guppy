@@ -13,6 +13,7 @@ function testStart() {
   S.fish.forEach((f, i) => { f.age = 8 + (i % 6) * 2; f.loc = 'tank' + (i % 2); });
   for (let d = 0; d < 6; d++) { C.dayTick(S, R); S.fish.forEach(f => { f.atRisk = false; }); }   // 며칠 지나 새끼·의뢰가 생긴 상태
   S.fish.forEach(f => { if (C.isAdult(f)) C.revealCheck(S, f, []); });
+  divAll();
   S.money = 3000; S.cur = 0; S.clock = 0; S.log = []; rosterSig = ''; VIEW.z = 1; VIEW.cx = 0; layout(); render();
   setTimeout(() => { Q.length = 0; if (modalOpen) closeSheet(); toast('🧪 테스트판 · 새로고침하면 늘 이 상태로 다시 시작해요 (저장 안 됨)'); }, 600);
 }
