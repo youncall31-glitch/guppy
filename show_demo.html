@@ -424,7 +424,7 @@ body.hasdream #shelf{right:66px;left:66px}
 .btn.go.sm{box-shadow:0 3px 0 var(--jsh),inset 0 1px 0 rgba(255,255,255,.5)!important}
 .btn.go.sm:active{transform:translateY(3px)}
 .btn.go:disabled,.btn:disabled{background:#e3e9ea!important;color:#7d8d92!important;box-shadow:0 2px 0 #c9d3d5!important;text-shadow:none!important;transform:none!important;opacity:1!important}.btn:disabled *{color:#7d8d92!important}
-.btn:not(.go):not(.ad):not(.sell):not(.warn){background:rgba(20,45,58,.06)!important;border:1px solid rgba(20,45,58,.16)!important;color:#24343c!important}
+.btn:not(.go):not(.ad):not(.sell):not(.warn):not(.add){background:rgba(20,45,58,.06)!important;border:1px solid rgba(20,45,58,.16)!important;color:#24343c!important}
 .btn{border-radius:14px!important}
 .btn.ad{background:linear-gradient(#3b4175,#2b2f55)!important;box-shadow:0 3px 0 #1b1e3a!important}
 .btn.danger,#menu .danger,.danger{background:#8d9aa0!important;color:#fff!important;border:0!important;box-shadow:0 3px 0 #6c787d!important}
@@ -444,6 +444,24 @@ body.hasdream #shelf{right:66px;left:66px}
 .cell.no .rc{color:#ffe9a6!important}
 .big.back{position:relative;background:linear-gradient(#e6f3f6,#d4e9ee);border-radius:14px}
 .big.back .stamp{position:absolute;top:8px;right:10px;background:#fff;color:#2f6f7a;font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:8px;border:1.5px solid #2f6f7a;transform:rotate(4deg)}
+
+/* 족보 · 번식통: 같은 철학 */
+.tkids.k1,.tkids.k2,.tkids.k3{--tl:#c3d4d9}
+.tkids::before,.tkids>.titem::before{border-width:2px!important}
+.tst{width:auto!important;height:20px!important;border-radius:99px!important;padding:0 8px;font-size:11px!important;font-weight:800!important;white-space:nowrap}
+.tst.ok{background:#e4eff1!important;color:#4c6b75!important}
+.tst.half{background:#fff!important;color:#4c6b75!important;border:1.5px dashed #9fb6be}
+.tst.no{background:var(--jelly)!important;color:#fff!important;text-shadow:0 1px 1px rgba(0,70,55,.4)}
+.ttree .trow.root .tbody{border-color:#143a4f!important;background:#fff!important}
+.ttree .trow.ready .tbody{border-color:#3fd1b0!important;background:#effbf7!important}
+.ttree .trow.have .tbody{border-color:#e1ebee!important;background:#f8fbfb!important}
+.ttree .rd{color:#13785f}
+.tps{gap:8px!important}
+.tpc{border:2px solid #e1ebee!important;box-shadow:0 2px 0 rgba(20,58,79,.06);position:relative}
+.tpc.on{border-color:#3fd1b0!important;background:#effbf7!important;box-shadow:0 0 0 3px rgba(63,209,176,.25)!important}
+.tpc.on::after{content:'✓';position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;background:var(--jelly);color:#fff;font-size:12px;font-weight:900;line-height:20px;text-align:center;box-shadow:0 2px 0 var(--jsh)}
+.mt0{background:rgba(255,255,255,.72);border:1.5px solid rgba(20,58,79,.18);border-radius:12px;padding:7px 12px;color:#143a4f!important;font-weight:800!important;box-shadow:0 2px 0 rgba(20,58,79,.12);white-space:nowrap}
+.btn.add{background:transparent!important;border:1.5px dashed #3fd1b0!important;color:#13785f!important;font-weight:800!important}
 </style>
 </head>
 <body>
@@ -2605,7 +2623,7 @@ function showBoxes() {
     h += `<div class="bc" data-a="boxopen" data-id="${i}"><div class="bt"><b>번식통 ${i + 1}</b>${gl ? `<span class="gp">🎯${m && f ? ' ' + Math.round(chanceOf(m, f, gl, f.care) * 100) + '%' : ''}</span>` : ''}</div>${miniTank(i)}<div class="bs">${boxState(i)}</div></div>`;
   }
   h += '</div>';
-  if (S.boxes < C.BOX_MAX) h += `<button class="btn" style="width:100%;padding:12px;margin-top:4px" data-a="shop">📦 번식통 더 들이기 · 🪙${C.BOX_COST[S.boxes - 1]}</button>`;
+  if (S.boxes < C.BOX_MAX) h += `<button class="btn add" style="width:100%;padding:12px;margin-top:4px" data-a="shop">＋ 번식통 더 들이기 · 🪙${C.BOX_COST[S.boxes - 1]}</button>`;
   openSheet(h, 'boxes', null, true);
 }
 function showReq(g) {   // 💌 의뢰 카드: 누가, 무엇을, 지금 보낼 수 있는지
@@ -2844,14 +2862,14 @@ function showTree(g) {
   const mini = f => `<span class="tpic" title="${C.nameOf(f.ph)}">${fishSVG(f)}</span>`;
   const walk = (n, pre, last, depth) => {
     const ok = n.own.length > 0, half = !ok && n.hid.length > 0, ready = !ok && n.kids && n.kids.every(k => k.own.length || k.hid.length), bi = boxOf(n.g), gi = UI.treeG.push(n.g) - 1;
-    const st = ok ? `<span class="tst ok">✓</span>` : half ? `<span class="tst half">◐</span>` : `<span class="tst no">✗</span>`;
-    const info = ok ? `✔ 가진 구피 ${n.own.length}마리 · 여기서 시작해요` : half ? `숨긴 아이 ${n.hid.length}마리 (겉으론 안 보여요)` : n.kids ? (ready ? '<b class="rd">재료가 다 있어요 · 짝을 지어 주세요</b>' : '아래 단계부터 모아요') : '가진 구피가 없어요';
+    const st = ok ? `<span class="tst ok">있음</span>` : half ? `<span class="tst half">숨은 아이</span>` : `<span class="tst no">없음</span>`;
+    const info = ok ? `가진 구피 ${n.own.length}마리 · 여기서 시작해요` : half ? `숨긴 아이 ${n.hid.length}마리 (겉으론 안 보여요)` : n.kids ? (ready ? '<b class="rd">재료가 다 있어요 · 짝을 지어 주세요</b>' : '아래 단계부터 모아요') : '가진 구피가 없어요';
     const act = ok ? '' : n.kids ? `${bi >= 0 ? `<span class="tbox">💞 번식통 ${bi + 1}에서 짝짓는 중</span> ` : ''}${U('boxes') ? `<button class="btn ${ready && bi < 0 ? 'go' : ''} sm" data-a="treepair" data-v="${gi}">💞 ${bi >= 0 ? '다른 짝도' : '짝 지어 주기'}</button>` : ''}` : half ? '' : `<button class="btn sm" data-a="treebuy" data-v="${gi}">🛒 구하기</button>`;
     const kids = (n.kids || []).map(k => walk(k, '', false, depth + 1)).join('');
     return `<div class="titem d${Math.min(depth, 3)}"><div class="trow ${depth ? '' : 'root'} ${ready ? 'ready' : ''} ${ok ? 'have' : ''}"><div class="tbody">${st}<div class="tmain"><b>${depth ? '' : '🌟 '}${C.goalText(n.g)}</b><small>${info}</small>${ok ? `<div class="tpics">${n.own.slice(0, 5).map(mini).join('')}${n.own.length > 5 ? `<span class="tmore">+${n.own.length - 5}</span>` : ''}</div>` : half ? `<div class="tpics hidp">${n.hid.slice(0, 5).map(mini).join('')}</div>` : ''}${act}</div></div></div>${kids ? `<div class="tkids k${Math.min(depth + 1, 3)}">${kids}</div>` : ''}</div>`;
   };
   rows.push(walk(root, '', true, 0));
-  openSheet(head('🌳 족보') + `<p class="note">맨 위가 최종 목표, 아래로 갈수록 그 재료예요. <b>✓ 있음 · ◐ 숨긴 아이만 · ✗ 없음</b><br>✗ 칸에서 <b>💞 짝 지어 주기</b>를 누르면 수컷·암컷과 번식통을 직접 골라 넣어요. 아래 칸이 다 ✓면 <b>재료가 다 있어요</b>.</p>
+  openSheet(head('🌳 족보') + `<p class="note">맨 위가 최종 목표, 아래로 갈수록 그 재료예요. <b>있음 · 숨은 아이 · 없음</b> 뱃지로 표시해요.<br><b>없음</b> 칸에서 <b>💞 짝 지어 주기</b>를 누르면 수컷·암컷과 번식통을 직접 골라 넣어요. 아래 칸이 다 <b>있음</b>이면 <b>재료가 다 있어요</b>.</p>
     <div class="ttree">${rows.join('')}</div>
     <div class="row" style="margin-top:10px"><button class="btn" data-a="album">📖 목표 바꾸기</button><button class="btn" data-a="dreamoff">목표 그만두기</button></div>`, 'tree', null, true);
 }
