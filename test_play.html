@@ -465,6 +465,7 @@ body.hasdream #shelf{right:66px;left:66px}
 
 .donebn{display:flex;align-items:center;gap:8px;justify-content:space-between;background:#effbf7;border:1.5px solid #3fd1b0;border-radius:14px;padding:9px 10px;margin:6px 0 8px;font-weight:800;font-size:13px;color:#13785f}
 .sw.on{background:#3fd1b0!important}
+.ver{text-align:center;font-size:11px;color:#8a9aa0;margin:10px 0 2px}
 </style>
 </head>
 <body>
@@ -779,13 +780,13 @@ body.hasdream #shelf{right:66px;left:66px}
     { ap: 1, t: '먹이를 줘 보세요', h: '🍤 먹이 버튼을 끌어다 어항 위에서 손을 떼요', r: 10, ok: S => (S.stats.fed || 0) >= 1 },
     { ap: 1, t: '치어를 건져 보세요', h: '새끼가 태어나면 뜨는 🐣 버튼을 눌러요', r: 20, un: ['boxes'], ok: S => (S.stats.rescued || 0) >= 1 },
     { ap: 1, t: '번식통에 짝을 넣어 보세요', h: '아래 💞 번식 → ✨ 추천 짝', r: 30, ok: S => { for (let i = 0; i < S.boxes; i++) { const b = at(S, 'box' + i).filter(f => !f.sep); if (b.some(f => f.sex === 'm') && b.some(f => f.sex === 'f')) return true; } return false; } },
-    { ap: 1, t: '어항 물을 갈아 주세요', h: '☰ → 💧 물 갈기 · 물이 맑아야 구피가 건강해요', r: 15, ok: S => (S.stats.wc || 0) >= 1 },
+    { ap: 1, t: '어항 물을 갈아 주세요', h: '메뉴 → 💧 물 갈기 · 물이 맑아야 구피가 건강해요', r: 15, ok: S => (S.stats.wc || 0) >= 1 },
     { ap: 1, t: '치어가 자라 정체를 드러내요', h: '태어난 지 6일이면 어른이 돼요', r: 35, un: ['sell'], ok: S => S.fish.some(f => isAdult(f) && bornHere(S, f)) },
     { ap: 1, t: '남는 구피를 팔아 보세요', h: '🐟 내 구피 → 💰 팔기 정리', r: 30, un: ['orders'], ok: S => (S.stats.sold || 0) >= 1 },
-    { ap: 1, t: '📋 의뢰를 하나 해결해 보세요', h: '☰ → 📋 의뢰 · 맞는 구피를 보내요', r: 40, un: ['goal'], ok: S => (S.stats.orders || 0) >= 1 },
+    { ap: 1, t: '📋 의뢰를 하나 해결해 보세요', h: '메뉴 → 📋 의뢰 · 맞는 구피를 보내요', r: 40, un: ['goal'], ok: S => (S.stats.orders || 0) >= 1 },
     { ap: 1, t: '🎯 번식통 목표를 정해 보세요', h: '번식통 → 🎯 목표 → 추천 카드', r: 35, un: ['album', 'starter'], ok: S => Object.keys(S.boxGoal || {}).length > 0 },
     { ap: 1, t: '초보 사장님 특혜로 색깔 구피 들이기', h: '🛒 상점 맨 위 🎁 특혜 · 두 가지 색을 싸게', r: 35, grad: GRAD_BONUS, un: ['shop', 'show'], ok: S => !!(S.starter && Object.keys(S.starter.got || {}).length) },
-    { t: '의뢰 5개 해결하기', h: '☰ → 📋 의뢰', r: 90, un: ['auto'], ok: S => (S.stats.orders || 0) >= 5 },
+    { t: '의뢰 5개 해결하기', h: '메뉴 → 📋 의뢰', r: 90, un: ['auto'], ok: S => (S.stats.orders || 0) >= 5 },
     { t: '사진첩에 모습 10가지 모으기', h: '다양한 짝을 지어 봐요', r: 90, un: ['deco', 'gacha'], ok: S => Object.keys(S.album).length >= 10 },
     { t: '전시 어항을 들여 보세요', h: '🛒 상점 → 전시 어항 · 손님은 전시 어항을 보러 와요', r: 120, ok: S => S.tanks.some(t => t.show) },
     { t: '의뢰 20개 해결하기', h: '어려운 의뢰일수록 보상이 커요', r: 240, ok: S => (S.stats.orders || 0) >= 20 },
@@ -2316,8 +2317,9 @@ function menuHtml() {
     + (t.show ? it('care', '🖼', '전시 어항 장치') + it('viewmode', '🎬', '감상 모드') : it('care', '💧', '물과 먹이', `<span class="${w < 50 ? 'warn' : ''}">${Math.round(t.water)}%</span>`))
     + (t.show ? '' : it('divt', '💞', '암수 합사', `<span>${t.div ? '따로' : '같이'}</span>`))
     + (U('deco') ? '' : '<!--') + it('decomode', '🪴', '꾸미기', `<span>${C.decoStats(t).n}/${C.slotCount(t.size)}</span>`) + (U('deco') ? '' : '-->')
-    + it('quiet', '🔕', '알림 줄이기', `<span>${S.quiet ? '켬' : '끔'}</span>`) + it('log', '📜', '가게 기록') + it('helpon', '❔', '궁금한 것 눌러 보기') + it('help', '📘', '도움말 · 튜토리얼') + ((S.goal || 0) < C.AP_N ? it('appass', '🎓', '수습 패스하기', `<span>🪙${C.apLeft(S)}</span>`) : '') + it('stcopy', '🧾', '게임 상태 복사 (상담용)') + it('resetask', '🔄', '처음부터 다시 하기', '', 'class="danger"');
+    + it('quiet', '🔕', '알림 줄이기', `<span>${S.quiet ? '켬' : '끔'}</span>`) + it('log', '📜', '가게 기록') + it('helpon', '❔', '궁금한 것 눌러 보기') + it('help', '📘', '도움말 · 튜토리얼') + ((S.goal || 0) < C.AP_N ? it('appass', '🎓', '수습 패스하기', `<span>🪙${C.apLeft(S)}</span>`) : '') + it('stcopy', '🧾', '게임 상태 복사 (상담용)') + it('resetask', '🔄', '처음부터 다시 하기', '', 'class="danger"') + `<p class="ver">버전 ${GAME_VER}</p>`;
 }
+const GAME_VER = 'v1124-2310';   // 고칠 때마다 올린다 (MMDD-HHMM)
 function menuToggle(on) { const m = $('#menu'); on = on == null ? !m.classList.contains('on') : on; if (on) menuHtml(); m.classList.toggle('on', on); if (on) tutOn('menu'); }
 function renderHud() {
   $('#money').textContent = S.money >= 1e4 ? (S.money / 1e4).toFixed(S.money >= 1e5 ? 0 : 1).replace(/\.0$/, '') + '만' : fmt(S.money); $("#day").textContent = `${S.day}일`; $('#spd').innerHTML = `⏳<b>×${S.speed}</b>`;
@@ -2956,7 +2958,7 @@ const TUT_STEPS = [
     start: () => { const s = SW[TUT.mom]; if (s) s.hold = false; S.safeBirth = true; S.clock = C.DAY_MS - 1500; TUT.pause = false; } },
   { el: () => $('#rescue button'), t: '🫙 치어 건지기', x: '주황 버튼을 눌러요. 안 건지면 잡아먹혀요!', wait: 'rescue', skip: () => !S.fish.some(f => f.atRisk) },
   { el: () => $('#dock [data-dock=fishes]'), t: '🐟 내 구피', x: '<b>내 구피</b>를 눌러 건진 치어를 봐요.<br><small>보육통에서 크면 저절로 어항으로 나와요</small>', wait: 'sheet:fishes', start: () => { VIEW.follow = null; VIEW.z = 1; zoomUi(); UI.where = 'nursery'; } },
-  { el: () => $('#menuBtn'), t: '☰ 메뉴', x: '<b>☰</b>를 눌러 봐요.<br><small>물 갈기 · 속도 · 도움말 · 새 기능도 여기 생겨요</small>', wait: 'menu' },
+  { el: () => $('#menuBtn'), t: '메뉴', x: '<b>메뉴</b>를 눌러 봐요.<br><small>물 갈기 · 속도 · 도움말 · 새 기능도 여기 생겨요</small>', wait: 'menu' },
   { el: () => $('#goal'), t: '🎓 수습 과정', x: '<b>목표</b>를 눌러 봐요. 9단계 수습을 끝내면 🪙500!<br><small>단계마다 새 기능이 열려요 · 막히면 목표를 누르면 할 곳으로 데려가 줘요</small>', wait: 'goal', start: () => { renderHud(); } }
 ];
 function startTut() { if (curTank().show || curTank().lock) { const i = S.tanks.findIndex(t => !t.show && !t.lock); if (i >= 0) { S.cur = i; VIEW.z = 1; VIEW.follow = null; layout(); render(); } } momOf(); TUT.on = true; TUT.i = 0; TUT.pause = true; S.clock = 0; $('#tut').classList.add('on'); tutShow(); requestAnimationFrame(tutLoop); }
@@ -3242,7 +3244,8 @@ function showHelp(first) {
     <li>⚠️ 친척끼리는 혈통 건강 ↓</li>
     <li>🚧 어항은 기본으로 암수가 나뉘어 있어요 · 메뉴 → 암수 합사로 같이 둘 수 있어요</li>
     <li>🌙 앱을 닫으면 하루 = 10분</li>
-    <li>❔ ☰ → 궁금한 것 눌러 보기</li></ul></div>
+    <li>❔ 메뉴 → 궁금한 것 눌러 보기</li>
+    <li>🧬 게임 속 유전은 쉽게 줄였어요 · 실제 구피는 무늬 상당수가 아빠 → 아들로 가는 성염색체 유전이에요</li></ul></div>
     <div class="row"><button class="btn" data-a="tutagain">🎓 튜토리얼 다시 보기</button><button class="btn go" data-a="close">${first ? '시작하기' : '알겠어요'}</button></div>`);
 }
 function showOffline(days, got, events) {
@@ -3276,7 +3279,7 @@ function handle(ev, quiet) {
     if (e.t === 'old' && !quiet) { const f = S.fish.find(x => x.id === e.id); if (f && !f.oldTold && (C.isParent(f) || whyPrecious(f).filter(r => !r.startsWith('📋')).length)) { f.oldTold = 1; queue(() => showOld(f.id)); } }
     if (e.t === 'gone' && !quiet && e.f) { const f = e.f, R = whyPrecious(f, S.fish).filter(r => !r.startsWith('📋')); if (R.length || f.fav || f.nick) note(`🌙 ${f.nick || C.nameOf(f.ph)}이(가) 편히 쉬러 떠났어요 · 📖 사진첩에 추억으로`); }
     if (e.t === 'upkeep1' && !quiet) note(`🍤 구피가 ${C.UPKEEP.free}마리를 넘어 관리비가 나가요 · 남는 아이는 팔거나 의뢰로 보내요`);
-    if (e.t === 'order' && !quiet) note(`📋 새 의뢰 ${e.n}개가 왔어요 · ☰ → 📋 의뢰`);
+    if (e.t === 'order' && !quiet) note(`📋 새 의뢰 ${e.n}개가 왔어요 · 메뉴 → 📋 의뢰`);
     if (e.t === 'gift' && !quiet) note('🤝 이웃 가게 사장님이 구피 한 쌍을 나눠 줬어요');
     if (e.t === 'auto' && !quiet) { note(`🤖 자동 ${e.action === 'donate' ? `기증 ${e.n}마리 · ⭐+${e.rep}` : `판매 ${e.n}마리 · 🪙+${fmt(e.coins)}`}`); if (e.coins) inc += e.coins; }
   });
@@ -3462,7 +3465,7 @@ function act(a, el) {
     case 'showok': S.showOk = 1; closeSheet(); if (SHOW_RETRY) { const f = SHOW_RETRY; SHOW_RETRY = null; f(); } return;
     case 'buyshow': err = C.buy(S, 'show', el.dataset.id); if (!err) { closeSheet(); S.cur = S.tanks.length - 1; VIEW.z = 1; VIEW.cx = 0; layout(); render(); save(); return toast(`🖼 ${C.THEMES[el.dataset.id].n} 전시 어항이 놓였어요`); } break;
     case 'addon': err = C.buy(S, 'addon', el.dataset.id); if (!err) { layout(); render(); save(); toast(`${C.ADDONS[el.dataset.id].i} ${C.ADDONS[el.dataset.id].n}을 달았어요`); return showCare(); } break;
-    case 'newtank': err = C.buy(S, 'tank', id); if (!err) { S.cur = S.tanks.length - 1; let dv = ''; if (el.dataset.div) { const r = C.buy(S, 'div'); if (!r) dv = ' · 🚧 칸막이를 세웠어요 (♂ 왼쪽 · ♀ 오른쪽)'; } VIEW.z = 1; VIEW.cx = 0; layout(); toast('🫧 새 1자 어항이 놓였어요' + dv + ' · ☰ 메뉴에서 칸막이를 세우고 걷을 수 있어요'); } break;
+    case 'newtank': err = C.buy(S, 'tank', id); if (!err) { S.cur = S.tanks.length - 1; let dv = ''; if (el.dataset.div) { const r = C.buy(S, 'div'); if (!r) dv = ' · 🚧 칸막이를 세웠어요 (♂ 왼쪽 · ♀ 오른쪽)'; } VIEW.z = 1; VIEW.cx = 0; layout(); toast('🫧 새 1자 어항이 놓였어요' + dv + ' · 메뉴 → 암수 합사에서 바꿀 수 있어요'); } break;
     case 'resize': err = C.buy(S, 'resize', id); if (!err) { save(); layout(); render(); toast(`📐 어항을 ${C.SIZES[curTank().size].n}(${C.SIZES[curTank().size].cap}마리)로 넓혔어요`); return showShop(); } break;
     case 'tonursery': err = C.moveTo(S, id, 'nursery'); if (!err) { closePop(); toast('보육통으로 옮겼어요'); } break;
     case 'tobox': {
