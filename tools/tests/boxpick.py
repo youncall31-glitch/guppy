@@ -1,0 +1,26 @@
+import asyncio
+from playwright.async_api import async_playwright
+async def main():
+    async with async_playwright() as p:
+        b=await p.chromium.launch(executable_path='/usr/bin/google-chrome')
+        pg=await b.new_page(viewport={'width':390,'height':844},device_scale_factor=2)
+        errs=[]; pg.on('pageerror',lambda e:errs.append(str(e)))
+        await pg.goto('file:///home/claude/guppy/index.html'); await pg.wait_for_timeout(1500)
+        await pg.evaluate("TUT.on&&tutEnd(); S.divOffered=1; S.attend={d:new Date().toDateString(),n:1}; S.unl=null; Q.length=0; modalOpen&&closeSheet(); S.money=9999; coach=()=>{}; for(let i=0;i<8;i++)CORE.buyFounder(S,i%2?'f':'m',false,Math.random); S.fish.forEach(f=>f.age=10); layout(); render();")
+        await pg.wait_for_timeout(800); await pg.evaluate("Q.length=0; modalOpen&&closeSheet()")
+        T=lambda: pg.evaluate("[UI.sheet, document.querySelector('#modal h3')?.textContent]")
+        await pg.click('[data-a=boxes]'); await pg.wait_for_timeout(500); print('1',await T())
+        await pg.click('#modal .bc >> nth=0'); await pg.wait_for_timeout(500); print('2',await T())
+        await pg.click('#modal .slot >> nth=0'); await pg.wait_for_timeout(500); print('3',await T()); await pg.screenshot(path='bp3.png')
+        await pg.click('#modal [data-a=put] >> nth=0'); await pg.wait_for_timeout(700); print('4',await T()); await pg.screenshot(path='bp4.png')
+        await pg.click('#modal .slot >> nth=1'); await pg.wait_for_timeout(500); print('5',await T())
+        await pg.click('#modal .sh .x >> nth=0'); await pg.wait_for_timeout(500); print('6 back',await T())
+        await pg.click('#modal .slot >> nth=1'); await pg.wait_for_timeout(400); print('7',await T())
+        await pg.go_back(); await pg.wait_for_timeout(500); print('8 sysback',await T())
+        await pg.go_back(); await pg.wait_for_timeout(500); print('9 sysback',await T())
+        await pg.go_back(); await pg.wait_for_timeout(500); print('10 sysback',await T(), pg.url[-20:])
+        await pg.click('[data-a=boxes]'); await pg.wait_for_timeout(400); await pg.click('#modal .bc >> nth=0'); await pg.wait_for_timeout(400); await pg.click('#modal .slot >> nth=1'); await pg.wait_for_timeout(400)
+        print(await pg.evaluate('document.elementFromPoint(30,170).id')); await pg.mouse.click(30,170); await pg.wait_for_timeout(500); print('11 outside',await T())
+        await pg.click('#modal [data-a=close]'); await pg.wait_for_timeout(500); print('12 close',await T(), await pg.evaluate('history.length'))
+        print(errs); await b.close()
+asyncio.run(main())
